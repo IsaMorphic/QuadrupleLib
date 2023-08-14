@@ -205,6 +205,34 @@ namespace QuadrupleLib
             return result;
         }
 
+        public static Float128 Ceiling(Float128 value)
+        {
+            Float128 result;
+            int unbiasedExponent = value.Exponent;
+
+            if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
+            else if (unbiasedExponent < 0)
+            {
+                if (value.RawSignBit)
+                {
+                    result = 0;
+                }
+                else
+                {
+                    result = 1;
+                }
+            }
+            else
+            {
+                result = value;
+                int bitsToErase = 112 - unbiasedExponent;
+                result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
+                if (value.RawSignBit) result += 1;
+            }
+
+            return result;
+        }
+
         #endregion
 
         #region Public API (complex number related)
