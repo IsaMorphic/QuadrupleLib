@@ -2,7 +2,7 @@
 
 QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating point number type for .NET 7 and above based on the `UInt128` built-in. The goal of this project is to eventually create a fully fleshed out 128-bit floating point arithmetic library that includes all of the bells and whistles one could possibly want. 
 
-### Project TODOs
+### Project TODOs (Completed)
 
 - [x] Adheres to minimum requirements of IEEE 754 specification
 - [x] Partially implements .NET 7 `ISignedNumber` generic arithmetic interface
@@ -11,6 +11,9 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 - [x] Implements basic `ToString` and `Parse`/`TryParse` methods
 - [x] Implements conversion methods to & from `binary64` type
 - [x] Provides conversion pathways to all standard .NET number types via `binary64`
+
+### Project TODOs (HELP WANTED!!)
+
 - [ ] Implements `IEEERemainder` as suggested in IEEE 754
 - [ ] Implements typical library functions (`Pow`, `Atan2`, `Log`)
 - [ ] Supports all rounding modes (atm only implements "ties to even" mode)
