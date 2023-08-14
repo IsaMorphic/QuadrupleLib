@@ -1165,7 +1165,7 @@ namespace QuadrupleLib
                      ((smallMantissa >> 2) & 1)) &
                      ((smallMantissa >> 1) & 1)) == 1) // check rounding condition
                 {
-                    smallMantissa += 8;
+                    smallMantissa++;
                 }
 
                 if (IsSubnormal(x))
