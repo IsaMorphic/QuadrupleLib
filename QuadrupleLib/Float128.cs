@@ -432,7 +432,6 @@ namespace QuadrupleLib
                     var carry = (ulong)Math.Max(0, leftBits[i].CompareTo(newBits[i]));
                     newBits[i + 1] = leftBits[i + 1] + rightBits[i + 1] + carry;
                 }
-                newBits[i] = leftBits[i] + rightBits[i];
 
                 return result;
             }
@@ -498,14 +497,21 @@ namespace QuadrupleLib
                 }
 
                 // set tentative exponent
-                var sumExponent = left.Exponent;
+                int sumExponent = left.Exponent;
 
                 // align significands
                 var exponentDiff = left.Exponent - right.Exponent;
                 var sumSignificand = (right.Significand << 3) >> exponentDiff;
 
                 // set sticky bit
-                sumSignificand |= UInt128.Min(UInt128.PopCount(right.Significand & ((UInt128.One << exponentDiff) - 1)), 1);
+                sumSignificand |= UInt128.Min(right.Significand & ((UInt128.One << exponentDiff) - 1), 1);
+
+                if ((((sumSignificand & 1) |
+                     ((sumSignificand >> 2) & 1)) &
+                     ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
+                {
+                    sumSignificand++; // increment pth bit from the left
+                }
 
                 // call p + 3 bit adder
                 bool rawSignBit;
@@ -525,17 +531,11 @@ namespace QuadrupleLib
                         leftSignificand - sumSignificand;
                 }
 
-                if ((((sumSignificand & 1) |
-                     ((sumSignificand >> 2) & 1)) &
-                     ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
-                {
-                    sumSignificand++; // increment pth bit from the left
-                }
-
                 // normalize output
+                int normDist;
                 if ((sumSignificand >> 3) != 0 && IsNormal(left))
                 {
-                    var normDist = (short)(UInt128.LeadingZeroCount(sumSignificand >> 3) - 15);
+                    normDist = (short)(UInt128.LeadingZeroCount(sumSignificand >> 3) - 15);
                     if (normDist > 0)
                         sumSignificand <<= normDist;
                     else if (normDist < 0)
@@ -545,6 +545,18 @@ namespace QuadrupleLib
                 else
                 {
                     sumExponent = (short)(-EXPONENT_BIAS + 1);
+                    normDist = 0;
+                }
+
+                // set sticky bit
+                sumSignificand &= UInt128.MaxValue << 1;
+                sumSignificand |= normDist < 0 ? UInt128.Min(right.Significand & ((UInt128.One << -normDist) - 1), 1) : 0;
+
+                if ((((sumSignificand & 1) |
+                     ((sumSignificand >> 2) & 1)) &
+                     ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
+                {
+                    sumSignificand++; // increment pth bit from the left
                 }
 
                 return new Float128(sumSignificand >> 3, sumExponent, rawSignBit);
@@ -568,7 +580,7 @@ namespace QuadrupleLib
                 return _qNaN;
             }
             else
-            { 
+            {
                 var prodSign = left.RawSignBit != right.RawSignBit;
                 var prodExponent = left.Exponent + right.Exponent;
 
@@ -576,20 +588,11 @@ namespace QuadrupleLib
                 var lowBits = bigSignificand[0] & (UInt128.MaxValue >> 16);
                 var highBits = (bigSignificand[1] << 19) | (bigSignificand[0] >> 109);
 
-                // set sticky bit
-                highBits |= UInt128.Min(UInt128.PopCount(lowBits), 1);
-
-                if ((((highBits & 1) |
-                     ((highBits >> 2) & 1)) &
-                     ((highBits >> 1) & 1)) == 1) // check rounding condition
-                {
-                    highBits++; // increment pth bit from the left
-                }
-
                 // normalize output
+                int normDist;
                 if ((highBits >> 3) != 0 && IsNormal(left) && IsNormal(right))
                 {
-                    var normDist = (short)(UInt128.LeadingZeroCount(highBits >> 3) - 15);
+                    normDist = (short)(UInt128.LeadingZeroCount(highBits >> 3) - 15);
                     if (normDist > 0)
                         highBits <<= normDist;
                     else if (normDist < 0)
@@ -599,15 +602,27 @@ namespace QuadrupleLib
                 else if ((highBits >> 3) == 0)
                 {
                     prodExponent = (short)(-EXPONENT_BIAS + 1);
+                    normDist = 0;
                 }
                 else
                 {
-                    var normDist = prodExponent - (-EXPONENT_BIAS + 1);
+                    normDist = prodExponent - (-EXPONENT_BIAS + 1);
                     if (normDist > 0)
                         highBits <<= normDist;
                     else if (normDist < 0)
                         highBits >>= normDist;
                     prodExponent -= normDist;
+                }
+
+                // set sticky bit
+                highBits &= UInt128.MaxValue << 1;
+                highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << -normDist) - 1) : 0), 1);
+
+                if ((((highBits & 1) |
+                     ((highBits >> 2) & 1)) &
+                     ((highBits >> 1) & 1)) == 1) // check rounding condition
+                {
+                    highBits++; // increment pth bit from the left
                 }
 
                 return new Float128(highBits >> 3, prodExponent, prodSign);
@@ -650,20 +665,11 @@ namespace QuadrupleLib
                 var quotExponent = leftExponent - rightExponent;
                 var quotSign = left.RawSignBit != right.RawSignBit;
 
-                // set sticky bit
-                quotSignificand |= UInt128.Min(leftSignificand % rightSignificand, 1);
-
-                if ((((quotSignificand & 1) |
-                     ((quotSignificand >> 2) & 1)) &
-                     ((quotSignificand >> 1) & 1)) == 1) // check rounding condition
-                {
-                    quotSignificand++; // increment pth bit from the left
-                }
-
                 // normalize output
+                int normDist;
                 if ((quotSignificand >> 3) != 0)
                 {
-                    var normDist = (short)(UInt128.LeadingZeroCount(quotSignificand >> 3) - 15);
+                    normDist = (short)(UInt128.LeadingZeroCount(quotSignificand >> 3) - 15);
                     if (normDist > 0)
                         quotSignificand <<= normDist;
                     else if (normDist < 0)
@@ -673,6 +679,18 @@ namespace QuadrupleLib
                 else
                 {
                     quotExponent = (short)(-EXPONENT_BIAS + 1);
+                    normDist = 0;
+                }
+
+                // set sticky bit
+                quotSignificand &= UInt128.MaxValue << 1;
+                quotSignificand |= UInt128.Min(leftSignificand % rightSignificand + (normDist < 0 ? quotSignificand & ((UInt128.One << -normDist) - 1) : 0), 1);
+
+                if ((((quotSignificand & 1) |
+                     ((quotSignificand >> 2) & 1)) &
+                     ((quotSignificand >> 1) & 1)) == 1) // check rounding condition
+                {
+                    quotSignificand++; // increment pth bit from the left
                 }
 
                 return new Float128(quotSignificand >> 3, quotExponent, quotSign);
@@ -1247,14 +1265,15 @@ namespace QuadrupleLib
             {
                 return double.NegativeInfinity;
             }
-            else if (IsZero(x))
+            else if (IsSubnormal(x))
             {
                 return 0.0;
             }
             else
             {
                 var smallMantissa = (ulong)(x.RawSignificand >> 57);
-                smallMantissa |= Math.Min((ulong)UInt128.PopCount(x.RawSignificand & 0xfffffffffffffUL), 1);
+                smallMantissa &= ulong.MaxValue << 1;
+                smallMantissa |= Math.Min((ulong)(x.RawSignificand & ((UInt128.One << 57) - 1)), 1);
 
                 if ((((smallMantissa & 1) |
                      ((smallMantissa >> 2) & 1)) &
@@ -1263,14 +1282,7 @@ namespace QuadrupleLib
                     smallMantissa++;
                 }
 
-                if (IsSubnormal(x))
-                {
-                    return BitConverter.UInt64BitsToDouble((smallMantissa >> 3) | (x.RawSignBit ? 1UL << 63 : 0));
-                }
-                else
-                {
-                    return BitConverter.UInt64BitsToDouble((smallMantissa >> 3) | ((ulong)(x.Exponent + 0x3ff) << 52) | (x.RawSignBit ? 1UL << 63 : 0));
-                }
+                return BitConverter.UInt64BitsToDouble((smallMantissa >> 3) | ((ulong)(x.Exponent + 0x3ff) << 52) | (x.RawSignBit ? 1UL << 63 : 0));
             }
         }
 
