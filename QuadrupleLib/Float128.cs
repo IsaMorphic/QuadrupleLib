@@ -2,12 +2,13 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace QuadrupleLib
 {
-    internal struct Float128 : ISignedNumber<Float128>
+    public struct Float128 : ISignedNumber<Float128>
     {
         #region Useful constants
 
@@ -380,6 +381,86 @@ namespace QuadrupleLib
 
         #endregion
 
+        #region Private API: Full-width 128-bit Multiplication Utility
+
+        private struct BigMul
+        {
+            private readonly UInt128 _lo;
+            private readonly UInt128 _hi;
+
+            private Span<ulong> GetUInt64Bits()
+            {
+                var thisSpan = MemoryMarshal.CreateSpan(ref this, 1);
+                return MemoryMarshal.Cast<BigMul, ulong>(thisSpan);
+            }
+
+            public ReadOnlySpan<UInt128> GetUInt128Bits()
+            {
+                var thisSpan = MemoryMarshal.CreateSpan(ref this, 1);
+                return MemoryMarshal.Cast<BigMul, UInt128>(thisSpan);
+            }
+
+            private static BigMul Add(BigMul left, BigMul right)
+            {
+                var leftBits = left.GetUInt64Bits();
+                var rightBits = right.GetUInt64Bits();
+
+                BigMul result = new();
+                Span<ulong> newBits = result.GetUInt64Bits();
+
+                int i;
+                for (i = 0; i < newBits.Length - 1; i++)
+                {
+                    newBits[i] = leftBits[i] + rightBits[i];
+                    var carry = (ulong)Math.Max(0, leftBits[i].CompareTo(newBits[i]));
+                    newBits[i + 1] = leftBits[i + 1] + rightBits[i + 1] + carry;
+                }
+                newBits[i] = leftBits[i] + rightBits[i];
+
+                return result;
+            }
+
+            private static BigMul Multiply(UInt128 left, ulong right)
+            {
+                Span<UInt128> leftVal = stackalloc[] { left };
+                Span<ulong> leftBits = MemoryMarshal.Cast<UInt128, ulong>(leftVal);
+
+                BigMul result = new();
+                Span<ulong> newBits = result.GetUInt64Bits();
+
+                int i;
+                ulong oldHigh = Math.BigMul(leftBits[0], right, out ulong low1);
+                newBits[0] = low1;
+                for (i = 1; i < leftBits.Length; i++)
+                {
+                    ulong newHigh = Math.BigMul(leftBits[i], right, out ulong low2);
+                    newBits[i] += low2 + oldHigh;
+                    oldHigh = newHigh + (ulong)Math.Max(0, low2.CompareTo(low2 + oldHigh));
+                }
+                newBits[i] = oldHigh;
+
+                return result;
+            }
+
+            public static BigMul Multiply(UInt128 left, UInt128 right)
+            {
+                Span<UInt128> rightVal = stackalloc[] { right };
+                Span<ulong> rightBits = MemoryMarshal.Cast<UInt128, ulong>(rightVal);
+
+                var leftProd = Multiply(left, rightBits[0]);
+                var rightProd = Multiply(left, rightBits[1]);
+                var rightShift = new BigMul();
+
+                var rightProdBits = rightProd.GetUInt64Bits();
+                var rightShiftBits = rightShift.GetUInt64Bits();
+                rightProdBits.Slice(0, 3).CopyTo(rightShiftBits.Slice(1));
+
+                return Add(leftProd, rightShift);
+            }
+        }
+
+        #endregion
+
         #region Public API (arithmetic related)
 
         public static Float128 operator +(Float128 left, Float128 right)
@@ -470,16 +551,13 @@ namespace QuadrupleLib
                 return _qNaN;
             }
             else
-            {
-                BigInteger leftSignificand = left.Significand;
-                BigInteger rightSignificand = right.Significand;
-
+            { 
                 var prodSign = left.RawSignBit != right.RawSignBit;
                 var prodExponent = left.Exponent + right.Exponent;
 
-                var bigSignificand = leftSignificand * rightSignificand;
-                var lowBits = (UInt128)(bigSignificand & (UInt128.MaxValue >> 16));
-                var highBits = (UInt128)(bigSignificand >> 109);
+                var bigSignificand = BigMul.Multiply(left.Significand, right.Significand).GetUInt128Bits();
+                var lowBits = bigSignificand[0] & (UInt128.MaxValue >> 16);
+                var highBits = (bigSignificand[1] << 19) | (bigSignificand[0] >> 109);
 
                 // set sticky bit
                 highBits |= UInt128.Min(UInt128.PopCount(lowBits), 1);
@@ -1055,7 +1133,7 @@ namespace QuadrupleLib
                 result = (double)(object)value;
                 return true;
             }
-            catch (InvalidCastException) 
+            catch (InvalidCastException)
             {
                 result = _sNaN;
                 return false;
@@ -1069,7 +1147,7 @@ namespace QuadrupleLib
                 result = (TOther)(object)(double)value;
                 return true;
             }
-            catch (InvalidCastException) 
+            catch (InvalidCastException)
             {
                 result = default;
                 return false;
