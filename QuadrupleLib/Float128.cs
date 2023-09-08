@@ -1282,7 +1282,14 @@ namespace QuadrupleLib
                     smallMantissa++;
                 }
 
-                return BitConverter.UInt64BitsToDouble((smallMantissa >> 3) | ((ulong)(x.Exponent + 0x3ff) << 52) | (x.RawSignBit ? 1UL << 63 : 0));
+                if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 52)
+                {
+                    return BitConverter.UInt64BitsToDouble(((ulong)(x.Exponent + 0x400) << 52) | (x.RawSignBit ? 1UL << 63 : 0));
+                }
+                else
+                {
+                    return BitConverter.UInt64BitsToDouble((smallMantissa >> 3) | ((ulong)(x.Exponent + 0x3ff) << 52) | (x.RawSignBit ? 1UL << 63 : 0));
+                }
             }
         }
 
