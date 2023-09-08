@@ -1259,15 +1259,15 @@ namespace QuadrupleLib
             {
                 return double.NaN;
             }
-            else if (IsPositiveInfinity(x))
+            else if (IsPositiveInfinity(x) || (x.Exponent >= 0x3ff && !x.RawSignBit))
             {
                 return double.PositiveInfinity;
             }
-            else if (IsNegativeInfinity(x))
+            else if (IsNegativeInfinity(x) || (x.Exponent >= 0x3ff && x.RawSignBit))
             {
                 return double.NegativeInfinity;
             }
-            else if (IsSubnormal(x))
+            else if (IsSubnormal(x) || x.Exponent <= 0x3fe)
             {
                 return 0.0;
             }
