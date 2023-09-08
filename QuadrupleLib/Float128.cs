@@ -1267,7 +1267,7 @@ namespace QuadrupleLib
             {
                 return double.NegativeInfinity;
             }
-            else if (IsSubnormal(x) || x.Exponent <= 0x3fe)
+            else if (IsSubnormal(x) || x.Exponent <= -0x3fe)
             {
                 return 0.0;
             }
