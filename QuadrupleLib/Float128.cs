@@ -1,5 +1,5 @@
 ﻿/*
- *  Copyright 2023 Chosen Few Software
+ *  Copyright 2024 Chosen Few Software
  *  This file is part of QuadrupleLib.
  *
  *  QuadrupleLib is free software: you can redistribute it and/or modify
@@ -16,16 +16,19 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace QuadrupleLib
 {
-    public struct Float128 : ISignedNumber<Float128>
+    public struct Float128 : INumber<Float128>
     {
         #region Useful constants
 
@@ -400,76 +403,123 @@ namespace QuadrupleLib
 
         #region Private API: Full-width 128-bit Multiplication Utility
 
-        private struct BigMul
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BigMul128
         {
-            private readonly UInt128 _lo;
-            private readonly UInt128 _hi;
+            public uint _0;
+            public uint _1;
+            public uint _2;
+            public uint _3;
 
-            private Span<ulong> GetUInt64Bits()
+            private static BigMul128 Add(BigMul128 left, BigMul128 right)
             {
-                var thisSpan = MemoryMarshal.CreateSpan(ref this, 1);
-                return MemoryMarshal.Cast<BigMul, ulong>(thisSpan);
-            }
+                uint carry;
+                BigMul128 result = new BigMul128();
 
-            public ReadOnlySpan<UInt128> GetUInt128Bits()
-            {
-                var thisSpan = MemoryMarshal.CreateSpan(ref this, 1);
-                return MemoryMarshal.Cast<BigMul, UInt128>(thisSpan);
-            }
+                result._0 = left._0 + right._0;
 
-            private static BigMul Add(BigMul left, BigMul right)
-            {
-                var leftBits = left.GetUInt64Bits();
-                var rightBits = right.GetUInt64Bits();
+                carry = (uint)Math.Max(0, left._0.CompareTo(result._0));
+                result._1 = left._1 + right._1 + carry;
 
-                BigMul result = new();
-                Span<ulong> newBits = result.GetUInt64Bits();
+                carry = (uint)Math.Max(0, left._1.CompareTo(result._1));
+                result._2 = left._2 + right._2 + carry;
 
-                int i;
-                for (i = 0; i < newBits.Length - 1; i++)
-                {
-                    newBits[i] = leftBits[i] + rightBits[i];
-                    var carry = (ulong)Math.Max(0, leftBits[i].CompareTo(newBits[i]));
-                    newBits[i + 1] = leftBits[i + 1] + rightBits[i + 1] + carry;
-                }
+                carry = (uint)Math.Max(0, left._2.CompareTo(result._2));
+                result._3 = left._3 + right._3 + carry;
 
                 return result;
             }
 
-            private static BigMul Multiply(UInt128 left, ulong right)
+            private static BigMul128 Multiply(ulong left, uint right)
             {
-                Span<UInt128> leftVal = stackalloc[] { left };
-                Span<ulong> leftBits = MemoryMarshal.Cast<UInt128, ulong>(leftVal);
+                var result = new BigMul128();
 
-                BigMul result = new();
-                Span<ulong> newBits = result.GetUInt64Bits();
+                ulong prod1 = (uint)left * (ulong)right;
+                result._0 = (uint)prod1;
 
-                int i;
-                ulong oldHigh = Math.BigMul(leftBits[0], right, out ulong low1);
-                newBits[0] = low1;
-                for (i = 1; i < leftBits.Length; i++)
-                {
-                    ulong newHigh = Math.BigMul(leftBits[i], right, out ulong low2);
-                    newBits[i] += low2 + oldHigh;
-                    oldHigh = newHigh + (ulong)Math.Max(0, low2.CompareTo(low2 + oldHigh));
-                }
-                newBits[i] = oldHigh;
+                ulong prod2 = (left >> 32) * right;
+                result._1 = (uint)prod2 + (uint)(prod1 >> 32);
+                result._2 = (uint)(prod2 >> 32) + (uint)Math.Max(0, ((uint)prod2).CompareTo((uint)prod2 + (uint)(prod1 >> 32)));
 
                 return result;
             }
 
-            public static BigMul Multiply(UInt128 left, UInt128 right)
+            public static BigMul128 Multiply(ulong left, ulong right)
             {
-                Span<UInt128> rightVal = stackalloc[] { right };
-                Span<ulong> rightBits = MemoryMarshal.Cast<UInt128, ulong>(rightVal);
+                var leftProd = Multiply(left, (uint)right);
+                var rightProd = Multiply(left, (uint)(right >> 32));
 
-                var leftProd = Multiply(left, rightBits[0]);
-                var rightProd = Multiply(left, rightBits[1]);
-                var rightShift = new BigMul();
+                var rightShift = new BigMul128 // 32-bit left-shift
+                {
+                    _1 = rightProd._0,
+                    _2 = rightProd._1,
+                    _3 = rightProd._2,
+                };
 
-                var rightProdBits = rightProd.GetUInt64Bits();
-                var rightShiftBits = rightShift.GetUInt64Bits();
-                rightProdBits.Slice(0, 3).CopyTo(rightShiftBits.Slice(1));
+                return Add(leftProd, rightShift);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BigMul256
+        {
+            public ulong _0;
+            public ulong _1;
+            public ulong _2;
+            public ulong _3;
+
+            private static BigMul256 Add(BigMul256 left, BigMul256 right)
+            {
+                ulong carry;
+                BigMul256 result = new BigMul256();
+
+                result._0 = left._0 + right._0;
+
+                carry = (ulong)Math.Max(0, left._0.CompareTo(result._0));
+                result._1 = left._1 + right._1 + carry;
+
+                carry = (ulong)Math.Max(0, left._1.CompareTo(result._1));
+                result._2 = left._2 + right._2 + carry;
+
+                carry = (ulong)Math.Max(0, left._2.CompareTo(result._2));
+                result._3 = left._3 + right._3 + carry;
+
+                return result;
+            }
+
+            private static BigMul256 Multiply(UInt128 left, ulong right)
+            {
+                var result = new BigMul256();
+
+                BigMul128 prod1 = BigMul128.Multiply((ulong)left, right);
+
+                var lo1 = prod1._0 | ((ulong)prod1._1 << 32);
+                var hi1 = prod1._2 | ((ulong)prod1._3 << 32);
+
+                result._0 = lo1;
+
+                BigMul128 prod2 = BigMul128.Multiply((ulong)(left >> 64), right);
+
+                var lo2 = prod2._0 | ((ulong)prod2._1 << 32);
+                var hi2 = prod2._2 | ((ulong)prod2._3 << 32);
+
+                result._1 = lo2 + hi1;
+                result._2 = hi2 + (ulong)Math.Max(0, lo2.CompareTo(lo2 + hi1));
+
+                return result;
+            }
+
+            public static BigMul256 Multiply(UInt128 left, UInt128 right)
+            {
+                var leftProd = Multiply(left, (ulong)right);
+                var rightProd = Multiply(left, (ulong)(right >> 64));
+
+                var rightShift = new BigMul256 // 64-bit left-shift
+                {
+                    _1 = rightProd._0,
+                    _2 = rightProd._1,
+                    _3 = rightProd._2,
+                };
 
                 return Add(leftProd, rightShift);
             }
@@ -584,9 +634,13 @@ namespace QuadrupleLib
                 var prodSign = left.RawSignBit != right.RawSignBit;
                 var prodExponent = left.Exponent + right.Exponent;
 
-                var bigSignificand = BigMul.Multiply(left.Significand, right.Significand).GetUInt128Bits();
-                var lowBits = bigSignificand[0] & (UInt128.MaxValue >> 16);
-                var highBits = (bigSignificand[1] << 19) | (bigSignificand[0] >> 109);
+                var bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+
+                var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
+                var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
+
+                var lowBits = bigLo & (UInt128.MaxValue >> 16);
+                var highBits = (bigHi << 19) | (bigLo >> 109);
 
                 // normalize output
                 int normDist;
@@ -629,6 +683,66 @@ namespace QuadrupleLib
             }
         }
 
+        private static (ulong lo, ulong hi) Divide(UInt128 n, ulong d, out ulong r)
+        {
+            var nLoBits = (ulong)n;
+            var nHiBits = (ulong)(n >> 64);
+
+            var hiBits = nHiBits / d;
+            var loBits = (nLoBits + nHiBits % d) / d;
+
+            r = (nLoBits + nHiBits % d) % d;
+
+            return (loBits, hiBits);
+        }
+
+        private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
+        {
+            var dLoBits = (ulong)d;
+            var dHiBits = (ulong)(d >> 64);
+
+            if (d != 0 && d > n)
+            {
+                r = n;
+                return UInt128.Zero;
+            }
+            else if (d == n)
+            {
+                r = UInt128.Zero;
+                return UInt128.One;
+            }
+            else if (dHiBits > 0)
+            {
+                // Base 2^64 long division (lol)
+                UInt128 q = UInt128.Zero;
+                r = n;
+
+                while (r >= d)
+                {
+                    var p = Divide(r, dHiBits, out ulong _);
+                    if (p.hi == 0)
+                    {
+                        q += UInt128.One;
+                        r -= d;
+                        break;
+                    }
+
+                    q += p.hi;
+
+                    var prod = BigMul256.Multiply(d, p.hi);
+                    r -= prod._0 | ((UInt128)prod._1 << 64);
+                }
+
+                return q;
+            }
+            else
+            {
+                var q = Divide(n, dLoBits, out ulong r0);
+                r = r0;
+                return q.lo | ((UInt128)q.hi << 64);
+            }
+        }
+
         public static Float128 operator /(Float128 left, Float128 right)
         {
             if (IsInfinity(left) && IsFinite(right))
@@ -661,7 +775,7 @@ namespace QuadrupleLib
                 var rightSignificand = right.Significand >> rightAdjust;
                 var rightExponent = right.Exponent + rightAdjust - 115;
 
-                var quotSignificand = leftSignificand / rightSignificand;
+                var quotSignificand = Divide(leftSignificand, rightSignificand, out UInt128 remSignificand);
                 var quotExponent = leftExponent - rightExponent;
                 var quotSign = left.RawSignBit != right.RawSignBit;
 
@@ -684,7 +798,7 @@ namespace QuadrupleLib
 
                 // set sticky bit
                 quotSignificand &= UInt128.MaxValue << 1;
-                quotSignificand |= UInt128.Min(leftSignificand % rightSignificand + (normDist < 0 ? quotSignificand & ((UInt128.One << -normDist) - 1) : 0), 1);
+                quotSignificand |= UInt128.Min(remSignificand + (normDist < 0 ? quotSignificand & ((UInt128.One << -normDist) - 1) : 0), 1);
 
                 if ((((quotSignificand & 1) |
                      ((quotSignificand >> 2) & 1)) &
@@ -1241,7 +1355,7 @@ namespace QuadrupleLib
             }
             else
             {
-                ulong bits = BitConverter.DoubleToUInt64Bits(x);
+                ulong bits = Unsafe.As<double, ulong>(ref x);
                 // Note that the shift is sign-extended, hence the test against -1 not 1
                 bool negative = (bits & (1UL << 63)) != 0;
                 int exponent = (int)((bits >> 52) & 0x7ffUL) - 0x3ff;
@@ -1257,15 +1371,15 @@ namespace QuadrupleLib
             {
                 return double.NaN;
             }
-            else if (IsPositiveInfinity(x))
+            else if (IsPositiveInfinity(x) || (x.Exponent >= 0x3ff && !x.RawSignBit))
             {
                 return double.PositiveInfinity;
             }
-            else if (IsNegativeInfinity(x))
+            else if (IsNegativeInfinity(x) || (x.Exponent >= 0x3ff && x.RawSignBit))
             {
                 return double.NegativeInfinity;
             }
-            else if (IsSubnormal(x))
+            else if (IsSubnormal(x) || x.Exponent <= -0x3fe)
             {
                 return 0.0;
             }
@@ -1282,7 +1396,22 @@ namespace QuadrupleLib
                     smallMantissa++;
                 }
 
-                return BitConverter.UInt64BitsToDouble((smallMantissa >> 3) | ((ulong)(x.Exponent + 0x3ff) << 52) | (x.RawSignBit ? 1UL << 63 : 0));
+                ulong result;
+                if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 52)
+                {
+                    result =
+                        ((ulong)((x.Exponent + 0x400) << 52) & 0x7ff) |
+                        (x.RawSignBit ? 1UL << 63 : 0);
+                }
+                else
+                {
+                    result =
+                        ((smallMantissa >> 3) & 0xfffffffffffffUL) |
+                        ((ulong)((x.Exponent + 0x3ff) & 0x7ff) << 52) |
+                        (x.RawSignBit ? 1UL << 63 : 0);
+                }
+
+                return Unsafe.As<ulong, double>(ref result);
             }
         }
 
