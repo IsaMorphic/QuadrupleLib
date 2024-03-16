@@ -16,10 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -401,15 +399,23 @@ namespace QuadrupleLib
 
         #endregion
 
-        #region Private API: Full-width 128-bit Multiplication Utility
+        #region Private API: Full-width 256-bit Multiplication Utility
 
         [StructLayout(LayoutKind.Sequential)]
         private struct BigMul128
         {
+
+#if BIGENDIAN
+            public uint _3;
+            public uint _2;
+            public uint _1;
+            public uint _0;
+#else
             public uint _0;
             public uint _1;
             public uint _2;
             public uint _3;
+#endif
 
             private static BigMul128 Add(BigMul128 left, BigMul128 right)
             {
@@ -463,10 +469,18 @@ namespace QuadrupleLib
         [StructLayout(LayoutKind.Sequential)]
         private struct BigMul256
         {
+
+#if BIGENDIAN
+            public ulong _3;
+            public ulong _2;
+            public ulong _1;
+            public ulong _0;
+#else
             public ulong _0;
             public ulong _1;
             public ulong _2;
             public ulong _3;
+#endif
 
             private static BigMul256 Add(BigMul256 left, BigMul256 right)
             {
@@ -527,6 +541,70 @@ namespace QuadrupleLib
 
         #endregion
 
+        #region Private API: Software-based 128-bit Division Routines
+
+        private static (ulong lo, ulong hi) Divide(UInt128 n, ulong d, out ulong r)
+        {
+            var nLoBits = (ulong)n;
+            var nHiBits = (ulong)(n >> 64);
+
+            var hiBits = nHiBits / d;
+            var loBits = (nLoBits + nHiBits % d) / d;
+
+            r = (nLoBits + nHiBits % d) % d;
+
+            return (loBits, hiBits);
+        }
+
+        private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
+        {
+            var dLoBits = (ulong)d;
+            var dHiBits = (ulong)(d >> 64);
+
+            if (d != 0 && d > n)
+            {
+                r = n;
+                return UInt128.Zero;
+            }
+            else if (d == n)
+            {
+                r = UInt128.Zero;
+                return UInt128.One;
+            }
+            else if (dHiBits > 0)
+            {
+                // Base 2^64 long division (lol)
+                UInt128 q = UInt128.Zero;
+                r = n;
+
+                while (r >= d)
+                {
+                    var p = Divide(r, dHiBits, out ulong _);
+                    if (p.hi == 0)
+                    {
+                        q += UInt128.One;
+                        r -= d;
+                        break;
+                    }
+
+                    q += p.hi;
+
+                    var prod = BigMul256.Multiply(d, p.hi);
+                    r -= prod._0 | ((UInt128)prod._1 << 64);
+                }
+
+                return q;
+            }
+            else
+            {
+                var q = Divide(n, dLoBits, out ulong r0);
+                r = r0;
+                return q.lo | ((UInt128)q.hi << 64);
+            }
+        }
+
+        #endregion
+
         #region Public API (arithmetic related)
 
         public static Float128 operator +(Float128 left, Float128 right)
@@ -539,8 +617,15 @@ namespace QuadrupleLib
             {
                 return _qNaN;
             }
-            else if (left.Exponent >= right.Exponent)
+            else
             {
+                if (left.Exponent < right.Exponent)
+                {
+                    var temp = left;
+                    left = right;
+                    right = temp;
+                }
+
                 if (IsNormal(left) && IsSubnormal(right))
                 {
                     return left;
@@ -611,10 +696,6 @@ namespace QuadrupleLib
 
                 return new Float128(sumSignificand >> 3, sumExponent, rawSignBit);
             }
-            else
-            {
-                return right + left;
-            }
         }
 
         public static Float128 operator -(Float128 left, Float128 right)
@@ -680,66 +761,6 @@ namespace QuadrupleLib
                 }
 
                 return new Float128(highBits >> 3, prodExponent, prodSign);
-            }
-        }
-
-        private static (ulong lo, ulong hi) Divide(UInt128 n, ulong d, out ulong r)
-        {
-            var nLoBits = (ulong)n;
-            var nHiBits = (ulong)(n >> 64);
-
-            var hiBits = nHiBits / d;
-            var loBits = (nLoBits + nHiBits % d) / d;
-
-            r = (nLoBits + nHiBits % d) % d;
-
-            return (loBits, hiBits);
-        }
-
-        private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
-        {
-            var dLoBits = (ulong)d;
-            var dHiBits = (ulong)(d >> 64);
-
-            if (d != 0 && d > n)
-            {
-                r = n;
-                return UInt128.Zero;
-            }
-            else if (d == n)
-            {
-                r = UInt128.Zero;
-                return UInt128.One;
-            }
-            else if (dHiBits > 0)
-            {
-                // Base 2^64 long division (lol)
-                UInt128 q = UInt128.Zero;
-                r = n;
-
-                while (r >= d)
-                {
-                    var p = Divide(r, dHiBits, out ulong _);
-                    if (p.hi == 0)
-                    {
-                        q += UInt128.One;
-                        r -= d;
-                        break;
-                    }
-
-                    q += p.hi;
-
-                    var prod = BigMul256.Multiply(d, p.hi);
-                    r -= prod._0 | ((UInt128)prod._1 << 64);
-                }
-
-                return q;
-            }
-            else
-            {
-                var q = Divide(n, dLoBits, out ulong r0);
-                r = r0;
-                return q.lo | ((UInt128)q.hi << 64);
             }
         }
 
@@ -1400,7 +1421,7 @@ namespace QuadrupleLib
                 if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 52)
                 {
                     result =
-                        ((ulong)((x.Exponent + 0x400) << 52) & 0x7ff) |
+                        ((ulong)((x.Exponent + 0x400) & 0x7ff) << 52) |
                         (x.RawSignBit ? 1UL << 63 : 0);
                 }
                 else
