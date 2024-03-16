@@ -5,7 +5,7 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 ### Project TODOs (Completed)
 
 - [x] Adheres to minimum requirements of IEEE 754 specification
-- [x] Partially implements .NET 7 `ISignedNumber` generic arithmetic interface
+- [x] Partially implements .NET 7 `INumber` generic arithmetic interface
 - [x] Implements all basic arithmetic operations (`+`, `-`, `*`, `/`, `%`, `++`, `--`)
 - [x] Implements all standard rounding functions (`Round`, `Floor`, `Ceiling`)
 - [x] Implements basic `ToString` and `Parse`/`TryParse` methods
