@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.33711.374
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadrupleLib", "QuadrupleLib\QuadrupleLib.csproj", "{83D04C8F-280F-464B-8F49-E8FBADD91EE3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadrupleLib.Driver", "QuadrupleLib.Driver\QuadrupleLib.Driver.csproj", "{1F59B37D-4FB2-4CB0-88AA-B86EE574F1B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{83D04C8F-280F-464B-8F49-E8FBADD91EE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83D04C8F-280F-464B-8F49-E8FBADD91EE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83D04C8F-280F-464B-8F49-E8FBADD91EE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F59B37D-4FB2-4CB0-88AA-B86EE574F1B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F59B37D-4FB2-4CB0-88AA-B86EE574F1B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F59B37D-4FB2-4CB0-88AA-B86EE574F1B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F59B37D-4FB2-4CB0-88AA-B86EE574F1B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
