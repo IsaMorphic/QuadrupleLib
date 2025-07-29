@@ -26,7 +26,7 @@ using System.Text.RegularExpressions;
 
 namespace QuadrupleLib
 {
-    public struct Float128 : INumber<Float128>
+    public struct Float128 : IBinaryFloatingPointIeee754<Float128>
     {
         #region Useful constants
 
@@ -142,9 +142,6 @@ namespace QuadrupleLib
         public static Float128 NegativeInfinity => _nInf;
         public static Float128 NaN => _qNaN;
 
-        private static readonly Float128 _pi = Parse("3.1415926535897932384626433832795028");
-        public static Float128 PI => _pi;
-
         private static readonly Float128 _epsilon = new Float128(UInt128.One, -EXPONENT_BIAS + 1, false);
         public static Float128 Epsilon => _epsilon;
 
@@ -155,6 +152,17 @@ namespace QuadrupleLib
         public static int Radix => 2;
         public static Float128 AdditiveIdentity => Zero;
         public static Float128 MultiplicativeIdentity => One;
+
+        public static Float128 NegativeZero => new(UInt128.Zero, 0, true);
+
+        private static readonly Float128 _e = Parse("2.7182818284590452353602874713526625");
+        public static Float128 E => _e;
+
+        private static readonly Float128 _pi = Parse("3.1415926535897932384626433832795028");
+        public static Float128 Pi => _pi;
+
+        private static readonly Float128 _tau = Parse("6.2831853071795864769252867665590058");
+        public static Float128 Tau => _tau;
 
         #endregion
 
@@ -274,6 +282,12 @@ namespace QuadrupleLib
         #endregion
 
         #region Public API (representation related)
+
+        public static bool IsPow2(Float128 value)
+        {
+            return (value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) || 
+                value.RawSignificand == UInt128.Zero;
+        }
 
         public static bool IsCanonical(Float128 value)
         {
@@ -607,6 +621,143 @@ namespace QuadrupleLib
 
         #region Public API (arithmetic related)
 
+        public static Float128 FusedMultiplyAdd(Float128 left, Float128 right, Float128 addend)
+        {
+            var prodSign = left.RawSignBit != right.RawSignBit;
+            var prodExponent = left.Exponent + right.Exponent;
+
+            var bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+
+            var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
+            var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
+
+            var lowBits = bigLo & (UInt128.MaxValue >> 16);
+            var highBits = (bigHi << 19) | (bigLo >> 109);
+
+            // normalize output
+            int normDist;
+            if ((highBits >> 3) != 0 && IsNormal(left) && IsNormal(right))
+            {
+                normDist = (short)(UInt128.LeadingZeroCount(highBits >> 3) - 15);
+                if (normDist > 0)
+                    highBits <<= normDist;
+                else if (normDist < 0)
+                    highBits >>= -normDist;
+                prodExponent -= normDist;
+            }
+            else if ((highBits >> 3) == 0)
+            {
+                prodExponent = (short)(-EXPONENT_BIAS + 1);
+                normDist = 0;
+            }
+            else
+            {
+                normDist = prodExponent - (-EXPONENT_BIAS + 1);
+                if (normDist > 0)
+                    highBits <<= normDist;
+                else if (normDist < 0)
+                    highBits >>= normDist;
+                prodExponent -= normDist;
+            }
+
+            // set sticky bit
+            highBits &= UInt128.MaxValue << 1;
+            highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << -normDist) - 1) : 0), 1);
+
+            bool leftSign = prodSign;
+            int leftExponent = prodExponent;
+            UInt128 leftSignificand = highBits;
+
+            bool rightSign = addend.RawSignBit;
+            int rightExponent = addend.Exponent;
+            UInt128 rightSignificand = addend.Significand << 3;
+
+            if (leftExponent < rightExponent)
+            {
+                var (tempSign, tempExponent, tempSignificand) = (leftSign, leftExponent, leftSignificand);
+                (leftSign, leftExponent, leftSignificand) = (rightSign, rightExponent, rightSignificand);
+                (rightSign, rightExponent, rightSignificand) = (tempSign, tempExponent, tempSignificand);
+            }
+
+            if (leftExponent > -EXPONENT_BIAS + 1 && rightExponent <= -EXPONENT_BIAS + 1)
+            {
+                return new Float128(leftSignificand, leftExponent, leftSign);
+            }
+
+            // set tentative exponent
+            int sumExponent = leftExponent;
+
+            // align significands
+            var exponentDiff = leftExponent - rightExponent;
+            var sumSignificand = rightSignificand >> exponentDiff;
+
+            // set sticky bit
+            sumSignificand |= UInt128.Min(rightSignificand & ((UInt128.One << exponentDiff) - 1), 1);
+
+            if ((((sumSignificand & 1) |
+                 ((sumSignificand >> 2) & 1)) &
+                 ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
+            {
+                sumSignificand++; // increment pth bit from the left
+            }
+
+            // call p + 3 bit adder
+            bool sumSign;
+            if (leftSign == rightSign)
+            {
+                sumSign = leftSign;
+                sumSignificand += leftSignificand;
+            }
+            else
+            {
+                sumSign =
+                    (rightSign && leftSignificand < sumSignificand) ||
+                    (leftSign && sumSignificand < leftSignificand);
+                sumSignificand = leftSignificand < sumSignificand ?
+                    sumSignificand - leftSignificand :
+                    leftSignificand - sumSignificand;
+            }
+
+            // normalize output
+            if ((sumSignificand >> 3) != 0 && leftExponent > -EXPONENT_BIAS + 1)
+            {
+                normDist = (short)(UInt128.LeadingZeroCount(sumSignificand >> 3) - 15);
+                if (normDist > 0)
+                    sumSignificand <<= normDist;
+                else if (normDist < 0)
+                    sumSignificand >>= -normDist;
+                sumExponent -= normDist;
+            }
+            else
+            {
+                sumExponent = (short)(-EXPONENT_BIAS + 1);
+                normDist = 0;
+            }
+
+            // set sticky bit
+            sumSignificand &= UInt128.MaxValue << 1;
+            sumSignificand |= normDist < 0 ? UInt128.Min(right.Significand & ((UInt128.One << -normDist) - 1), 1) : 0;
+
+            if ((((sumSignificand & 1) |
+                 ((sumSignificand >> 2) & 1)) &
+                 ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
+            {
+                sumSignificand++; // increment pth bit from the left
+            }
+
+            return new Float128(sumSignificand >> 3, sumExponent, sumSign);
+        }
+
+        public static Float128 Ieee754Remainder(Float128 left, Float128 right)
+        {
+            return left - right * Round(left / right);
+        }
+
+        public static Float128 Round(Float128 x, int digits, MidpointRounding mode)
+        {
+            throw new NotImplementedException();
+        }
+
         public static Float128 operator +(Float128 left, Float128 right)
         {
             if (IsInfinity(left) && IsInfinity(right))
@@ -847,6 +998,119 @@ namespace QuadrupleLib
         public static Float128 operator --(Float128 value)
         {
             return value - One;
+        }
+
+        #endregion
+
+        #region Public API (storage representation related)
+
+        public int GetExponentByteCount()
+        {
+            return 2;
+        }
+
+        public int GetExponentShortestBitLength()
+        {
+            return 15 - short.LeadingZeroCount(Exponent);
+        }
+
+        public int GetSignificandBitLength()
+        {
+            return 113 - (int)UInt128.LeadingZeroCount(Significand);
+        }
+
+        public int GetSignificandByteCount()
+        {
+            return 14;
+        }
+
+        public bool TryWriteExponentBigEndian(Span<byte> destination, out int bytesWritten)
+        {
+            bytesWritten = GetExponentByteCount();
+            Span<byte> exponentBytes = destination.Slice(0, bytesWritten);
+
+            bool flag = BitConverter.TryWriteBytes(exponentBytes, Exponent);
+            if (BitConverter.IsLittleEndian)
+            {
+                exponentBytes.Reverse();
+            }
+            return flag;
+        }
+
+        public bool TryWriteExponentLittleEndian(Span<byte> destination, out int bytesWritten)
+        {
+            bytesWritten = GetExponentByteCount();
+            Span<byte> exponentBytes = destination.Slice(0, bytesWritten);
+
+            bool flag = BitConverter.TryWriteBytes(exponentBytes, Exponent);
+            if (!BitConverter.IsLittleEndian)
+            {
+                exponentBytes.Reverse();
+            }
+            return flag;
+        }
+
+        public bool TryWriteSignificandBigEndian(Span<byte> destination, out int bytesWritten)
+        {
+            bytesWritten = GetSignificandByteCount();
+            Span<byte> significandBytes = destination.Slice(0, bytesWritten);
+
+            UInt128 significand = Significand;
+            bool flag = MemoryMarshal.TryWrite(significandBytes, ref significand);
+            if (BitConverter.IsLittleEndian)
+            {
+                significandBytes.Reverse();
+            }
+            return flag;
+        }
+
+        public bool TryWriteSignificandLittleEndian(Span<byte> destination, out int bytesWritten)
+        {
+            bytesWritten = GetSignificandByteCount();
+            Span<byte> significandBytes = destination.Slice(0, bytesWritten);
+
+            UInt128 significand = Significand;
+            bool flag = MemoryMarshal.TryWrite(significandBytes, ref significand);
+            if (!BitConverter.IsLittleEndian)
+            {
+                significandBytes.Reverse();
+            }
+            return flag;
+        }
+
+        public static Float128 BitDecrement(Float128 x)
+        {
+            return new Float128(x.RawSignificand - 1, x.Exponent, x.RawSignBit);
+        }
+
+        public static Float128 BitIncrement(Float128 x)
+        {
+            return new Float128(x.RawSignificand + 1, x.Exponent, x.RawSignBit);
+        }
+
+        public static Float128 ScaleB(Float128 x, int n)
+        {
+            return new Float128(x.RawSignificand, x.Exponent + n, x.RawSignBit);
+        }
+
+        public static Float128 operator &(Float128 left, Float128 right)
+        {
+            return new Float128(left._rawBits & right._rawBits);
+        }
+
+        public static Float128 operator |(Float128 left, Float128 right)
+        {
+            return new Float128(left._rawBits | right._rawBits);
+        }
+
+        public static Float128 operator ^(Float128 left, Float128 right)
+        {
+            return new Float128(left._rawBits ^ right._rawBits);
+        }
+
+        public static Float128 operator ~(Float128 value)
+        {
+            return new Float128(~value._rawBits);
         }
 
         #endregion
@@ -1434,6 +1698,185 @@ namespace QuadrupleLib
 
                 return Unsafe.As<ulong, double>(ref result);
             }
+        }
+
+        #endregion
+
+        #region Public API (library functions)
+
+        public static Float128 Log2(Float128 value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Atan2(Float128 y, Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Atan2Pi(Float128 y, Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static int ILogB(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Exp(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Exp10(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Exp2(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Acosh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Asinh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Atanh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Cosh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Sinh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Tanh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Log(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Log(Float128 x, Float128 newBase)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Log10(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Pow(Float128 x, Float128 y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Cbrt(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Hypot(Float128 x, Float128 y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 RootN(Float128 x, int n)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Sqrt(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Acos(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 AcosPi(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Asin(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 AsinPi(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Atan(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 AtanPi(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Cos(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 CosPi(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Sin(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static (Float128 Sin, Float128 Cos) SinCos(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 SinPi(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Tan(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 TanPi(Float128 x)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion
