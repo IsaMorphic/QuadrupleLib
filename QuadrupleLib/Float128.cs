@@ -1,5 +1,5 @@
 ﻿/*
- *  Copyright 2024 Chosen Few Software
+ *  Copyright 2025 Chosen Few Software
  *  This file is part of QuadrupleLib.
  *
  *  QuadrupleLib is free software: you can redistribute it and/or modify
