@@ -1082,7 +1082,7 @@ namespace QuadrupleLib
             Span<byte> significandBytes = destination.Slice(0, bytesWritten);
 
             UInt128 significand = Significand;
-            bool flag = MemoryMarshal.TryWrite(significandBytes, ref significand);
+            bool flag = MemoryMarshal.TryWrite(significandBytes, in significand);
             if (BitConverter.IsLittleEndian)
             {
                 significandBytes.Reverse();
@@ -1096,7 +1096,7 @@ namespace QuadrupleLib
             Span<byte> significandBytes = destination.Slice(0, bytesWritten);
 
             UInt128 significand = Significand;
-            bool flag = MemoryMarshal.TryWrite(significandBytes, ref significand);
+            bool flag = MemoryMarshal.TryWrite(significandBytes, in significand);
             if (!BitConverter.IsLittleEndian)
             {
                 significandBytes.Reverse();
