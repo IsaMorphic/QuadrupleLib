@@ -616,7 +616,7 @@ namespace QuadrupleLib
                     UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
                     while (r < s)
                     {
-                        prod = BigMul256.Multiply(d, --pHi);
+                        prod = BigMul256.Multiply(d, pHi >>= 1);
                         s = prod._0 | ((UInt128)prod._1 << 64);
                     }
 
