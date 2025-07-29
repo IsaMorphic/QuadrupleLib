@@ -571,13 +571,11 @@ namespace QuadrupleLib
 
         private static (ulong lo, ulong hi) Divide(UInt128 n, ulong d, out ulong r)
         {
-            var nLoBits = (ulong)n;
-            var nHiBits = (ulong)(n >> 64);
+            (UInt128 quot, UInt128 rem) = UInt128.DivRem(n, d);
 
-            var hiBits = nHiBits / d;
-            var loBits = (nLoBits + nHiBits % d) / d;
-
-            r = (nLoBits + nHiBits % d) % d;
+            ulong loBits = (ulong)quot;
+            ulong hiBits = (ulong)(quot >> 64);
+            r = (ulong)rem;
 
             return (loBits, hiBits);
         }
@@ -613,10 +611,17 @@ namespace QuadrupleLib
                         break;
                     }
 
-                    q += p.hi;
+                    var pHi = p.hi;
+                    var prod = BigMul256.Multiply(d, pHi);
+                    UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
+                    while (r < s)
+                    {
+                        prod = BigMul256.Multiply(d, --pHi);
+                        s = prod._0 | ((UInt128)prod._1 << 64);
+                    }
 
-                    var prod = BigMul256.Multiply(d, p.hi);
-                    r -= prod._0 | ((UInt128)prod._1 << 64);
+                    q += pHi;
+                    r -= s;
                 }
 
                 return q;
