@@ -297,7 +297,7 @@ namespace QuadrupleLib
 
         public static bool IsPow2(Float128 value)
         {
-            return (value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) || 
+            return (value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) ||
                 value.RawSignificand == UInt128.Zero;
         }
 
@@ -767,7 +767,16 @@ namespace QuadrupleLib
 
         public static Float128 Round(Float128 x, int digits, MidpointRounding mode)
         {
-            throw new NotImplementedException();
+            if (mode != MidpointRounding.ToEven)
+            {
+                throw new ArgumentException("The specified rounding mode is not supported", nameof(mode));
+            }
+
+            for (int i = 0; i < digits; i++) { x *= 10; }
+            x = Round(x);
+            for (int i = 0; i < digits; i++) { x /= 10; }
+
+            return x;
         }
 
         public static Float128 operator +(Float128 left, Float128 right)
@@ -1722,21 +1731,21 @@ namespace QuadrupleLib
 
         private static readonly Float128 _K_n;
 
-        private static Float128 AtanPow2(int k) 
+        private static Float128 AtanPow2(int k)
         {
             Float128 x_n = One;
             if (k == 0) return Pi * 0.25;
-            for (int n = 0; n < 5; n++) 
+            for (int n = 0; n < 5; n++)
             {
                 x_n = ScaleB(x_n * x_n * (x_n * (x_n * (3 - ScaleB(x_n, k)) + ScaleB(One, k + 3)) - 12) + 12, -k - 2) / 3;
             }
             return x_n;
         }
 
-        private static Float128 ComputeK(int n) 
+        private static Float128 ComputeK(int n)
         {
             Float128 K_i = One;
-            for (int i = 0; i < n; i++) 
+            for (int i = 0; i < n; i++)
             {
                 K_i /= Sqrt(One + ScaleB(One, -i << 1));
             }
@@ -1767,7 +1776,7 @@ namespace QuadrupleLib
         {
             Float128 sigma, theta = Zero;
             (Float128 x, Float128 y) = (Zero, One);
-            for (int i = 0; i < SINCOS_ITER_COUNT; i++) 
+            for (int i = 0; i < SINCOS_ITER_COUNT; i++)
             {
                 sigma = theta < alpha ? One : NegativeOne;
 
@@ -1901,7 +1910,7 @@ namespace QuadrupleLib
         public static Float128 Sqrt(Float128 x)
         {
             Float128 y_n = x * 0.5;
-            for (int n = 0; n < 10; n++) 
+            for (int n = 0; n < 10; n++)
             {
                 y_n = 0.5 * (y_n + x / y_n);
             }
