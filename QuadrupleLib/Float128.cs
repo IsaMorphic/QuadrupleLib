@@ -130,6 +130,18 @@ namespace QuadrupleLib
 
         #endregion
 
+        #region Static constructor
+
+        static Float128()
+        {
+            // CoRDiC implementation
+            _thetaTable = Enumerable.Range(0, SINCOS_ITER_COUNT)
+                .Select(AtanPow2).ToArray();
+            _K_n = ComputeK(SINCOS_ITER_COUNT);
+        }
+
+        #endregion
+
         #region Public API (constants)
 
         private static readonly Float128 _qNaN = new Float128(UInt128.One, short.MaxValue, false);
@@ -1702,6 +1714,88 @@ namespace QuadrupleLib
 
         #endregion
 
+        #region Public API: Software-based CoRDiC Routine
+
+        private const int SINCOS_ITER_COUNT = 16;
+
+        private static readonly Float128[] _thetaTable;
+
+        private static readonly Float128 _K_n;
+
+        private static Float128 AtanPow2(int k) 
+        {
+            Float128 x_n = One;
+            if (k == 0) return Pi * 0.25;
+            for (int n = 0; n < 5; n++) 
+            {
+                x_n = ScaleB(x_n * x_n * (x_n * (x_n * (3 - ScaleB(x_n, k)) + ScaleB(One, k + 3)) - 12) + 12, -k - 2) / 3;
+            }
+            return x_n;
+        }
+
+        private static Float128 ComputeK(int n) 
+        {
+            Float128 K_i = One;
+            for (int i = 0; i < n; i++) 
+            {
+                K_i /= Sqrt(One + ScaleB(One, -i << 1));
+            }
+            return K_i;
+        }
+
+        public static Float128 Cos(Float128 x)
+        {
+            return SinCos(x).Cos;
+        }
+
+        public static Float128 CosPi(Float128 x)
+        {
+            return SinCosPi(x).CosPi;
+        }
+
+        public static Float128 Sin(Float128 x)
+        {
+            return SinCos(x).Sin;
+        }
+
+        public static Float128 SinPi(Float128 x)
+        {
+            return SinCosPi(x).SinPi;
+        }
+
+        public static (Float128 Sin, Float128 Cos) SinCos(Float128 alpha)
+        {
+            Float128 sigma, theta = Zero;
+            (Float128 x, Float128 y) = (Zero, One);
+            for (int i = 0; i < SINCOS_ITER_COUNT; i++) 
+            {
+                sigma = theta < alpha ? One : NegativeOne;
+
+                (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
+                theta += sigma * _thetaTable[i];
+            }
+            return (y * _K_n, x * _K_n);
+        }
+
+        public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
+        {
+            return SinCos(x * Pi);
+        }
+
+        public static Float128 Tan(Float128 alpha)
+        {
+            (Float128 y, Float128 x) = SinCos(alpha);
+            return y / x;
+        }
+
+        public static Float128 TanPi(Float128 alpha)
+        {
+            (Float128 y, Float128 x) = SinCos(alpha * Pi);
+            return y / x;
+        }
+
+        #endregion
+
         #region Public API (library functions)
 
         public static Float128 Log2(Float128 value)
@@ -1796,7 +1890,7 @@ namespace QuadrupleLib
 
         public static Float128 Hypot(Float128 x, Float128 y)
         {
-            throw new NotImplementedException();
+            return Sqrt(x * x + y * y);
         }
 
         public static Float128 RootN(Float128 x, int n)
@@ -1806,7 +1900,12 @@ namespace QuadrupleLib
 
         public static Float128 Sqrt(Float128 x)
         {
-            throw new NotImplementedException();
+            Float128 y_n = x * 0.5;
+            for (int n = 0; n < 10; n++) 
+            {
+                y_n = 0.5 * (y_n + x / y_n);
+            }
+            return y_n;
         }
 
         public static Float128 Acos(Float128 x)
@@ -1835,46 +1934,6 @@ namespace QuadrupleLib
         }
 
         public static Float128 AtanPi(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Cos(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 CosPi(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Sin(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static (Float128 Sin, Float128 Cos) SinCos(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 SinPi(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Tan(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 TanPi(Float128 x)
         {
             throw new NotImplementedException();
         }
