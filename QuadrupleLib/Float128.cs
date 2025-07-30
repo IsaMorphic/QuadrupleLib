@@ -588,7 +588,7 @@ namespace QuadrupleLib
                     var pHi = p.hi;
                     var prod = BigMul256.Multiply(d, pHi);
                     UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
-                    while (r < s)
+                    while (r < s && pHi > 0)
                     {
                         prod = BigMul256.Multiply(d, pHi >>= 1);
                         s = prod._0 | ((UInt128)prod._1 << 64);
