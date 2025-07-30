@@ -1902,7 +1902,7 @@ namespace QuadrupleLib
             (Float128 x, Float128 y) = (One, Zero);
             for (int i = 0; i < SINCOS_ITER_COUNT; i++)
             {
-                sigma = theta < alpha ? One : NegativeOne;
+                sigma = theta < alpha % Tau ? One : NegativeOne;
 
                 (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
                 theta += sigma * _thetaTable[i];
@@ -1931,9 +1931,38 @@ namespace QuadrupleLib
 
         #region Public API (library functions)
 
-        public static Float128 Log2(Float128 value)
+        private static Float128 _Log2(Float128 y, int N)
         {
-            throw new NotImplementedException();
+            if (N == 0)
+            {
+                return y;
+            }
+            else
+            {
+                int m = 0;
+                while (y < 2.0)
+                { y *= y; --m; }
+                return ScaleB(One + _Log2(y * 0.5, N - 1), m);
+            }
+        }
+
+        public static Float128 Log2(Float128 x)
+        {
+            if (x <= Zero) 
+            {
+                return _sNaN;
+            }
+
+            int n = ILogB(x);
+            Float128 y = ScaleB(x, -n);
+            if (y == One)
+            {
+                return n;
+            }
+            else
+            {
+                return n + _Log2(y, 15);
+            }
         }
 
         public static Float128 Atan2(Float128 y, Float128 x)
@@ -1948,22 +1977,47 @@ namespace QuadrupleLib
 
         public static int ILogB(Float128 x)
         {
-            throw new NotImplementedException();
+            return x.Exponent - (int)UInt128.LeadingZeroCount(x.Significand) + 15;
         }
 
-        public static Float128 Exp(Float128 x)
+        public static Float128 Exp(Float128 y)
         {
-            throw new NotImplementedException();
+            Float128 x_n = One;
+            for (int i = 0; i < y; i++) 
+            {
+                x_n *= E;
+            }
+
+            for (int n = 0; n < 10; n++) 
+            {
+                x_n -= x_n * (Log(x_n) - y);
+            }
+            return x_n;
         }
 
-        public static Float128 Exp10(Float128 x)
+        public static Float128 Exp10(Float128 y)
         {
-            throw new NotImplementedException();
+            Float128 x_n = One;
+            for (int i = 0; i < y; i++)
+            {
+                x_n *= 10;
+            }
+
+            for (int n = 0; n < 10; n++)
+            {
+                x_n -= x_n * Log(10) * (Log10(x_n) - y);
+            }
+            return x_n;
         }
 
-        public static Float128 Exp2(Float128 x)
+        public static Float128 Exp2(Float128 y)
         {
-            throw new NotImplementedException();
+            Float128 x_n = ScaleB(One, (int)Floor(y));
+            for (int n = 0; n < 10; n++)
+            {
+                x_n -= x_n * Log(2) * (Log2(x_n) - y);
+            }
+            return x_n;
         }
 
         public static Float128 Acosh(Float128 x)
@@ -1998,27 +2052,34 @@ namespace QuadrupleLib
 
         public static Float128 Log(Float128 x)
         {
-            throw new NotImplementedException();
+            return Log2(x) / Log2(E);
         }
 
         public static Float128 Log(Float128 x, Float128 newBase)
         {
-            throw new NotImplementedException();
+            return Log2(x) / Log2(newBase);
         }
 
         public static Float128 Log10(Float128 x)
         {
-            throw new NotImplementedException();
+            return Log2(x) / Log2(10);
         }
 
         public static Float128 Pow(Float128 x, Float128 y)
         {
-            throw new NotImplementedException();
+            return Exp(y * Log(x));
         }
 
         public static Float128 Cbrt(Float128 x)
         {
-            throw new NotImplementedException();
+            Float128 y_n = x * 0.5;
+            for (int n = 0; n < 10; n++)
+            {
+                Float128 sq = y_n * y_n;
+                Float128 cb = sq * y_n;
+                y_n = x + 2.0 * cb / (3.0 * sq);
+            }
+            return y_n;
         }
 
         public static Float128 Hypot(Float128 x, Float128 y)
@@ -2028,7 +2089,7 @@ namespace QuadrupleLib
 
         public static Float128 RootN(Float128 x, int n)
         {
-            throw new NotImplementedException();
+            return Pow(x, One / n);
         }
 
         public static Float128 Sqrt(Float128 x)
