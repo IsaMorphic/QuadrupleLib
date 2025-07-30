@@ -134,6 +134,16 @@ namespace QuadrupleLib
 
         static Float128()
         {
+            // Rounding related
+            Float128 pow10 = One;
+            List<Float128> pow10List = new();
+            for (int i = 0; i < 38; i++)
+            {
+                pow10List.Add(pow10);
+                pow10 *= 10;
+            }
+            _pow10Table = pow10List.ToArray();
+
             // CoRDiC implementation
             _thetaTable = Enumerable.Range(0, SINCOS_ITER_COUNT)
                 .Select(AtanPow2).ToArray();
@@ -193,6 +203,35 @@ namespace QuadrupleLib
         public static bool IsOddInteger(Float128 value)
         {
             return IsInteger(value) && value.Exponent < 1;
+        }
+
+        #endregion
+
+        #region Public API (rounding related)
+
+        private static readonly Float128[] _pow10Table;
+
+        public static Float128 Round(Float128 x, int digits, MidpointRounding mode = MidpointRounding.ToEven)
+        {
+            if (mode != MidpointRounding.ToEven)
+            {
+                throw new ArgumentException("The specified rounding mode is not supported", nameof(mode));
+            }
+
+            if (digits < 0) 
+            {
+                throw new ArgumentOutOfRangeException("Parameter must be greater than or equal to 0.", nameof(digits));
+            }
+
+            if (digits >= 38)
+            {
+                return x;
+            }
+            else
+            {
+                Float128 scaled = x * _pow10Table[digits];
+                return Round(scaled) / _pow10Table[digits];
+            }
         }
 
         public static Float128 Round(Float128 value)
@@ -768,20 +807,6 @@ namespace QuadrupleLib
         public static Float128 Ieee754Remainder(Float128 left, Float128 right)
         {
             return left - right * Round(left / right);
-        }
-
-        public static Float128 Round(Float128 x, int digits, MidpointRounding mode)
-        {
-            if (mode != MidpointRounding.ToEven)
-            {
-                throw new ArgumentException("The specified rounding mode is not supported", nameof(mode));
-            }
-
-            for (int i = 0; i < digits; i++) { x *= 10; }
-            x = Round(x);
-            for (int i = 0; i < digits; i++) { x /= 10; }
-
-            return x;
         }
 
         public static Float128 operator +(Float128 left, Float128 right)
