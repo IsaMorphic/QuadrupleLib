@@ -1935,7 +1935,7 @@ namespace QuadrupleLib
         {
             if (N == 0)
             {
-                return y;
+                return Zero;
             }
             else
             {
