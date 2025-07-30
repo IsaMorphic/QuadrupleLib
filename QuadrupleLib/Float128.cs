@@ -945,19 +945,25 @@ namespace QuadrupleLib
 
         #region Public API (parsing related)
 
-        public static Float128 Parse(string s)
+        public static Float128 Parse(string s, IFormatProvider? provider = null)
         {
-            switch (s)
+            NumberFormatInfo formatter = NumberFormatInfo.GetInstance(provider);
+            if (s == formatter.NaNSymbol)
             {
-                case "NaN":
-                    return _qNaN;
-                case "Infinity":
-                    return _pInf;
-                case "-Infinity":
-                    return _nInf;
+                return _qNaN;
+            }
+            else if (s == formatter.PositiveInfinitySymbol)
+            {
+                return _pInf;
+            }
+            else if (s == formatter.NegativeInfinitySymbol)
+            {
+                return _nInf;
             }
 
-            var match = Regex.Match(s, @"(\-)?(\d+)(?:\.(\d+))?(?:E(\-?\d+))?");
+            var match = Regex.Match(s.Trim(), @$"((?:{Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d+)" +
+                @$"(?:{Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
+                @$"((?: ?{Regex.Escape(formatter.NegativeSign)})|\))?");
             if (!match.Success)
             {
                 return _sNaN;
@@ -980,17 +986,18 @@ namespace QuadrupleLib
                         else
                         {
                             builder.Append(allDigits);
-                            builder.Insert(allDigits.Length - qExponent, '.');
+                            builder.Insert(allDigits.Length - qExponent, formatter.NumberDecimalSeparator);
                         }
                     }
                     else if (qExponent < 0)
                     {
-                        builder.Append("0.");
+                        builder.Append("0");
+                        builder.Append(formatter.NumberDecimalSeparator);
                         builder.Append(new string('0', -qExponent));
                         builder.Append(allDigits);
                     }
 
-                    return Parse(builder.ToString());
+                    return Parse(builder.ToString(), formatter);
                 }
 
                 var wholePart = BigInteger.Parse(match.Groups[2].Value);
@@ -1016,7 +1023,11 @@ namespace QuadrupleLib
                     }
                 }
 
-                var resultSign = match.Groups[1].Value.StartsWith('-');
+                var resultSign =
+                    (match.Groups[1].Value.StartsWith(formatter.NegativeSign) ^
+                    match.Groups[5].Value.EndsWith(formatter.NegativeSign)) ||
+                    (match.Groups[1].Value.StartsWith('(') &&
+                    match.Groups[5].Value.EndsWith(')'));
                 var resultSignificand = (UInt128)wholePart;
                 if (fracPart == 0)
                 {
@@ -1075,52 +1086,62 @@ namespace QuadrupleLib
             }
         }
 
-        public static bool TryParse(string s, out Float128 result)
-        {
-            result = Parse(s);
-            return !IsNaN(result);
-        }
-
-        // TODO: These methods >(
-
         public static Float128 Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider)
         {
-            throw new NotImplementedException();
+            return Parse(new string(s), style, provider);
         }
 
         public static Float128 Parse(string s, NumberStyles style, IFormatProvider? provider)
         {
-            throw new NotImplementedException();
+            if (style == NumberStyles.Float)
+            {
+                return Parse(s);
+            }
+            else
+            {
+                throw new ArgumentException($"Parameter must be equal to {nameof(NumberStyles.Float)}.", nameof(style));
+            }
         }
 
         public static Float128 Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
         {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Parse(string s, IFormatProvider? provider)
-        {
-            throw new NotImplementedException();
+            return Parse(new string(s), provider);
         }
 
         public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
         {
-            throw new NotImplementedException();
+            return TryParse(new string(s), style, provider, out result);
         }
 
         public static bool TryParse([NotNullWhen(true)] string? s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                result = _sNaN;
+            }
+            else
+            {
+                result = Parse(s, style, provider);
+            }
+            return !IsNaN(result);
         }
 
         public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
         {
-            throw new NotImplementedException();
+            return TryParse(new string(s), provider, out result);
         }
 
         public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                result = _sNaN;
+            }
+            else
+            {
+                result = Parse(s, provider);
+            }
+            return !IsNaN(result);
         }
 
         #endregion
@@ -1129,52 +1150,61 @@ namespace QuadrupleLib
 
         public override string ToString()
         {
+            return ToString(null, null);
+        }
+
+        public string ToString(string? format, IFormatProvider? formatProvider)
+        {
+            NumberFormatInfo formatter = formatProvider is null ?
+                new NumberFormatInfo() { NumberDecimalDigits = 38 } :
+                NumberFormatInfo.GetInstance(formatProvider);
             if (IsNaN(this))
             {
-                return "NaN";
+                return formatter.NaNSymbol;
             }
             else if (IsPositiveInfinity(this))
             {
-                return "Infinity";
+                return formatter.PositiveInfinitySymbol;
             }
             else if (IsNegativeInfinity(this))
             {
-                return "-Infinity";
+                return formatter.NegativeInfinitySymbol;
             }
             else
             {
+                Float128 rounded = Round(this, formatter.NumberDecimalDigits);
                 var builder = new StringBuilder();
 
                 BigInteger fracPart;
                 int fracDiff;
 
-                BigInteger wholePart = Significand;
-                var wholeDiff = 112 - Exponent;
+                BigInteger wholePart = rounded.Significand;
+                var wholeDiff = 112 - rounded.Exponent;
 
                 if (wholeDiff > 0)
                 {
                     wholePart >>= wholeDiff;
-                    if (Exponent < 0)
+                    if (rounded.Exponent < 0)
                     {
-                        var tzc = (int)UInt128.TrailingZeroCount(Significand);
+                        var tzc = (int)UInt128.TrailingZeroCount(rounded.Significand);
                         int shift;
-                        if (-Exponent < 112)
+                        if (-rounded.Exponent < 112)
                         {
-                            shift = -Exponent;
+                            shift = -rounded.Exponent;
                             fracDiff = 0;
                         }
                         else
                         {
                             shift = tzc;
-                            fracDiff = -Exponent - shift;
+                            fracDiff = -rounded.Exponent - shift;
                         }
 
-                        fracPart = (Significand >> shift) & SIGNIFICAND_MASK;
+                        fracPart = (rounded.Significand >> shift) & SIGNIFICAND_MASK;
                     }
                     else
                     {
                         fracDiff = 0;
-                        fracPart = (Significand << Exponent) & SIGNIFICAND_MASK;
+                        fracPart = (rounded.Significand << rounded.Exponent) & SIGNIFICAND_MASK;
                     }
                 }
                 else
@@ -1186,20 +1216,46 @@ namespace QuadrupleLib
 
                 if (fracPart == 0)
                 {
-                    builder.Append(wholePart);
+                    string resultStr;
                     var numDigits = (int)Math.Floor(BigInteger.Log10(wholePart));
                     if (numDigits >= 20)
                     {
-                        return $"{builder.ToString().Substring(0, 36).TrimEnd('0').Insert(1, ".")}E{numDigits}";
+                        NumberFormatInfo newFormatter = (NumberFormatInfo)formatter.Clone();
+                        newFormatter.NumberGroupSizes = [0];
+
+                        builder.Append(wholePart.ToString(newFormatter));
+                        resultStr = $"{builder.ToString().Substring(0, 36).TrimEnd('0').Insert(1, formatter.NumberDecimalSeparator)}E{numDigits}";
                     }
                     else
                     {
-                        return builder.ToString();
+                        builder.Append(wholePart.ToString(formatter));
+                        resultStr = builder.ToString();
+                    }
+
+                    switch (formatter.NumberNegativePattern)
+                    {
+                        case 0:
+                            return rounded.RawSignBit ?
+                                $"({resultStr})" : resultStr;
+                        case 1:
+                            return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                                + resultStr;
+                        case 2:
+                            return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                                + $" {resultStr}";
+                        case 3:
+                            return resultStr +
+                                (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                        case 4:
+                            return $"{resultStr} " +
+                                (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                        default:
+                            throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
                     }
                 }
                 else
                 {
-                    builder.Append(wholePart);
+                    builder.Append(wholePart.ToString(formatProvider));
 
                     var numDigits = wholePart == 0 ? 0 : builder.Length;
                     var decimalExpn = numDigits;
@@ -1208,7 +1264,7 @@ namespace QuadrupleLib
                     BigInteger guardDigit = 0;
                     BigInteger lastDigit = 0;
 
-                    while (!nonZeroFlag || ++numDigits < 38)
+                    while (!nonZeroFlag || ++numDigits < Math.Min(38, formatter.NumberDecimalDigits))
                     {
                         fracPart *= 10;
 
@@ -1238,35 +1294,73 @@ namespace QuadrupleLib
 
                     if (wholePart == 0 && decimalExpn >= 20)
                     {
-                        builder.Insert(1, '.');
-                        return $"{(RawSignBit ? "-" : "")}{builder.ToString().TrimEnd('0')}E{-decimalExpn}";
+                        builder.Insert(1, formatter.NumberDecimalSeparator);
+                        string resultStr = $"{builder.ToString().TrimEnd('0')}E{-decimalExpn}";
+                        switch (formatter.NumberNegativePattern)
+                        {
+                            case 0:
+                                return rounded.RawSignBit ?
+                                    $"({resultStr})" : resultStr;
+                            case 1:
+                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                                    + resultStr;
+                            case 2:
+                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                                    + $" {resultStr}";
+                            case 3:
+                                return resultStr +
+                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                            case 4:
+                                return $"{resultStr} " +
+                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                            default:
+                                throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
+                        }
                     }
                     else if (wholePart == 0)
                     {
                         builder.Insert(0, new string('0', decimalExpn));
-                        builder.Insert(1, '.');
+                        builder.Insert(1, formatter.NumberDecimalSeparator);
                     }
                     else
                     {
-                        builder.Insert(decimalExpn, '.');
+                        builder.Insert(decimalExpn, formatter.NumberDecimalSeparator);
                     }
 
-                    return $"{(RawSignBit ? "-" : "")}{builder.ToString().TrimEnd('0')}";
+                    {
+                        string resultStr = builder.ToString().TrimEnd('0');
+                        switch (formatter.NumberNegativePattern)
+                        {
+                            case 0:
+                                return rounded.RawSignBit ?
+                                    $"({resultStr})" : resultStr;
+                            case 1:
+                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                                    + resultStr;
+                            case 2:
+                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                                    + $" {resultStr}";
+                            case 3:
+                                return resultStr +
+                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                            case 4:
+                                return $"{resultStr} " +
+                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                            default:
+                                throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
+                        }
+                    }
                 }
             }
         }
 
-        // TODO: IFormatProvider
-        public string ToString(string? format, IFormatProvider? formatProvider)
-        {
-            var formatter = NumberFormatInfo.GetInstance(formatProvider);
-            return ToString();
-        }
-
         public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
         {
-            var formatter = NumberFormatInfo.GetInstance(provider);
-            throw new NotImplementedException();
+            string? formatStr = format.Length == 0 ? null : new string(format);
+            string resultStr = ToString(formatStr, provider);
+
+            charsWritten = Math.Min(destination.Length, resultStr.Length);
+            return resultStr.TryCopyTo(destination);
         }
 
         #endregion
