@@ -1874,7 +1874,7 @@ namespace QuadrupleLib
         public static (Float128 Sin, Float128 Cos) SinCos(Float128 alpha)
         {
             Float128 sigma, theta = Zero;
-            (Float128 x, Float128 y) = (Zero, One);
+            (Float128 x, Float128 y) = (One, Zero);
             for (int i = 0; i < SINCOS_ITER_COUNT; i++)
             {
                 sigma = theta < alpha ? One : NegativeOne;
