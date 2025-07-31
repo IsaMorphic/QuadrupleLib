@@ -4,7 +4,7 @@ using QuadrupleLib;
 using (StreamWriter writer = File.CreateText("cordic.csv"))
 {
     writer.WriteLine("x,sin(x),cos(x)");
-    for (int i = -90; i <= 90; i += 5)
+    for (int i = 0; i <= 360; i += 5)
     {
         (Float128 sin, Float128 cos) = Float128.SinCos(i * Float128.Pi / 180);
         writer.WriteLine($"{i},{sin},{cos}");

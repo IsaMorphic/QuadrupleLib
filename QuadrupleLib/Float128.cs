@@ -218,7 +218,7 @@ namespace QuadrupleLib
                 throw new ArgumentException("The specified rounding mode is not supported", nameof(mode));
             }
 
-            if (digits < 0) 
+            if (digits < 0)
             {
                 throw new ArgumentOutOfRangeException("Parameter must be greater than or equal to 0.", nameof(digits));
             }
@@ -1847,9 +1847,9 @@ namespace QuadrupleLib
 
         #endregion
 
-        #region Public API: Software-based CoRDiC Routine
+        #region Public API (trig functions)
 
-        private const int SINCOS_ITER_COUNT = 16;
+        private const int SINCOS_ITER_COUNT = 32;
 
         private static readonly Float128[] _thetaTable;
 
@@ -1859,9 +1859,9 @@ namespace QuadrupleLib
         {
             Float128 x_n = One;
             if (k == 0) return Pi * 0.25;
-            for (int n = 0; n < 5; n++)
+            for (int n = 0; n < 25; n++)
             {
-                x_n = ScaleB(x_n * x_n * (x_n * (x_n * (3 - ScaleB(x_n, k)) + ScaleB(One, k + 3)) - 12) + 12, -k - 2) / 3;
+                x_n = ScaleB(x_n * x_n * (x_n * (x_n * (x_n * (x_n * (x_n * (x_n * (5 - ScaleB(x_n, k)) + ScaleB(One, k + 5)) - 120) - ScaleB(3, k + 7)) + 960) + ScaleB(15, k + 7)) - 2880) + 2880, -k - 6) / 45;
             }
             return x_n;
         }
@@ -1871,7 +1871,7 @@ namespace QuadrupleLib
             Float128 K_i = One;
             for (int i = 0; i < n; i++)
             {
-                K_i /= Sqrt(One + ScaleB(One, -i << 1));
+                K_i /= Sqrt(One + ScaleB(One, i * -2));
             }
             return K_i;
         }
@@ -1898,21 +1898,109 @@ namespace QuadrupleLib
 
         public static (Float128 Sin, Float128 Cos) SinCos(Float128 alpha)
         {
-            Float128 sigma, theta = Zero;
-            (Float128 x, Float128 y) = (One, Zero);
-            for (int i = 0; i < SINCOS_ITER_COUNT; i++)
+            Float128 phi = Ieee754Remainder(alpha, Pi);
+            if (Abs(phi - Zero) < 0.00001)
             {
-                sigma = theta < alpha % Tau ? One : NegativeOne;
-
-                (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
-                theta += sigma * _thetaTable[i];
+                return (Zero, One);
             }
-            return (y * _K_n, x * _K_n);
+            else if (Abs(Abs(phi) - Pi) < 0.00001)
+            {
+                return (Zero, NegativeOne);
+            }
+            else if (Abs(Abs(phi) - Pi / 2.0) < 0.00001)
+            {
+                return (Sign(phi), Zero);
+            }
+            else
+            {
+                Float128 x = One, y = Zero;
+                Float128 sigma, theta = Zero;
+                for (int i = 0; i < SINCOS_ITER_COUNT; i++)
+                {
+                    sigma = theta < phi ? One : NegativeOne;
+
+                    (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
+                    theta += sigma * _thetaTable[i];
+                }
+                return (y * _K_n, x * _K_n);
+            }
         }
 
         public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
         {
             return SinCos(x * Pi);
+        }
+
+        public static Float128 Asin(Float128 x)
+        {
+            if (x > One || x < NegativeOne)
+            {
+                return _sNaN;
+            }
+            else
+            {
+                Float128 y_n = Zero;
+                for (int n = 0; n < 25; n++)
+                {
+                    (Float128 sin, Float128 cos) = SinCos(y_n);
+                    y_n += (x - sin) / cos;
+                }
+                return y_n;
+            }
+        }
+
+        public static Float128 AsinPi(Float128 x)
+        {
+            if (x > One || x < NegativeOne)
+            {
+                return _sNaN;
+            }
+            else
+            {
+                Float128 y_n = Zero;
+                for (int n = 0; n < 25; n++)
+                {
+                    (Float128 sin, Float128 cos) = SinCosPi(y_n);
+                    y_n += (x - sin) / (cos * Pi);
+                }
+                return y_n;
+            }
+        }
+
+        public static Float128 Acos(Float128 x)
+        {
+            if (x > One || x < NegativeOne)
+            {
+                return _sNaN;
+            }
+            else
+            {
+                Float128 y_n = Zero;
+                for (int n = 0; n < 25; n++)
+                {
+                    (Float128 sin, Float128 cos) = SinCos(y_n);
+                    y_n += (cos - x) / sin;
+                }
+                return y_n;
+            }
+        }
+
+        public static Float128 AcosPi(Float128 x)
+        {
+            if (x > One || x < NegativeOne)
+            {
+                return _sNaN;
+            }
+            else
+            {
+                Float128 y_n = Zero;
+                for (int n = 0; n < 25; n++)
+                {
+                    (Float128 sin, Float128 cos) = SinCosPi(y_n);
+                    y_n += (cos - x) / (sin * Pi);
+                }
+                return y_n;
+            }
         }
 
         public static Float128 Tan(Float128 alpha)
@@ -1923,13 +2011,125 @@ namespace QuadrupleLib
 
         public static Float128 TanPi(Float128 alpha)
         {
-            (Float128 y, Float128 x) = SinCos(alpha * Pi);
+            (Float128 y, Float128 x) = SinCosPi(alpha);
             return y / x;
+        }
+
+        public static Float128 Atan(Float128 x)
+        {
+            Float128 y_n = Zero;
+            for (int n = 0; n < 25; n++)
+            {
+                (Float128 sin, Float128 cos) = SinCos(y_n);
+                y_n += cos * cos * x - cos * sin;
+            }
+            return y_n;
+        }
+
+        public static Float128 AtanPi(Float128 x)
+        {
+            Float128 y_n = Zero;
+            for (int n = 0; n < 25; n++)
+            {
+                (Float128 sin, Float128 cos) = SinCosPi(y_n);
+                y_n += (cos * cos * x - cos * sin) / Pi;
+            }
+            return y_n;
+        }
+
+        public static Float128 Atan2(Float128 y, Float128 x)
+        {
+            if (x > Zero)
+            {
+                return Atan(y / x);
+            }
+            else if (y >= Zero && x < 0)
+            {
+                return Atan(y / x) + Pi;
+            }
+            else if (y < Zero && x < 0)
+            {
+                return Atan(y / x) - Pi;
+            }
+            else if (y > Zero && x == Zero)
+            {
+                return Pi / 2.0;
+            }
+            else if (y < Zero && x == Zero)
+            {
+                return Pi / -2.0;
+            }
+            else
+            {
+                return _sNaN;
+            }
+        }
+
+        public static Float128 Atan2Pi(Float128 y, Float128 x)
+        {
+            if (x > Zero)
+            {
+                return AtanPi(y / x);
+            }
+            else if (y >= Zero && x < 0)
+            {
+                return AtanPi(y / x) + Pi;
+            }
+            else if (y < Zero && x < 0)
+            {
+                return AtanPi(y / x) - Pi;
+            }
+            else if (y > Zero && x == Zero)
+            {
+                return Pi / 2.0;
+            }
+            else if (y < Zero && x == Zero)
+            {
+                return Pi / -2.0;
+            }
+            else
+            {
+                return _sNaN;
+            }
         }
 
         #endregion
 
-        #region Public API (library functions)
+        #region Public API (hyperbolic trig functions)
+
+        public static Float128 Cosh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Sinh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Tanh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Acosh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Asinh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Float128 Atanh(Float128 x)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region Public API (misc. library functions)
 
         private static Float128 _Log2(Float128 y, int N)
         {
@@ -1948,7 +2148,7 @@ namespace QuadrupleLib
 
         public static Float128 Log2(Float128 x)
         {
-            if (x <= Zero) 
+            if (x <= Zero)
             {
                 return _sNaN;
             }
@@ -1961,18 +2161,8 @@ namespace QuadrupleLib
             }
             else
             {
-                return n + _Log2(y, 15);
+                return n + _Log2(y, 25);
             }
-        }
-
-        public static Float128 Atan2(Float128 y, Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Atan2Pi(Float128 y, Float128 x)
-        {
-            throw new NotImplementedException();
         }
 
         public static int ILogB(Float128 x)
@@ -1983,12 +2173,12 @@ namespace QuadrupleLib
         public static Float128 Exp(Float128 y)
         {
             Float128 x_n = One;
-            for (int i = 0; i < y; i++) 
+            for (int i = 0; i < y; i++)
             {
                 x_n *= E;
             }
 
-            for (int n = 0; n < 10; n++) 
+            for (int n = 0; n < 25; n++)
             {
                 x_n -= x_n * (Log(x_n) - y);
             }
@@ -2003,7 +2193,7 @@ namespace QuadrupleLib
                 x_n *= 10;
             }
 
-            for (int n = 0; n < 10; n++)
+            for (int n = 0; n < 25; n++)
             {
                 x_n -= x_n * Log(10) * (Log10(x_n) - y);
             }
@@ -2013,41 +2203,11 @@ namespace QuadrupleLib
         public static Float128 Exp2(Float128 y)
         {
             Float128 x_n = ScaleB(One, (int)Floor(y));
-            for (int n = 0; n < 10; n++)
+            for (int n = 0; n < 25; n++)
             {
                 x_n -= x_n * Log(2) * (Log2(x_n) - y);
             }
             return x_n;
-        }
-
-        public static Float128 Acosh(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Asinh(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Atanh(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Cosh(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Sinh(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Tanh(Float128 x)
-        {
-            throw new NotImplementedException();
         }
 
         public static Float128 Log(Float128 x)
@@ -2073,7 +2233,7 @@ namespace QuadrupleLib
         public static Float128 Cbrt(Float128 x)
         {
             Float128 y_n = x * 0.5;
-            for (int n = 0; n < 10; n++)
+            for (int n = 0; n < 25; n++)
             {
                 Float128 sq = y_n * y_n;
                 Float128 cb = sq * y_n;
@@ -2095,41 +2255,11 @@ namespace QuadrupleLib
         public static Float128 Sqrt(Float128 x)
         {
             Float128 y_n = x * 0.5;
-            for (int n = 0; n < 10; n++)
+            for (int n = 0; n < 25; n++)
             {
                 y_n = 0.5 * (y_n + x / y_n);
             }
             return y_n;
-        }
-
-        public static Float128 Acos(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 AcosPi(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Asin(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 AsinPi(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 Atan(Float128 x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Float128 AtanPi(Float128 x)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
