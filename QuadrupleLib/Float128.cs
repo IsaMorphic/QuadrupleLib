@@ -817,6 +817,14 @@ namespace QuadrupleLib
             {
                 return left.RawSignBit == right.RawSignBit ? left : _sNaN;
             }
+            else if (IsInfinity(left) && !IsInfinity(right))
+            {
+                return left;
+            }
+            else if (IsInfinity(right) && !IsInfinity(left)) 
+            {
+                return right;
+            }
             else if (IsNaN(left) || IsNaN(right))
             {
                 return _qNaN;
