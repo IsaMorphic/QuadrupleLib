@@ -1876,6 +1876,11 @@ namespace QuadrupleLib
             return K_i;
         }
 
+        public static Float128 Hypot(Float128 x, Float128 y)
+        {
+            return Sqrt(x * x + y * y);
+        }
+
         public static Float128 Cos(Float128 x)
         {
             return SinCos(x).Cos;
@@ -2099,37 +2104,42 @@ namespace QuadrupleLib
 
         public static Float128 Cosh(Float128 x)
         {
-            throw new NotImplementedException();
+            return (Exp(x) + Exp(-x)) * 0.5;
         }
 
         public static Float128 Sinh(Float128 x)
         {
-            throw new NotImplementedException();
+            return (Exp(x) - Exp(-x)) * 0.5;
         }
 
         public static Float128 Tanh(Float128 x)
         {
-            throw new NotImplementedException();
+            return (Exp(x) - Exp(-x)) / (Exp(x) + Exp(-x));
         }
 
         public static Float128 Acosh(Float128 x)
         {
-            throw new NotImplementedException();
+            return Log(x + Sqrt(x * x - One));
         }
 
         public static Float128 Asinh(Float128 x)
         {
-            throw new NotImplementedException();
+            return Log(x + Sqrt(x * x + One));
         }
 
         public static Float128 Atanh(Float128 x)
         {
-            throw new NotImplementedException();
+            return Log((One + x) / (One - x)) * 0.5;
         }
 
         #endregion
 
-        #region Public API (misc. library functions)
+        #region Public API (logarithm functions)
+
+        public static int ILogB(Float128 x)
+        {
+            return x.Exponent - (int)UInt128.LeadingZeroCount(x.Significand) + 15;
+        }
 
         private static Float128 _Log2(Float128 y, int N)
         {
@@ -2165,10 +2175,24 @@ namespace QuadrupleLib
             }
         }
 
-        public static int ILogB(Float128 x)
+        public static Float128 Log(Float128 x)
         {
-            return x.Exponent - (int)UInt128.LeadingZeroCount(x.Significand) + 15;
+            return Log2(x) / Log2(E);
         }
+
+        public static Float128 Log(Float128 x, Float128 newBase)
+        {
+            return Log2(x) / Log2(newBase);
+        }
+
+        public static Float128 Log10(Float128 x)
+        {
+            return Log2(x) / Log2(10);
+        }
+
+        #endregion
+
+        #region Public API (exponential functions)
 
         public static Float128 Exp(Float128 y)
         {
@@ -2210,24 +2234,23 @@ namespace QuadrupleLib
             return x_n;
         }
 
-        public static Float128 Log(Float128 x)
-        {
-            return Log2(x) / Log2(E);
-        }
-
-        public static Float128 Log(Float128 x, Float128 newBase)
-        {
-            return Log2(x) / Log2(newBase);
-        }
-
-        public static Float128 Log10(Float128 x)
-        {
-            return Log2(x) / Log2(10);
-        }
-
         public static Float128 Pow(Float128 x, Float128 y)
         {
             return Exp(y * Log(x));
+        }
+
+        #endregion
+
+        #region Public API (root functions)
+
+        public static Float128 Sqrt(Float128 x)
+        {
+            Float128 y_n = x * 0.5;
+            for (int n = 0; n < 25; n++)
+            {
+                y_n = 0.5 * (y_n + x / y_n);
+            }
+            return y_n;
         }
 
         public static Float128 Cbrt(Float128 x)
@@ -2242,24 +2265,9 @@ namespace QuadrupleLib
             return y_n;
         }
 
-        public static Float128 Hypot(Float128 x, Float128 y)
-        {
-            return Sqrt(x * x + y * y);
-        }
-
         public static Float128 RootN(Float128 x, int n)
         {
             return Pow(x, One / n);
-        }
-
-        public static Float128 Sqrt(Float128 x)
-        {
-            Float128 y_n = x * 0.5;
-            for (int n = 0; n < 25; n++)
-            {
-                y_n = 0.5 * (y_n + x / y_n);
-            }
-            return y_n;
         }
 
         #endregion
