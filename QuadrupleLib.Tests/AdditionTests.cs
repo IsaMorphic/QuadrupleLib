@@ -13,21 +13,31 @@ namespace QuadrupleLib.Tests
         }
 
         [Theory]
+        [InlineData([0.5, 1.5, 2.0])]
+        [InlineData([1.0, 2.0, 3.0])]
+        [InlineData([-1.0, 3.5, 2.5])]
+        public void AddGeneralIsCorrect(double x, double y, double z) 
+        {
+            Assert.Equal(z, (Float128)x + y);
+        }
+
+        [Theory]
         [InlineData([0.5, 1.5])]
         [InlineData([1.0, 2.0])]
         [InlineData([-1.0, 0.0])]
-        public void AddOneIsCorrect(double x, double y) 
+        public void AddOneIsCorrect(double x, double y)
         {
             Assert.Equal(y, x + Float128.One);
         }
 
         [Theory]
-        [InlineData([0.5, 1.5, 2.0])]
-        [InlineData([1.0, 2.0, 3.0])]
-        [InlineData([-1.0, 2.0, 1.0])]
-        public void AddGeneralIsCorrect(double x, double y, double z) 
+        [InlineData([0.5, 1.5])]
+        [InlineData([1.0, 2.0])]
+        [InlineData([-1.0, 0.0])]
+        public void IncrementIsCorrect(double x, double y) 
         {
-            Assert.Equal(z, (Float128)x + y);
+            Float128 x_inc = (Float128)x;
+            Assert.Equal(y, ++x_inc);
         }
     }
 }
