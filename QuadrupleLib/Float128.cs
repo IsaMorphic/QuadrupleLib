@@ -2119,7 +2119,14 @@ namespace QuadrupleLib
 
         public static Float128 Acosh(Float128 x)
         {
-            return Log(x + Sqrt(x * x - One));
+            if (x >= One)
+            {
+                return Log(x + Sqrt(x * x - One));
+            }
+            else 
+            {
+                return _sNaN;
+            }
         }
 
         public static Float128 Asinh(Float128 x)
@@ -2129,7 +2136,14 @@ namespace QuadrupleLib
 
         public static Float128 Atanh(Float128 x)
         {
-            return Log((One + x) / (One - x)) * 0.5;
+            if (Abs(x) < One)
+            {
+                return Log((One + x) / (One - x)) * 0.5;
+            }
+            else 
+            {
+                return _sNaN;
+            }
         }
 
         #endregion
