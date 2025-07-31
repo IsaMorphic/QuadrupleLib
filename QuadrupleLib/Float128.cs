@@ -643,24 +643,26 @@ namespace QuadrupleLib
                 while (r >= d)
                 {
                     var p = Divide(r, dHiBits, out ulong _);
+
+                    var prod = BigMul256.Multiply(d, p.hi);
+                    UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
+                    while (p.hi > 0 && r < s)
+                    {
+                        prod = BigMul256.Multiply(d, p.hi >>= 1);
+                        s = prod._0 | ((UInt128)prod._1 << 64);
+                    }
+
                     if (p.hi == 0)
                     {
                         q += UInt128.One;
                         r -= d;
                         break;
                     }
-
-                    var pHi = p.hi;
-                    var prod = BigMul256.Multiply(d, pHi);
-                    UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
-                    while (r < s && pHi > 0)
+                    else
                     {
-                        prod = BigMul256.Multiply(d, pHi >>= 1);
-                        s = prod._0 | ((UInt128)prod._1 << 64);
+                        q += p.hi;
+                        r -= s;
                     }
-
-                    q += pHi;
-                    r -= s;
                 }
 
                 return q;
