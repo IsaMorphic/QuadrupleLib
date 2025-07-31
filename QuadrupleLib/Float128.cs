@@ -792,7 +792,7 @@ namespace QuadrupleLib
 
             // set sticky bit
             sumSignificand &= UInt128.MaxValue << 1;
-            sumSignificand |= normDist < 0 ? UInt128.Min(right.Significand & ((UInt128.One << -normDist) - 1), 1) : 0;
+            sumSignificand |= normDist < 0 ? UInt128.Min(rightSignificand & ((UInt128.One << -normDist) - 1), 1) : 0;
 
             if ((((sumSignificand & 1) |
                  ((sumSignificand >> 2) & 1)) &
