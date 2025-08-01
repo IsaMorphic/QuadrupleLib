@@ -681,10 +681,27 @@ namespace QuadrupleLib
 
         public static Float128 FusedMultiplyAdd(Float128 left, Float128 right, Float128 addend)
         {
+            if (IsInfinity(left) || IsInfinity(right) || IsNaN(left) || IsNaN(right) || IsNaN(addend))
+            {
+                return _qNaN;
+            }
+
             var prodSign = left.RawSignBit != right.RawSignBit;
             var prodExponent = left.Exponent + right.Exponent;
 
-            var bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+            BigMul256 bigSignificand;
+            if (prodExponent > EXPONENT_BIAS)
+            {
+                return (prodSign ? _nInf : _pInf) + addend;
+            }
+            else if (IsInfinity(addend))
+            {
+                return addend;
+            }
+            else
+            {
+                bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+            }
 
             var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
             var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
@@ -1187,6 +1204,8 @@ namespace QuadrupleLib
         public static Float128 ScaleB(Float128 x, int n)
         {
             if (IsNaN(x)) return _qNaN;
+            else if (x == Zero) return Zero;
+            else if (n == 0) return x;
 
             int normDist, newExponent = x.Exponent + n;
             if (newExponent > EXPONENT_BIAS)
@@ -1935,7 +1954,7 @@ namespace QuadrupleLib
             if (k == 0) return Pi * 0.25;
             for (int n = 0; n < 25; n++)
             {
-                x_n = ScaleB(x_n * x_n * (x_n * (x_n * (x_n * (x_n * (x_n * (x_n * (5 - ScaleB(x_n, k)) + ScaleB(One, k + 5)) - 120) - ScaleB(3, k + 7)) + 960) + ScaleB(15, k + 7)) - 2880) + 2880, -k - 6) / 45;
+                x_n = ScaleB(FusedMultiplyAdd(x_n * x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, 5 - ScaleB(x_n, k), ScaleB(One, k + 5)), -120), ScaleB(-3, k + 7)), 960), ScaleB(15, k + 7)), -2880), 2880), -k - 6) / 45;
             }
             return x_n;
         }
@@ -1978,31 +1997,17 @@ namespace QuadrupleLib
         public static (Float128 Sin, Float128 Cos) SinCos(Float128 alpha)
         {
             Float128 phi = Ieee754Remainder(alpha, Pi);
-            if (Abs(phi - Zero) < 0.00001)
-            {
-                return (Zero, One);
-            }
-            else if (Abs(Abs(phi) - Pi) < 0.00001)
-            {
-                return (Zero, NegativeOne);
-            }
-            else if (Abs(Abs(phi) - Pi / 2.0) < 0.00001)
-            {
-                return (Sign(phi), Zero);
-            }
-            else
-            {
-                Float128 x = One, y = Zero;
-                Float128 sigma, theta = Zero;
-                for (int i = 0; i < SINCOS_ITER_COUNT; i++)
-                {
-                    sigma = theta < phi ? One : NegativeOne;
 
-                    (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
-                    theta += sigma * _thetaTable[i];
-                }
-                return (y * _K_n, x * _K_n);
+            Float128 x = One, y = Zero;
+            Float128 sigma, theta = Zero;
+            for (int i = 0; i < SINCOS_ITER_COUNT; i++)
+            {
+                sigma = theta < phi ? One : NegativeOne;
+
+                (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
+                theta += sigma * _thetaTable[i];
             }
+            return (y * _K_n, x * _K_n);
         }
 
         public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
