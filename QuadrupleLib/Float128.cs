@@ -1147,9 +1147,10 @@ namespace QuadrupleLib
             {
                 return new Float128(newSignificand << normDist, x.Exponent - normDist, x.RawSignBit);
             }
-            else 
+            else
             {
                 return new Float128(newSignificand, x.Exponent, x.RawSignBit);
+            }
         }
 
         public static Float128 BitIncrement(Float128 x)
