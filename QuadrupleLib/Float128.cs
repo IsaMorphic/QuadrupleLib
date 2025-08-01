@@ -1019,14 +1019,14 @@ namespace QuadrupleLib
                 var quotExponent = leftExponent - rightExponent;
                 var quotSign = left.RawSignBit != right.RawSignBit;
 
-                UInt128 quotSignificand;
+                UInt128 quotSignificand, remSignificand;
                 if (quotExponent > EXPONENT_BIAS)
                 {
                     return quotSign ? _nInf : _pInf;
                 }
                 else
                 {
-                    quotSignificand = Divide(leftSignificand, rightSignificand, out UInt128 remSignificand);
+                    quotSignificand = Divide(leftSignificand, rightSignificand, out remSignificand);
                 }
 
                 // normalize output
