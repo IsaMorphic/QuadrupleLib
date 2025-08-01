@@ -714,7 +714,7 @@ namespace QuadrupleLib
                 if (normDist > 0)
                     highBits <<= normDist;
                 else if (normDist < 0)
-                    highBits >>= normDist;
+                    highBits >>= -normDist;
                 prodExponent -= normDist;
             }
 
@@ -821,7 +821,7 @@ namespace QuadrupleLib
             {
                 return left;
             }
-            else if (IsInfinity(right) && !IsInfinity(left)) 
+            else if (IsInfinity(right) && !IsInfinity(left))
             {
                 return right;
             }
@@ -957,7 +957,7 @@ namespace QuadrupleLib
                     if (normDist > 0)
                         highBits <<= normDist;
                     else if (normDist < 0)
-                        highBits >>= normDist;
+                        highBits >>= -normDist;
                     prodExponent -= normDist;
                 }
 
@@ -2133,7 +2133,7 @@ namespace QuadrupleLib
             {
                 return Log(x + Sqrt(x * x - One));
             }
-            else 
+            else
             {
                 return _sNaN;
             }
@@ -2150,7 +2150,7 @@ namespace QuadrupleLib
             {
                 return Log((One + x) / (One - x)) * 0.5;
             }
-            else 
+            else
             {
                 return _sNaN;
             }
