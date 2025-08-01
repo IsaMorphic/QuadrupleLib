@@ -1151,7 +1151,36 @@ namespace QuadrupleLib
 
         public static Float128 ScaleB(Float128 x, int n)
         {
-            return new Float128(x.RawSignificand, x.Exponent + n, x.RawSignBit);
+            if (IsNaN(x)) return _qNaN;
+
+            int normDist, newExponent = x.Exponent + n;
+            if (newExponent > EXPONENT_BIAS)
+            {
+                return x.RawSignBit ? _nInf : _pInf;
+            }
+            else if (newExponent < -EXPONENT_BIAS + 1)
+            {
+                normDist = newExponent - (-EXPONENT_BIAS + 1);
+                UInt128 newSignificand = (x.RawSignificand << 3) >> normDist;
+
+                // set sticky bit
+                newSignificand &= UInt128.MaxValue << 1;
+                newSignificand |= UInt128.Min(newSignificand & ((UInt128.One << normDist) - 1), 1);
+
+                if ((((newSignificand & 1) |
+                     ((newSignificand >> 2) & 1)) &
+                     ((newSignificand >> 1) & 1)) == 1) // check rounding condition
+                {
+                    newSignificand++; // increment pth bit from the left
+                }
+
+                return new Float128(newSignificand >> 3, -EXPONENT_BIAS + 1, x.RawSignBit);
+            }
+            else
+            {
+                normDist = (int)UInt128.LeadingZeroCount(x.Significand) - 15;
+                return new Float128(x.RawSignificand << normDist, newExponent - normDist, x.RawSignBit);
+            }
         }
 
         public static Float128 operator &(Float128 left, Float128 right)
