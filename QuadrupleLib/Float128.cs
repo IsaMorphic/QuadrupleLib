@@ -1141,12 +1141,29 @@ namespace QuadrupleLib
 
         public static Float128 BitDecrement(Float128 x)
         {
-            return new Float128(x.RawSignificand - 1, x.Exponent, x.RawSignBit);
+            UInt128 newSignificand = x.Significand - 1;
+            int normDist = (int)UInt128.LeadingZeroCount(newSignificand) - 15;
+            if (normDist > 0)
+            {
+                return new Float128(newSignificand << normDist, x.Exponent - normDist, x.RawSignBit);
+            }
+            else 
+            {
+                return new Float128(newSignificand, x.Exponent, x.RawSignBit);
         }
 
         public static Float128 BitIncrement(Float128 x)
         {
-            return new Float128(x.RawSignificand + 1, x.Exponent, x.RawSignBit);
+            UInt128 newSignificand = x.Significand + 1;
+            int normDist = 15 - (int)UInt128.LeadingZeroCount(newSignificand);
+            if (normDist > 0)
+            {
+                return new Float128(newSignificand >> normDist, x.Exponent + normDist, x.RawSignBit);
+            }
+            else
+            {
+                return new Float128(newSignificand, x.Exponent, x.RawSignBit);
+            }
         }
 
         public static Float128 ScaleB(Float128 x, int n)
