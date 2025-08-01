@@ -927,7 +927,15 @@ namespace QuadrupleLib
                 var prodSign = left.RawSignBit != right.RawSignBit;
                 var prodExponent = left.Exponent + right.Exponent;
 
-                var bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+                BigMul256 bigSignificand;
+                if (prodExponent > EXPONENT_BIAS)
+                {
+                    return prodSign ? _nInf : _pInf;
+                }
+                else
+                {
+                    bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+                }
 
                 var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
                 var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
@@ -996,7 +1004,7 @@ namespace QuadrupleLib
             }
             else if (IsNormal(left) && IsSubnormal(right))
             {
-                return left.RawSignBit ? _nInf : _pInf;
+                return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
             }
             else
             {
@@ -1008,9 +1016,18 @@ namespace QuadrupleLib
                 var rightSignificand = right.Significand >> rightAdjust;
                 var rightExponent = right.Exponent + rightAdjust - 115;
 
-                var quotSignificand = Divide(leftSignificand, rightSignificand, out UInt128 remSignificand);
                 var quotExponent = leftExponent - rightExponent;
                 var quotSign = left.RawSignBit != right.RawSignBit;
+
+                UInt128 quotSignificand;
+                if (quotExponent > EXPONENT_BIAS)
+                {
+                    return quotSign ? _nInf : _pInf;
+                }
+                else
+                {
+                    quotSignificand = Divide(leftSignificand, rightSignificand, out UInt128 remSignificand);
+                }
 
                 // normalize output
                 int normDist;
