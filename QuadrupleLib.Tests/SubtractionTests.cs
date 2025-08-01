@@ -3,6 +3,40 @@ namespace QuadrupleLib.Tests
     public class SubtractionTests
     {
         [Theory]
+        [InlineData([0.5, -0.5])]
+        [InlineData([1.0, 0.0])]
+        [InlineData([-1.0, -2.0])]
+        public void DecrementIsCorrect(double x, double y)
+        {
+            Float128 x_dec = (Float128)x;
+            Assert.Equal(y, --x_dec);
+        }
+
+        [Fact]
+        public void NegativeInfinityMinusNegativeInfinityIsNaN()
+        {
+            Assert.True(Float128.IsNaN(Float128.NegativeInfinity - Float128.NegativeInfinity));
+        }
+
+        [Fact]
+        public void NegativeInfinityMinusPositiveInfinityIsNegativeInfinity()
+        {
+            Assert.Equal(Float128.NegativeInfinity, Float128.NegativeInfinity - Float128.PositiveInfinity);
+        }
+
+        [Fact]
+        public void PositiveInfinityMinusNegativeInfinityIsPositiveInfinity()
+        {
+            Assert.Equal(Float128.PositiveInfinity, Float128.PositiveInfinity - Float128.NegativeInfinity);
+        }
+
+        [Fact]
+        public void PositiveInfinityMinusPositiveInfinityIsNaN() 
+        {
+            Assert.True(Float128.IsNaN(Float128.PositiveInfinity - Float128.PositiveInfinity));
+        }
+
+        [Theory]
         [InlineData([0.5, 1.5, -1.0])]
         [InlineData([1.0, -2.0, 3.0])]
         [InlineData([-1.0, 3.5, -4.5])]
@@ -60,6 +94,18 @@ namespace QuadrupleLib.Tests
             Assert.Equal(Float128.NegativeInfinity, x - Float128.PositiveInfinity);
         }
 
+        [Fact]
+        public void SubtractSubnormalIsSubnormal()
+        {
+            Assert.True(Float128.IsSubnormal(Float128.Epsilon - -Float128.Epsilon));
+        }
+
+        [Fact]
+        public void SubtractSubnormalIsCorrect()
+        {
+            Assert.Equal(Float128.Zero, Float128.Epsilon - Float128.Epsilon);
+        }
+
         [Theory]
         [InlineData(0.5)]
         [InlineData(1.0)]
@@ -78,40 +124,6 @@ namespace QuadrupleLib.Tests
         public void SubtractZeroIsIdentity(double x)
         {
             Assert.Equal(x, x - Float128.Zero);
-        }
-
-        [Theory]
-        [InlineData([0.5, -0.5])]
-        [InlineData([1.0, 0.0])]
-        [InlineData([-1.0, -2.0])]
-        public void DecrementIsCorrect(double x, double y)
-        {
-            Float128 x_dec = (Float128)x;
-            Assert.Equal(y, --x_dec);
-        }
-
-        [Fact]
-        public void NegativeInfinityMinusNegativeInfinityIsNaN()
-        {
-            Assert.True(Float128.IsNaN(Float128.NegativeInfinity - Float128.NegativeInfinity));
-        }
-
-        [Fact]
-        public void NegativeInfinityMinusPositiveInfinityIsNegativeInfinity()
-        {
-            Assert.Equal(Float128.NegativeInfinity, Float128.NegativeInfinity - Float128.PositiveInfinity);
-        }
-
-        [Fact]
-        public void PositiveInfinityMinusNegativeInfinityIsPositiveInfinity()
-        {
-            Assert.Equal(Float128.PositiveInfinity, Float128.PositiveInfinity - Float128.NegativeInfinity);
-        }
-
-        [Fact]
-        public void PositiveInfinityMinusPositiveInfinityIsNaN() 
-        {
-            Assert.True(Float128.IsNaN(Float128.PositiveInfinity - Float128.PositiveInfinity));
         }
     }
 }

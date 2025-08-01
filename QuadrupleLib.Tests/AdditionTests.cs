@@ -3,15 +3,6 @@ namespace QuadrupleLib.Tests
     public class AdditionTests
     {
         [Theory]
-        [InlineData([0.5, 1.5, 2.0])]
-        [InlineData([1.0, 2.0, 3.0])]
-        [InlineData([-1.0, 3.5, 2.5])]
-        public void AddGeneralIsCorrect(double x, double y, double z)
-        {
-            Assert.Equal(z, (Float128)x + y);
-        }
-
-        [Theory]
         [InlineData(0.5)]
         [InlineData(1.0)]
         [InlineData(-1.0)]
@@ -51,6 +42,15 @@ namespace QuadrupleLib.Tests
         }
 
         [Theory]
+        [InlineData([0.5, 1.5, 2.0])]
+        [InlineData([1.0, 2.0, 3.0])]
+        [InlineData([-1.0, 3.5, 2.5])]
+        public void AddNormalIsCorrect(double x, double y, double z)
+        {
+            Assert.Equal(z, (Float128)x + y);
+        }
+
+        [Theory]
         [InlineData(0.5)]
         [InlineData(1.0)]
         [InlineData(-1.0)]
@@ -58,6 +58,18 @@ namespace QuadrupleLib.Tests
         public void AddPositiveInfinityIsPositiveInfinity(double x)
         {
             Assert.Equal(Float128.PositiveInfinity, x + Float128.PositiveInfinity);
+        }
+
+        [Fact]
+        public void AddSubnormalIsSubnormal()
+        {
+            Assert.True(Float128.IsSubnormal(Float128.Epsilon + Float128.Epsilon));
+        }
+
+        [Fact]
+        public void AddSubnormalIsCorrect()
+        {
+            Assert.Equal(Float128.Zero, -Float128.Epsilon + Float128.Epsilon);
         }
 
         [Theory]
