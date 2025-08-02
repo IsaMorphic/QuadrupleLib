@@ -769,13 +769,6 @@ namespace QuadrupleLib
             // set sticky bit
             sumSignificand |= UInt128.Min(rightSignificand & ((UInt128.One << exponentDiff) - 1), 1);
 
-            if ((((sumSignificand & 1) |
-                 ((sumSignificand >> 2) & 1)) &
-                 ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
-            {
-                sumSignificand++; // increment pth bit from the left
-            }
-
             // call p + 3 bit adder
             bool sumSign;
             if (leftSign == rightSign)
@@ -869,13 +862,6 @@ namespace QuadrupleLib
 
                 // set sticky bit
                 sumSignificand |= UInt128.Min(right.Significand & ((UInt128.One << exponentDiff) - 1), 1);
-
-                if ((((sumSignificand & 1) |
-                     ((sumSignificand >> 2) & 1)) &
-                     ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
-                {
-                    sumSignificand++; // increment pth bit from the left
-                }
 
                 // call p + 3 bit adder
                 bool rawSignBit;
@@ -1617,9 +1603,9 @@ namespace QuadrupleLib
                     fracDiff = 0;
                 }
 
+                string resultStr;
                 if (fracPart == 0)
                 {
-                    string resultStr;
                     var numDigits = (int)Math.Floor(BigInteger.Log10(wholePart));
                     if (numDigits >= 20)
                     {
@@ -1634,27 +1620,6 @@ namespace QuadrupleLib
                         builder.Append(wholePart.ToString(formatter));
                         resultStr = builder.ToString();
                     }
-
-                    switch (formatter.NumberNegativePattern)
-                    {
-                        case 0:
-                            return rounded.RawSignBit ?
-                                $"({resultStr})" : resultStr;
-                        case 1:
-                            return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
-                                + resultStr;
-                        case 2:
-                            return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
-                                + $" {resultStr}";
-                        case 3:
-                            return resultStr +
-                                (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
-                        case 4:
-                            return $"{resultStr} " +
-                                (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
-                        default:
-                            throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
-                    }
                 }
                 else
                 {
@@ -1667,7 +1632,23 @@ namespace QuadrupleLib
                     BigInteger guardDigit = 0;
                     BigInteger lastDigit = 0;
 
-                    while (!nonZeroFlag || ++numDigits < Math.Min(38, formatter.NumberDecimalDigits))
+                    while (!nonZeroFlag)
+                    {
+                        fracPart *= 10;
+
+                        guardDigit = lastDigit;
+                        lastDigit = fracPart >> (112 + fracDiff);
+
+                        fracPart &= (BigInteger.One << (112 + fracDiff)) - 1;
+
+                        nonZeroFlag = nonZeroFlag || lastDigit > 0;
+                        if (nonZeroFlag) builder.Append(lastDigit);
+                        else ++decimalExpn;
+                    }
+
+                    int addDigits = decimalExpn < 20 ? decimalExpn : 0;
+                    int maxDigits = Math.Min(38, formatter.NumberDecimalDigits);
+                    while (++numDigits + addDigits < maxDigits)
                     {
                         fracPart *= 10;
 
@@ -1697,62 +1678,42 @@ namespace QuadrupleLib
 
                     if (wholePart == 0 && decimalExpn >= 20)
                     {
+                        builder.Remove(0, 1);
                         builder.Insert(1, formatter.NumberDecimalSeparator);
-                        string resultStr = $"{builder.ToString().TrimEnd('0')}E{-decimalExpn}";
-                        switch (formatter.NumberNegativePattern)
-                        {
-                            case 0:
-                                return rounded.RawSignBit ?
-                                    $"({resultStr})" : resultStr;
-                            case 1:
-                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
-                                    + resultStr;
-                            case 2:
-                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
-                                    + $" {resultStr}";
-                            case 3:
-                                return resultStr +
-                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
-                            case 4:
-                                return $"{resultStr} " +
-                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
-                            default:
-                                throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
-                        }
+                        resultStr = $"{builder.ToString().TrimEnd('0')}E{1 - decimalExpn}";
                     }
                     else if (wholePart == 0)
                     {
                         builder.Insert(0, new string('0', decimalExpn));
                         builder.Insert(1, formatter.NumberDecimalSeparator);
+                        resultStr = builder.ToString().TrimEnd('0');
                     }
                     else
                     {
                         builder.Insert(decimalExpn, formatter.NumberDecimalSeparator);
+                        resultStr = builder.ToString().TrimEnd('0');
                     }
+                }
 
-                    {
-                        string resultStr = builder.ToString().TrimEnd('0');
-                        switch (formatter.NumberNegativePattern)
-                        {
-                            case 0:
-                                return rounded.RawSignBit ?
-                                    $"({resultStr})" : resultStr;
-                            case 1:
-                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
-                                    + resultStr;
-                            case 2:
-                                return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
-                                    + $" {resultStr}";
-                            case 3:
-                                return resultStr +
-                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
-                            case 4:
-                                return $"{resultStr} " +
-                                    (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
-                            default:
-                                throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
-                        }
-                    }
+                switch (formatter.NumberNegativePattern)
+                {
+                    case 0:
+                        return rounded.RawSignBit ?
+                            $"({resultStr})" : resultStr;
+                    case 1:
+                        return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                            + resultStr;
+                    case 2:
+                        return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                            + $" {resultStr}";
+                    case 3:
+                        return resultStr +
+                            (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                    case 4:
+                        return $"{resultStr} " +
+                            (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                    default:
+                        throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
                 }
             }
         }
@@ -1996,9 +1957,25 @@ namespace QuadrupleLib
 
         public static (Float128 Sin, Float128 Cos) SinCos(Float128 alpha)
         {
-            Float128 phi = Ieee754Remainder(alpha, Pi);
-
             Float128 x = One, y = Zero;
+            Float128 phi = Ieee754Remainder(alpha, Tau);
+            if (phi > Pi / 2)
+            {
+                do
+                {
+                    phi -= Pi / 2;
+                    (x, y) = (-y, x);
+                } while (phi > Pi / 2);
+            }
+            else if (phi < -Pi / 2)
+            {
+                do
+                {
+                    phi += Pi / 2;
+                    (x, y) = (y, -x);
+                } while (phi < -Pi / 2);
+            }
+
             Float128 sigma, theta = Zero;
             for (int i = 0; i < SINCOS_ITER_COUNT; i++)
             {
@@ -2290,40 +2267,66 @@ namespace QuadrupleLib
         public static Float128 Exp(Float128 y)
         {
             Float128 x_n = One;
-            for (int i = 0; i < y; i++)
+            if (y > 0)
             {
-                x_n *= E;
+                for (int i = 0; i < y; i++)
+                {
+                    x_n *= E;
+                }
+            }
+            else
+            {
+                for (int i = 0; i > y; i--)
+                {
+                    x_n /= E;
+                }
             }
 
             for (int n = 0; n < 25; n++)
             {
-                x_n -= x_n * (Log(x_n) - y);
+                x_n = FusedMultiplyAdd(x_n, y - Log(x_n), x_n);
             }
+
             return x_n;
         }
 
         public static Float128 Exp10(Float128 y)
         {
             Float128 x_n = One;
-            for (int i = 0; i < y; i++)
+            if (y > 0)
             {
-                x_n *= 10;
+                for (int i = 0; i < y; i++)
+                {
+                    x_n *= 10;
+                }
+            }
+            else
+            {
+                for (int i = 0; i > y; i--)
+                {
+                    x_n /= 10;
+                }
             }
 
+            Float128 log10 = Log(10);
             for (int n = 0; n < 25; n++)
             {
-                x_n -= x_n * Log(10) * (Log10(x_n) - y);
+                x_n = FusedMultiplyAdd(x_n * log10, y - Log10(x_n), x_n);
             }
+
             return x_n;
         }
 
         public static Float128 Exp2(Float128 y)
         {
             Float128 x_n = ScaleB(One, (int)Floor(y));
+
+            Float128 log2 = Log(2);
             for (int n = 0; n < 25; n++)
             {
-                x_n -= x_n * Log(2) * (Log2(x_n) - y);
+                x_n = FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n);
             }
+
             return x_n;
         }
 
@@ -2358,9 +2361,14 @@ namespace QuadrupleLib
             return y_n;
         }
 
-        public static Float128 RootN(Float128 x, int n)
+        public static Float128 RootN(Float128 A, int n)
         {
-            return Pow(x, One / n);
+            Float128 x_k = A, f0 = (n - One) / n, f1 = A / n;
+            for (int k = 0; k < 25; k++)
+            {
+                x_k = FusedMultiplyAdd(x_k, f0, f1 * Pow(x_k, 1 - n));
+            }
+            return x_k;
         }
 
         #endregion
