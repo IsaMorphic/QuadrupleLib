@@ -11,11 +11,10 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 - [x] Supports all recommended rounding modes for arithmetic
 - [x] Implements basic `ToString` and `Parse`/`TryParse` methods
 - [x] Supports .NET Core formatting features for `ToString` and `Parse`
-- [x] Implements conversion methods to & from `binary64` type
-- [x] Provides conversion pathways to all standard .NET number types via `binary64`
+- [x] Implements conversion methods to & from all standard number types
 - [x] Implements `IEEERemainder` as suggested in IEEE 754
 - [x] Implements typical library functions (`Pow`, `Atan2`, `Log`)
 
-### Project TODOs (HELP WANTED!!)
+### Project TODOs (WIP)
 
-- [ ] Unit tests to check for specification coverage
+- [x] Unit tests to check for specification coverage (#11)
