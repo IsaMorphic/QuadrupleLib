@@ -1737,9 +1737,57 @@ namespace QuadrupleLib
 
         static bool INumberBase<Float128>.TryConvertFromChecked<TOther>(TOther value, out Float128 result)
         {
+            switch (value)
+            {
+                // Floating-point conversions
+                case double x:
+                    result = x;
+                    return true;
+                case float x:
+                    result = x;
+                    return true;
+                case Half x:
+                    result = (Float128)x;
+                    return true;
+
+                // Signed integer conversions
+                case Int128 n:
+                    result = (Float128)n;
+                    return true;
+                case long n:
+                    result = n;
+                    return true;
+                case int n:
+                    result = n;
+                    return true;
+                case short n:
+                    result = n;
+                    return true;
+                case sbyte n:
+                    result = n;
+                    return true;
+
+                // Unsigned integer conversions
+                case UInt128 n:
+                    result = (Float128)n;
+                    return true;
+                case ulong n:
+                    result = n;
+                    return true;
+                case uint n:
+                    result = n;
+                    return true;
+                case ushort n:
+                    result = n;
+                    return true;
+                case byte n:
+                    result = n;
+                    return true;
+            }
+
             try
             {
-                result = (double)(object)value;
+                result = (Float128)(object)value;
                 return true;
             }
             catch (InvalidCastException)
@@ -1751,9 +1799,57 @@ namespace QuadrupleLib
 
         static bool INumberBase<Float128>.TryConvertFromSaturating<TOther>(TOther value, out Float128 result)
         {
+            switch (value)
+            {
+                // Floating-point conversions
+                case double x:
+                    result = x;
+                    return true;
+                case float x:
+                    result = x;
+                    return true;
+                case Half x:
+                    result = (Float128)x;
+                    return true;
+
+                // Signed integer conversions
+                case Int128 n:
+                    result = (Float128)n;
+                    return true;
+                case long n:
+                    result = n;
+                    return true;
+                case int n:
+                    result = n;
+                    return true;
+                case short n:
+                    result = n;
+                    return true;
+                case sbyte n:
+                    result = n;
+                    return true;
+
+                // Unsigned integer conversions
+                case UInt128 n:
+                    result = (Float128)n;
+                    return true;
+                case ulong n:
+                    result = n;
+                    return true;
+                case uint n:
+                    result = n;
+                    return true;
+                case ushort n:
+                    result = n;
+                    return true;
+                case byte n:
+                    result = n;
+                    return true;
+            }
+
             try
             {
-                result = (double)(object)value;
+                result = (Float128)(object)value;
                 return true;
             }
             catch (InvalidCastException)
@@ -1765,9 +1861,57 @@ namespace QuadrupleLib
 
         static bool INumberBase<Float128>.TryConvertFromTruncating<TOther>(TOther value, out Float128 result)
         {
+            switch (value)
+            {
+                // Floating-point conversions
+                case double x:
+                    result = x;
+                    return true;
+                case float x:
+                    result = x;
+                    return true;
+                case Half x:
+                    result = (Float128)x;
+                    return true;
+
+                // Signed integer conversions
+                case Int128 n:
+                    result = (Float128)n;
+                    return true;
+                case long n:
+                    result = n;
+                    return true;
+                case int n:
+                    result = n;
+                    return true;
+                case short n:
+                    result = n;
+                    return true;
+                case sbyte n:
+                    result = n;
+                    return true;
+
+                // Unsigned integer conversions
+                case UInt128 n:
+                    result = (Float128)n;
+                    return true;
+                case ulong n:
+                    result = n;
+                    return true;
+                case uint n:
+                    result = n;
+                    return true;
+                case ushort n:
+                    result = n;
+                    return true;
+                case byte n:
+                    result = n;
+                    return true;
+            }
+
             try
             {
-                result = (double)(object)value;
+                result = (Float128)(object)value;
                 return true;
             }
             catch (InvalidCastException)
@@ -1779,49 +1923,257 @@ namespace QuadrupleLib
 
         static bool INumberBase<Float128>.TryConvertToChecked<TOther>(Float128 value, out TOther result)
         {
-            try
+            switch (Type.GetTypeCode(typeof(TOther)))
             {
-                result = (TOther)(object)(double)value;
-                return true;
-            }
-            catch (InvalidCastException)
-            {
-                result = default;
-                return false;
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                    return TOther.TryConvertFromChecked((Int128)value, out result);
+
+                case TypeCode.Byte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                    return TOther.TryConvertFromChecked((UInt128)value, out result);
+
+                default:
+                    try
+                    {
+                        result = (TOther)(object)value;
+                        return true;
+                    }
+                    catch (InvalidCastException)
+                    {
+                        result = default;
+                        return false;
+                    }
             }
         }
 
         static bool INumberBase<Float128>.TryConvertToSaturating<TOther>(Float128 value, out TOther result)
         {
-            try
+            switch (Type.GetTypeCode(typeof(TOther)))
             {
-                result = (TOther)(object)(double)value;
-                return true;
-            }
-            catch (InvalidCastException)
-            {
-                result = default;
-                return false;
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                    return TOther.TryConvertFromSaturating((Int128)value, out result);
+
+                case TypeCode.Byte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                    return TOther.TryConvertFromSaturating((UInt128)value, out result);
+
+                default:
+                    try
+                    {
+                        result = (TOther)(object)value;
+                        return true;
+                    }
+                    catch (InvalidCastException)
+                    {
+                        result = default;
+                        return false;
+                    }
             }
         }
 
         static bool INumberBase<Float128>.TryConvertToTruncating<TOther>(Float128 value, out TOther result)
         {
-            try
+            switch (Type.GetTypeCode(typeof(TOther)))
             {
-                result = (TOther)(object)(double)value;
-                return true;
-            }
-            catch (InvalidCastException)
-            {
-                result = default;
-                return false;
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                    return TOther.TryConvertFromTruncating((Int128)value, out result);
+
+                case TypeCode.Byte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                    return TOther.TryConvertFromTruncating((UInt128)value, out result);
+
+                default:
+                    try
+                    {
+                        result = (TOther)(object)value;
+                        return true;
+                    }
+                    catch (InvalidCastException)
+                    {
+                        result = default;
+                        return false;
+                    }
             }
         }
 
         #endregion
 
         #region Public API (conversion operators)
+
+        public static explicit operator Float128(Half x)
+        {
+            if (Half.IsNaN(x))
+            {
+                return _qNaN;
+            }
+            else if (Half.IsPositiveInfinity(x))
+            {
+                return _pInf;
+            }
+            else if (Half.IsNegativeInfinity(x))
+            {
+                return _nInf;
+            }
+            else if (x == Half.Zero)
+            {
+                return Zero;
+            }
+            else
+            {
+                ushort bits = Unsafe.As<Half, ushort>(ref x);
+                // Note that the shift is sign-extended, hence the test against -1 not 1
+                bool negative = (bits & (1U << 15)) != 0;
+                int exponent = (int)((bits >> 10) & 0x10U) - 0xf;
+                UInt128 mantissa = bits & 0x3ffU;
+
+                return new(mantissa << 102, exponent, negative);
+            }
+        }
+
+        public static explicit operator Half(Float128 x)
+        {
+            if (IsNaN(x))
+            {
+                return Half.NaN;
+            }
+            else if (IsPositiveInfinity(x) || (x.Exponent >= 0xf && !x.RawSignBit))
+            {
+                return Half.PositiveInfinity;
+            }
+            else if (IsNegativeInfinity(x) || (x.Exponent >= 0xf && x.RawSignBit))
+            {
+                return Half.NegativeInfinity;
+            }
+            else if (IsSubnormal(x) || x.Exponent <= -0xe)
+            {
+                return Half.Zero;
+            }
+            else
+            {
+                var smallMantissa = (ushort)(x.RawSignificand >> 99);
+                smallMantissa &= unchecked((ushort)(ushort.MaxValue << 1));
+                smallMantissa |= Math.Min((ushort)(x.RawSignificand & ((UInt128.One << 99) - 1)), (ushort)1);
+
+                if ((((smallMantissa & 1) |
+                     ((smallMantissa >> 2) & 1)) &
+                     ((smallMantissa >> 1) & 1)) == 1) // check rounding condition
+                {
+                    smallMantissa++;
+                }
+
+                ushort result;
+                if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 10)
+                {
+                    result =
+                        (ushort)(((ushort)((x.Exponent + 0x10) & 0x3f) << 10) |
+                        (x.RawSignBit ? 1 << 15 : 0));
+                }
+                else
+                {
+                    result =
+                        (ushort)((ushort)((smallMantissa >> 3) & 0x3ffU) |
+                        ((ushort)((x.Exponent + 0xf) & 0x3f) << 10) |
+                        (x.RawSignBit ? 1 << 15 : 0));
+                }
+
+                return Unsafe.As<ushort, Half>(ref result);
+            }
+        }
+
+        public static implicit operator Float128(float x)
+        {
+            if (float.IsNaN(x))
+            {
+                return _qNaN;
+            }
+            else if (float.IsPositiveInfinity(x))
+            {
+                return _pInf;
+            }
+            else if (float.IsNegativeInfinity(x))
+            {
+                return _nInf;
+            }
+            else if (x == 0.0)
+            {
+                return Zero;
+            }
+            else
+            {
+                uint bits = Unsafe.As<float, uint>(ref x);
+                // Note that the shift is sign-extended, hence the test against -1 not 1
+                bool negative = (bits & (1U << 31)) != 0;
+                int exponent = (int)((bits >> 23) & 0xffU) - 0x7f;
+                UInt128 mantissa = bits & 0x7fffffU;
+
+                return new(mantissa << 89, exponent, negative);
+            }
+        }
+
+        public static explicit operator float(Float128 x)
+        {
+            if (IsNaN(x))
+            {
+                return float.NaN;
+            }
+            else if (IsPositiveInfinity(x) || (x.Exponent >= 0x7f && !x.RawSignBit))
+            {
+                return float.PositiveInfinity;
+            }
+            else if (IsNegativeInfinity(x) || (x.Exponent >= 0x7f && x.RawSignBit))
+            {
+                return float.NegativeInfinity;
+            }
+            else if (IsSubnormal(x) || x.Exponent <= -0xfe)
+            {
+                return 0.0f;
+            }
+            else
+            {
+                var smallMantissa = (uint)(x.RawSignificand >> 86);
+                smallMantissa &= uint.MaxValue << 1;
+                smallMantissa |= Math.Min((uint)(x.RawSignificand & ((UInt128.One << 86) - 1)), 1);
+
+                if ((((smallMantissa & 1) |
+                     ((smallMantissa >> 2) & 1)) &
+                     ((smallMantissa >> 1) & 1)) == 1) // check rounding condition
+                {
+                    smallMantissa++;
+                }
+
+                uint result;
+                if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 23)
+                {
+                    result =
+                        ((uint)((x.Exponent + 0x80) & 0xff) << 23) |
+                        (x.RawSignBit ? 1U << 31 : 0);
+                }
+                else
+                {
+                    result =
+                        ((smallMantissa >> 3) & 0x7fffffU) |
+                        ((uint)((x.Exponent + 0x7f) & 0xff) << 23) |
+                        (x.RawSignBit ? 1U << 31 : 0);
+                }
+
+                return Unsafe.As<uint, float>(ref result);
+            }
+        }
 
         public static implicit operator Float128(double x)
         {
@@ -1901,6 +2253,254 @@ namespace QuadrupleLib
 
                 return Unsafe.As<ulong, double>(ref result);
             }
+        }
+
+        public static implicit operator Float128(sbyte n)
+        {
+            bool signBit;
+            UInt128 mantissa;
+            switch (n.CompareTo(0))
+            {
+                case > 0:
+                    mantissa = (UInt128)n;
+                    signBit = false;
+                    break;
+                case < 0:
+                    mantissa = (UInt128)(-n);
+                    signBit = true;
+                    break;
+                default:
+                    return Zero;
+            }
+
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        }
+
+        public static explicit operator sbyte(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (sbyte)-n : (sbyte)n;
+        }
+
+        public static implicit operator Float128(short n)
+        {
+            bool signBit;
+            UInt128 mantissa;
+            switch (n.CompareTo(0))
+            {
+                case > 0:
+                    mantissa = (UInt128)n;
+                    signBit = false;
+                    break;
+                case < 0:
+                    mantissa = (UInt128)(-n);
+                    signBit = true;
+                    break;
+                default:
+                    return Zero;
+            }
+
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        }
+
+        public static explicit operator short(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (short)-n : (short)n;
+        }
+
+        public static implicit operator Float128(int n)
+        {
+            bool signBit;
+            UInt128 mantissa;
+            switch (n.CompareTo(0))
+            {
+                case > 0:
+                    mantissa = (UInt128)n;
+                    signBit = false;
+                    break;
+                case < 0:
+                    mantissa = (UInt128)(-n);
+                    signBit = true;
+                    break;
+                default:
+                    return Zero;
+            }
+
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        }
+
+        public static explicit operator int(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (int)-n : (int)n;
+        }
+
+        public static implicit operator Float128(long n)
+        {
+            bool signBit;
+            UInt128 mantissa;
+            switch (n.CompareTo(0L))
+            {
+                case > 0:
+                    mantissa = (UInt128)n;
+                    signBit = false;
+                    break;
+                case < 0:
+                    mantissa = (UInt128)(-n);
+                    signBit = true;
+                    break;
+                default:
+                    return Zero;
+            }
+
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        }
+
+        public static explicit operator long(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (long)-n : (long)n;
+        }
+
+        public static explicit operator Float128(Int128 n)
+        {
+            bool signBit;
+            UInt128 mantissa;
+            switch (n.CompareTo(Int128.Zero))
+            {
+                case > 0:
+                    mantissa = (UInt128)n;
+                    signBit = false;
+                    break;
+                case < 0:
+                    mantissa = (UInt128)(-n);
+                    signBit = true;
+                    break;
+                default:
+                    return Zero;
+            }
+
+            UInt128 rounded;
+            int expShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            switch (expShift)
+            {
+                case 0:
+                    rounded = mantissa << 3;
+                    break;
+                case > 0:
+                    rounded = mantissa << (expShift + 3);
+                    break;
+                case < 0:
+                    rounded = mantissa >> (-expShift - 3);
+                    rounded &= UInt128.MaxValue << 1;
+                    rounded |= UInt128.Min(mantissa & ((UInt128.One << (113 + expShift)) - 1), 1);
+                    if ((((rounded & 1) |
+                         ((rounded >> 2) & 1)) &
+                         ((rounded >> 1) & 1)) == 1) // check rounding condition
+                    {
+                        rounded++;
+                    }
+                    break;
+            }
+
+            return new Float128(rounded >> 3, 112 - expShift, signBit);
+        }
+
+        public static explicit operator Int128(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? -n : n;
+        }
+
+        public static implicit operator Float128(byte n)
+        {
+            UInt128 mantissa = (UInt128)n;
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        }
+
+        public static explicit operator byte(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return (byte)(x.RawSignBit ? -n : n);
+        }
+
+        public static implicit operator Float128(ushort n)
+        {
+            UInt128 mantissa = (UInt128)n;
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        }
+
+        public static explicit operator ushort(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return (ushort)(x.RawSignBit ? -n : n);
+        }
+
+        public static implicit operator Float128(uint n)
+        {
+            UInt128 mantissa = (UInt128)n;
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        }
+
+        public static explicit operator uint(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return (uint)(x.RawSignBit ? -n : n);
+        }
+
+        public static implicit operator Float128(ulong n)
+        {
+            UInt128 mantissa = (UInt128)n;
+            int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
+            return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        }
+
+        public static explicit operator ulong(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return (ulong)(x.RawSignBit ? -n : n);
+        }
+
+        public static explicit operator Float128(UInt128 n)
+        {
+            UInt128 rounded;
+            int expShift = (int)UInt128.LeadingZeroCount(n) - 15;
+            switch (expShift)
+            {
+                case 0:
+                    rounded = n << 3;
+                    break;
+                case > 0:
+                    rounded = n << (expShift + 3);
+                    break;
+                case < 0:
+                    rounded = n >> (-expShift - 3);
+                    rounded &= UInt128.MaxValue << 1;
+                    rounded |= UInt128.Min(n & ((UInt128.One << (113 + expShift)) - 1), 1);
+                    if ((((rounded & 1) |
+                         ((rounded >> 2) & 1)) &
+                         ((rounded >> 1) & 1)) == 1) // check rounding condition
+                    {
+                        rounded++;
+                    }
+                    break;
+            }
+
+            return new Float128(rounded >> 3, 112 - expShift, false);
+        }
+
+        public static explicit operator UInt128(Float128 x)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return (UInt128)(x.RawSignBit ? -n : n);
         }
 
         #endregion
