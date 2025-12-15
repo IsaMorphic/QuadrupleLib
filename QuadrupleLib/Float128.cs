@@ -989,11 +989,7 @@ namespace QuadrupleLib
 
         public static Float128 operator /(Float128 left, Float128 right)
         {
-            if (IsInfinity(left) && IsFinite(right))
-            {
-                return left;
-            }
-            else if (IsFinite(left) && IsInfinity(right))
+            if (IsFinite(left) && IsInfinity(right))
             {
                 return Zero;
             }
@@ -1005,7 +1001,7 @@ namespace QuadrupleLib
             {
                 return _qNaN;
             }
-            else if (IsNormal(left) && IsSubnormal(right))
+            else if ((IsInfinity(left) && IsFinite(right)) || (IsNormal(left) && IsSubnormal(right)))
             {
                 return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
             }
@@ -1067,9 +1063,9 @@ namespace QuadrupleLib
                 }
                 else
                 {
-                return new Float128(quotSignificand >> 3, quotExponent, quotSign);
+                    return new Float128(quotSignificand >> 3, quotExponent, quotSign);
+                }
             }
-        }
         }
 
         public static Float128 operator %(Float128 left, Float128 right)
