@@ -17,4 +17,4 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 
 ### Project TODOs (WIP)
 
-- [x] Unit tests to check for specification coverage (#11)
+- [x] Unit tests to check for specification coverage ([#11](https://github.com/IsaMorphic/QuadrupleLib/pull/11))
