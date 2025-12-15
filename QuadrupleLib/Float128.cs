@@ -1060,8 +1060,16 @@ namespace QuadrupleLib
                     quotSignificand++; // increment pth bit from the left
                 }
 
+                if (quotExponent < -EXPONENT_BIAS + 1)
+                {
+                    var finalAdjust = (int)UInt128.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
+                    return new Float128(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
+                }
+                else
+                {
                 return new Float128(quotSignificand >> 3, quotExponent, quotSign);
             }
+        }
         }
 
         public static Float128 operator %(Float128 left, Float128 right)
