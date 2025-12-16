@@ -155,7 +155,7 @@ public partial struct Float128
         }
         else
         {
-            Float128 y_n = Zero;
+            Float128 y_n = One;
             for (int n = 0; n < 25; n++)
             {
                 (Float128 sin, Float128 cos) = SinCos(y_n);
@@ -201,7 +201,7 @@ public partial struct Float128
         for (int n = 0; n < 25; n++)
         {
             (Float128 sin, Float128 cos) = SinCos(y_n);
-            y_n += cos * cos * x - cos * sin;
+            y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos, y_n);
         }
         return y_n;
     }
@@ -212,7 +212,7 @@ public partial struct Float128
         for (int n = 0; n < 25; n++)
         {
             (Float128 sin, Float128 cos) = SinCosPi(y_n);
-            y_n += (cos * cos * x - cos * sin) / Pi;
+            y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos, y_n) / Pi;
         }
         return y_n;
     }
