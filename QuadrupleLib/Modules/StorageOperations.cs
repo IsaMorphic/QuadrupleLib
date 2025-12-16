@@ -20,15 +20,6 @@ namespace QuadrupleLib;
 
 public partial struct Float128
 {
-    #region Useful constants
-
-    private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
-    private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
-    private static readonly UInt128 SIGNBIT_MASK = ~(UInt128.MaxValue >> 1);
-    private static readonly ushort EXPONENT_BIAS = short.MaxValue >> 1;
-
-    #endregion
-
     #region Raw storage properties
 
     private UInt128 _rawBits;
