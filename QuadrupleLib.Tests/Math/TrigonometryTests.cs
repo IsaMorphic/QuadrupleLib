@@ -575,4 +575,73 @@ public class TrigonometryTests
         var pairB = Float128.SinCosPi(thetaDeg / 180);
         Assert.Equal(pairA, pairB);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(15)]
+    [InlineData(30)]
+    [InlineData(45)]
+    [InlineData(60)]
+    [InlineData(75)]
+    [InlineData(90)]
+    [InlineData(105)]
+    [InlineData(120)]
+    [InlineData(135)]
+    [InlineData(150)]
+    [InlineData(165)]
+    [InlineData(180)]
+    public void IsInverseCosPiEqualCoRDiC(double thetaDeg)
+    {
+        Float128 thetaA = thetaDeg / 180;
+        Float128 cos = Float128.CosPi(thetaA);
+
+        Float128 thetaB = Float128.AcosPi(cos);
+        Float128 diff = thetaA - thetaB;
+
+        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(15)]
+    [InlineData(30)]
+    [InlineData(45)]
+    [InlineData(60)]
+    [InlineData(75)]
+    [InlineData(90)]
+    [InlineData(-15)]
+    [InlineData(-30)]
+    [InlineData(-45)]
+    [InlineData(-60)]
+    [InlineData(-75)]
+    [InlineData(-90)]
+    public void IsInverseSinPiEqualCoRDiC(double thetaDeg)
+    {
+        Float128 thetaA = thetaDeg / 180;
+        Float128 sin = Float128.SinPi(thetaA);
+
+        Float128 thetaB = Float128.AsinPi(sin);
+        Float128 diff = thetaA - thetaB;
+
+        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(15)]
+    [InlineData(30)]
+    [InlineData(45)]
+    [InlineData(-15)]
+    [InlineData(-30)]
+    [InlineData(-45)]
+    public void IsInverseTanPiEqualCoRDiC(double thetaDeg)
+    {
+        Float128 thetaA = thetaDeg / 180;
+        Float128 tan = Float128.TanPi(thetaA);
+
+        Float128 thetaB = Float128.AtanPi(tan);
+        Float128 diff = thetaA - thetaB;
+
+        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+    }
 }
