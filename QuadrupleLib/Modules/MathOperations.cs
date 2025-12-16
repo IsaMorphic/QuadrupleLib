@@ -34,7 +34,7 @@ public partial struct Float128
         if (k == 0) return Pi * 0.25;
         for (int n = 0; n < 25; n++)
         {
-            x_n = ScaleB(FusedMultiplyAdd(x_n * x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, 5 - ScaleB(x_n, k), ScaleB(One, k + 5)), -120), ScaleB(-3, k + 7)), 960), ScaleB(15, k + 7)), -2880), 2880), -k - 6) / 45;
+            x_n = ScaleB(FusedMultiplyAdd(x_n * x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, 9 - ScaleB(x_n, k), ScaleB(One, k + 7)), -1008), ScaleB(-273, k + 5)), 58464), ScaleB(1449, k + 8)), -2056320), ScaleB(-315, k + 15)), 46448640), ScaleB(2835, k + 16)), -650280960), -ScaleB(59535, k + 15)), 4877107200), ScaleB(297675, k + 15)), -14631321600), 14631321600), -k - 14) / 893025;
         }
         return x_n;
     }
@@ -173,7 +173,7 @@ public partial struct Float128
         }
         else
         {
-            Float128 y_n = Zero;
+            Float128 y_n = One / Pi;
             for (int n = 0; n < 25; n++)
             {
                 (Float128 sin, Float128 cos) = SinCosPi(y_n);
