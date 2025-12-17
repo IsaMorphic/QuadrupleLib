@@ -37,6 +37,6 @@ public partial struct Float128 : IBinaryFloatingPointIeee754<Float128>
         // CoRDiC implementation
         _thetaTable = Enumerable.Range(0, SINCOS_ITER_COUNT)
             .Select(AtanPow2).ToArray();
-        _K_n = ComputeK(SINCOS_ITER_COUNT);
+        _invK_n = ComputeInverseK(SINCOS_ITER_COUNT);
     }
 }

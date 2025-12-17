@@ -22,16 +22,16 @@ public partial struct Float128
 {
     #region Public API (trig functions)
 
-    private const int SINCOS_ITER_COUNT = 32;
+    private const int SINCOS_ITER_COUNT = 40;
 
     private static readonly Float128[] _thetaTable;
 
-    private static readonly Float128 _K_n;
+    private static readonly Float128 _invK_n;
 
     private static Float128 AtanPow2(int k)
     {
         Float128 x_n = One;
-        if (k == 0) return Pi * 0.25;
+        if (k == 0) return QuarterPi;
         for (int n = 0; n < 25; n++)
         {
             x_n = ScaleB(
@@ -71,14 +71,14 @@ public partial struct Float128
         return x_n;
     }
 
-    private static Float128 ComputeK(int n)
+    private static Float128 ComputeInverseK(int n)
     {
         Float128 K_i = One;
         for (int i = 0; i < n; i++)
         {
-            K_i /= Sqrt(One + ScaleB(One, i * -2));
+            K_i = FusedMultiplyAdd(K_i, ScaleB(One, i * -2), K_i);
         }
-        return K_i;
+        return Sqrt(K_i);
     }
 
     public static Float128 Hypot(Float128 x, Float128 y)
@@ -110,32 +110,58 @@ public partial struct Float128
     {
         Float128 x = One, y = Zero;
         Float128 phi = Ieee754Remainder(alpha, Tau);
-        if (phi > Pi / 2)
+        if (phi > HalfPi)
         {
             do
             {
-                phi -= Pi / 2;
+                phi -= HalfPi;
                 (x, y) = (-y, x);
-            } while (phi > Pi / 2);
+            } while (phi > HalfPi);
         }
-        else if (phi < -Pi / 2)
+        else if (phi < -HalfPi)
         {
             do
             {
-                phi += Pi / 2;
+                phi += HalfPi;
                 (x, y) = (y, -x);
-            } while (phi < -Pi / 2);
+            } while (phi < -HalfPi);
         }
 
-        Float128 sigma, theta = Zero;
+        if (phi == Zero)
+        {
+            return (y, x);
+        }
+        
+        Float128 sigma, sigma_neg, theta = Zero;
         for (int i = 0; i < SINCOS_ITER_COUNT; i++)
         {
-            sigma = theta < phi ? One : NegativeOne;
+            bool stopFlag;
+            switch (theta.CompareTo(phi))
+            {
+                case < 0:
+                    sigma = One;
+                    sigma_neg = NegativeOne;
+                    stopFlag = false;
+                    break;
+                case > 0:
+                    sigma = NegativeOne;
+                    sigma_neg = One;
+                    stopFlag = false;
+                    break;
+                default:
+                    sigma = Zero;
+                    sigma_neg = Zero;
+                    stopFlag = true;
+                    break;
+            }
 
-            (x, y) = (x - ScaleB(sigma * y, -i), ScaleB(sigma * x, -i) + y);
-            theta += sigma * _thetaTable[i];
+            if (stopFlag) break;
+
+            (x, y) = (FusedMultiplyAdd(y, ScaleB(sigma_neg, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
+            theta = FusedMultiplyAdd(sigma, _thetaTable[i], theta);
         }
-        return (y * _K_n, x * _K_n);
+
+        return (y / _invK_n, x / _invK_n);
     }
 
     public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
