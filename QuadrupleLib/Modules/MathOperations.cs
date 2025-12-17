@@ -34,7 +34,39 @@ public partial struct Float128
         if (k == 0) return Pi * 0.25;
         for (int n = 0; n < 25; n++)
         {
-            x_n = ScaleB(FusedMultiplyAdd(x_n * x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, FusedMultiplyAdd(x_n, 9 - ScaleB(x_n, k), ScaleB(One, k + 7)), -1008), ScaleB(-273, k + 5)), 58464), ScaleB(1449, k + 8)), -2056320), ScaleB(-315, k + 15)), 46448640), ScaleB(2835, k + 16)), -650280960), -ScaleB(59535, k + 15)), 4877107200), ScaleB(297675, k + 15)), -14631321600), 14631321600), -k - 14) / 893025;
+            x_n = ScaleB(
+                FusedMultiplyAdd(x_n * x_n,
+                    FusedMultiplyAdd(x_n,
+                        FusedMultiplyAdd(x_n,
+                            FusedMultiplyAdd(x_n,
+                                FusedMultiplyAdd(x_n,
+                                    FusedMultiplyAdd(x_n,
+                                        FusedMultiplyAdd(x_n,
+                                            FusedMultiplyAdd(x_n,
+                                                FusedMultiplyAdd(x_n,
+                                                    FusedMultiplyAdd(x_n,
+                                                        FusedMultiplyAdd(x_n,
+                                                            FusedMultiplyAdd(x_n,
+                                                                FusedMultiplyAdd(x_n,
+                                                                    FusedMultiplyAdd(x_n,
+                                                                        FusedMultiplyAdd(x_n,
+                                                                            9 - ScaleB(x_n, k),
+                                                                        ScaleB(One, k + 7)),
+                                                                    -1008),
+                                                                ScaleB(-273, k + 5)),
+                                                            58464),
+                                                        ScaleB(1449, k + 8)),
+                                                    -2056320),
+                                                ScaleB(-315, k + 15)),
+                                            46448640),
+                                        ScaleB(2835, k + 16)),
+                                    -650280960),
+                                -ScaleB(59535, k + 15)),
+                            4877107200),
+                        ScaleB(297675, k + 15)),
+                    -14631321600),
+                14631321600),
+            -k - 14) / 893025;
         }
         return x_n;
     }
