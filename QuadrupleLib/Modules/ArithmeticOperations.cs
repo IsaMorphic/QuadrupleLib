@@ -566,64 +566,72 @@ public partial struct Float128
         }
         else
         {
-            var leftAdjust = (int)UInt128.LeadingZeroCount(left.Significand);
-            var leftSignificand = left.Significand << leftAdjust;
-            var leftExponent = left.Exponent - leftAdjust;
+            var numSignificand = SIGNBIT_MASK;
+            var numExponent = left.Exponent - 15;
 
-            var rightAdjust = (int)UInt128.TrailingZeroCount(right.Significand);
-            var rightSignificand = right.Significand >> rightAdjust;
-            var rightExponent = right.Exponent + rightAdjust - 115;
+            var divAdjust = (int)UInt128.TrailingZeroCount(right.Significand);
+            var divSignificand = right.Significand >> divAdjust;
+            var divExponent = right.Exponent + divAdjust - 112;
 
-            var quotExponent = leftExponent - rightExponent;
+            var quotExponent = numExponent - divExponent;
             var quotSign = left.RawSignBit != right.RawSignBit;
 
-            UInt128 quotSignificand, remSignificand;
+            UInt128 quotSignificand;
             if (quotExponent > EXPONENT_BIAS)
             {
                 return quotSign ? _nInf : _pInf;
             }
             else
             {
-                quotSignificand = Divide(leftSignificand, rightSignificand, out remSignificand);
+                quotSignificand = Divide(numSignificand, divSignificand, out _);
             }
+
+            BigMul256 bigSignificand = BigMul256.Multiply(left.Significand, quotSignificand);
+
+            var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
+            var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
+
+            var lowBits = bigLo & (UInt128.MaxValue >> 16);
+            var highBits = (bigHi << 19) | (bigLo >> 109);
 
             // normalize output
             int normDist;
-            if ((quotSignificand >> 3) != 0)
+            if ((highBits >> 3) != 0 && IsNormal(left) && IsNormal(right))
             {
-                normDist = (short)(UInt128.LeadingZeroCount(quotSignificand >> 3) - 15);
+                normDist = (short)(UInt128.LeadingZeroCount(highBits >> 3) - 15);
                 if (normDist > 0)
-                    quotSignificand <<= normDist;
+                    highBits <<= normDist;
                 else if (normDist < 0)
-                    quotSignificand >>= -normDist;
+                    highBits >>= -normDist;
                 quotExponent -= normDist;
             }
-            else
+            else if ((highBits >> 3) == 0)
             {
                 quotExponent = (short)(-EXPONENT_BIAS + 1);
                 normDist = 0;
             }
-
-            // set sticky bit
-            quotSignificand &= UInt128.MaxValue << 1;
-            quotSignificand |= UInt128.Min(remSignificand + (normDist < 0 ? quotSignificand & ((UInt128.One << -normDist) - 1) : 0), 1);
-
-            if ((((quotSignificand & 1) |
-                 ((quotSignificand >> 2) & 1)) &
-                 ((quotSignificand >> 1) & 1)) == 1) // check rounding condition
-            {
-                quotSignificand++; // increment pth bit from the left
-            }
-
-            if (quotExponent < -EXPONENT_BIAS + 1)
-            {
-                var finalAdjust = (int)UInt128.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
-                return new Float128(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
-            }
             else
             {
-                return new Float128(quotSignificand >> 3, quotExponent, quotSign);
+                normDist = quotExponent - (-EXPONENT_BIAS + 1);
+                if (normDist > 0)
+                    highBits <<= normDist;
+                else if (normDist < 0)
+                    highBits >>= -normDist;
+                quotExponent -= normDist;
             }
+
+            // set sticky bit
+            highBits &= UInt128.MaxValue << 1;
+            highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << -normDist) - 1) : 0), 1);
+
+            if ((((highBits & 1) |
+                 ((highBits >> 2) & 1)) &
+                 ((highBits >> 1) & 1)) == 1) // check rounding condition
+            {
+                highBits++; // increment pth bit from the left
+            }
+
+            return new Float128(highBits >> 3, quotExponent, quotSign);
         }
     }
 
