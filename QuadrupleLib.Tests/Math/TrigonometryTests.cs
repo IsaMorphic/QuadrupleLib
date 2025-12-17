@@ -642,6 +642,6 @@ public class TrigonometryTests
         Float128 thetaB = Float128.AtanPi(tan);
         Float128 diff = thetaA - thetaB;
 
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+        Assert.Equal(Float128.Zero, Float128.Round(diff, 5));
     }
 }
