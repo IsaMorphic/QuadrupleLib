@@ -212,7 +212,7 @@ public partial struct Float128
         for (int n = 0; n < 25; n++)
         {
             (Float128 sin, Float128 cos) = SinCosPi(y_n);
-            y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos, y_n) / Pi;
+            y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos / Pi, y_n);
         }
         return y_n;
     }
