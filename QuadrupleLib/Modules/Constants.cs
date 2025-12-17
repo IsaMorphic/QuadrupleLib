@@ -56,6 +56,12 @@ public partial struct Float128
 
     private static readonly Float128 _e = Parse("2.7182818284590452353602874713526625");
     public static Float128 E => _e;
+    
+    private static readonly Float128 _quarterPi = Parse("0.7853981633974483096156608458198757");
+    public static Float128 QuarterPi = _quarterPi;
+
+    private static readonly Float128 _halfPi = Parse("1.5707963267948966192313216916397514");
+    public static Float128 HalfPi = _halfPi;
 
     private static readonly Float128 _pi = Parse("3.1415926535897932384626433832795028");
     public static Float128 Pi => _pi;
