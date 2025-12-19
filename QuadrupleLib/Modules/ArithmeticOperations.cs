@@ -165,19 +165,19 @@ public partial struct Float128
 
     #endregion
 
-    #region Private API: Software-based 128-bit Division Routines
+    #region Private API: Software-based 128-bit Division Routine
 
     private static UInt128 Divide(UInt128 n, ulong d, out ulong r) 
     {
         uint n_0 = (uint)n;
         uint n_1 = (uint)(n >> 32);
-        ulong n_hi = (ulong)(n >> 64);
+        ulong n_2 = (ulong)(n >> 64);
 
-        (UInt128 q_hi, ulong r_hi) = Math.DivRem(n_hi, d);
-        (UInt128 q_1, ulong r_1) = Math.DivRem((r_hi << 32) | n_1, d);
-        (UInt128 q_0, r) = Math.DivRem((r_1 << 32) | n_1, d);
+        (UInt128 q_2, ulong r_2) = Math.DivRem(n_2, d);
+        (UInt128 q_1, ulong r_1) = Math.DivRem((r_2 << 32) | n_1, d);
+        (UInt128 q_0, r) = Math.DivRem((r_1 << 32) | n_0, d);
 
-        return q_0 | (q_1 << 32) | (q_hi << 64);
+        return q_0 | (q_1 << 32) | (q_2 << 64);
     }
 
     private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
@@ -228,17 +228,21 @@ public partial struct Float128
         }
     }
 
+    #endregion
+
+    #region Private API: Software-based 256-bit Division Routine
+
     private static UInt256 Divide(UInt256 n, UInt128 d, out UInt128 r)
     {
         ulong n_0 = (ulong)n;
         ulong n_1 = (ulong)(n >> 64);
-        UInt128 n_hi = (UInt128)(n >> 128);
+        UInt128 n_2 = (UInt128)(n >> 128);
 
-        UInt256 q_hi = Divide(n_hi, d, out UInt128 r_hi);
-        UInt256 q_1 = Divide((r_hi << 64) | n_1, d, out UInt128 r_1);
+        UInt256 q_2 = Divide(n_2, d, out UInt128 r_2);
+        UInt256 q_1 = Divide((r_2 << 64) | n_1, d, out UInt128 r_1);
         UInt256 q_0 = Divide((r_1 << 64) | n_0, d, out r);
 
-        return q_0 | (q_1 << 64) | (q_hi << 128);
+        return q_0 | (q_1 << 64) | (q_2 << 128);
     }
 
     #endregion
