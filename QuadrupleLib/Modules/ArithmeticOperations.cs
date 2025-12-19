@@ -167,60 +167,55 @@ public partial struct Float128
 
     #region Private API: Software-based 128-bit Division Routines
 
-    private static (ulong lo, ulong hi) Divide(UInt128 n, ulong d, out ulong r)
+    private static UInt128 Divide(UInt128 n, ulong d, out ulong r) 
     {
-        (UInt128 quot, UInt128 rem) = UInt128.DivRem(n, d);
+        uint n_0 = (uint)n;
+        uint n_1 = (uint)(n >> 32);
+        ulong n_hi = (ulong)(n >> 64);
 
-        ulong loBits = (ulong)quot;
-        ulong hiBits = (ulong)(quot >> 64);
-        r = (ulong)rem;
+        (UInt128 q_hi, ulong r_hi) = Math.DivRem(n_hi, d);
+        (UInt128 q_1, ulong r_1) = Math.DivRem((r_hi << 32) | n_1, d);
+        (UInt128 q_0, r) = Math.DivRem((r_1 << 32) | n_1, d);
 
-        return (loBits, hiBits);
+        return q_0 | (q_1 << 32) | (q_hi << 64);
     }
 
     private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
     {
         var dLoBits = (ulong)d;
         var dHiBits = (ulong)(d >> 64);
-
         if (d != 0 && d > n)
         {
-            r = n;
-            return UInt128.Zero;
+            r = n; return UInt128.Zero;
         }
         else if (d == n)
         {
-            r = UInt128.Zero;
-            return UInt128.One;
+            r = UInt128.Zero; return UInt128.One;
         }
         else if (dHiBits > 0)
         {
-            // Base 2^64 long division (lol)
-            UInt128 q = UInt128.Zero;
-            r = n;
-
+            UInt128 q = UInt128.Zero; r = n;
             while (r >= d)
             {
                 var p = Divide(r, dHiBits, out ulong _);
+                var p_hi = (ulong)(p >> 64);
 
-                var prod = BigMul256.Multiply(d, p.hi);
+                var prod = BigMul256.Multiply(d, p_hi);
                 UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
-                while (p.hi > 0 && r < s)
+                while (p_hi > 0 && r < s)
                 {
-                    prod = BigMul256.Multiply(d, p.hi >>= 1);
+                    prod = BigMul256.Multiply(d, p_hi >>= 1);
                     s = prod._0 | ((UInt128)prod._1 << 64);
                 }
 
-                if (p.hi == 0)
+                if (p_hi == 0)
                 {
-                    q += UInt128.One;
-                    r -= d;
+                    ++q; r -= d;
                     break;
                 }
                 else
                 {
-                    q += p.hi;
-                    r -= s;
+                    q += p_hi; r -= s;
                 }
             }
 
@@ -228,10 +223,22 @@ public partial struct Float128
         }
         else
         {
-            var q = Divide(n, dLoBits, out ulong r0);
-            r = r0;
-            return q.lo | ((UInt128)q.hi << 64);
+            var q = Divide(n, dLoBits, out ulong _r);
+            r = _r; return q;
         }
+    }
+
+    private static UInt256 Divide(UInt256 n, UInt128 d, out UInt128 r)
+    {
+        ulong n_0 = (ulong)n;
+        ulong n_1 = (ulong)(n >> 64);
+        UInt128 n_hi = (UInt128)(n >> 128);
+
+        UInt256 q_hi = Divide(n_hi, d, out UInt128 r_hi);
+        UInt256 q_1 = Divide((r_hi << 64) | n_1, d, out UInt128 r_1);
+        UInt256 q_0 = Divide((r_1 << 64) | n_0, d, out r);
+
+        return q_0 | (q_1 << 64) | (q_hi << 128);
     }
 
     #endregion
@@ -566,17 +573,18 @@ public partial struct Float128
         }
         else
         {
-            var leftAdjust = (int)UInt128.LeadingZeroCount(left.Significand);
-            var leftSignificand = left.Significand << leftAdjust;
-            var leftExponent = left.Exponent - leftAdjust;
+            var leftAdjust = (int)UInt256.LeadingZeroCount(left.Significand);
+            var leftSignificand = (UInt256)left.Significand << leftAdjust;
+            var leftExponent = left.Exponent - leftAdjust + 115;
 
             var rightAdjust = (int)UInt128.TrailingZeroCount(right.Significand);
             var rightSignificand = right.Significand >> rightAdjust;
-            var rightExponent = right.Exponent + rightAdjust - 115;
+            var rightExponent = right.Exponent + rightAdjust;
 
             var quotExponent = leftExponent - rightExponent;
             var quotSign = left.RawSignBit != right.RawSignBit;
 
+            UInt256 fullSignificand;
             UInt128 quotSignificand, remSignificand;
             if (quotExponent > EXPONENT_BIAS)
             {
@@ -584,29 +592,27 @@ public partial struct Float128
             }
             else
             {
-                quotSignificand = Divide(leftSignificand, rightSignificand, out remSignificand);
+                fullSignificand = Divide(leftSignificand, rightSignificand, out remSignificand);
             }
 
             // normalize output
             int normDist;
-            if ((quotSignificand >> 3) != 0)
+            if ((fullSignificand >> 3) != 0)
             {
-                normDist = (short)(UInt128.LeadingZeroCount(quotSignificand >> 3) - 15);
-                if (normDist > 0)
-                    quotSignificand <<= normDist;
-                else if (normDist < 0)
-                    quotSignificand >>= -normDist;
-                quotExponent -= normDist;
+                normDist = 143 - (int)UInt256.LeadingZeroCount(fullSignificand >> 3);
+                quotSignificand = (UInt128)(fullSignificand >> normDist);
+                quotExponent += normDist;
             }
             else
             {
                 quotExponent = (short)(-EXPONENT_BIAS + 1);
+                quotSignificand = UInt128.Zero;
                 normDist = 0;
             }
 
             // set sticky bit
             quotSignificand &= UInt128.MaxValue << 1;
-            quotSignificand |= UInt128.Min(remSignificand + (normDist < 0 ? quotSignificand & ((UInt128.One << -normDist) - 1) : 0), 1);
+            quotSignificand |= (UInt128)UInt256.Min(remSignificand + (normDist < 0 ? fullSignificand & ((UInt256.One << -normDist) - 1) : 0), 1);
 
             if ((((quotSignificand & 1) |
                  ((quotSignificand >> 2) & 1)) &
@@ -617,7 +623,7 @@ public partial struct Float128
 
             if (quotExponent < -EXPONENT_BIAS + 1)
             {
-                var finalAdjust = (int)UInt128.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
+                var finalAdjust = (int)UInt256.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
                 return new Float128(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
             }
             else
