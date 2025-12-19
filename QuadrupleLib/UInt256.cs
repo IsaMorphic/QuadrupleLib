@@ -56,6 +56,16 @@ namespace QuadrupleLib
             return n._lo;
         }
 
+        public static explicit operator UInt256(Int128 n)
+        {
+            return new UInt256((UInt128)n, UInt128.Zero);
+        }
+
+        public static explicit operator Int128(UInt256 n)
+        {
+            return (Int128)n._lo;
+        }
+
         public static implicit operator UInt256(ulong n)
         {
             return new UInt256(n, UInt128.Zero);
@@ -64,6 +74,36 @@ namespace QuadrupleLib
         public static explicit operator ulong(UInt256 n)
         {
             return (ulong)n._lo;
+        }
+
+        public static explicit operator UInt256(long n)
+        {
+            return new UInt256((UInt128)n, UInt128.Zero);
+        }
+
+        public static explicit operator long(UInt256 n)
+        {
+            return (long)n._lo;
+        }
+
+        public static implicit operator UInt256(uint n)
+        {
+            return new UInt256(n, UInt128.Zero);
+        }
+
+        public static explicit operator uint(UInt256 n)
+        {
+            return (uint)n._lo;
+        }
+
+        public static explicit operator UInt256(int n) 
+        {
+            return new UInt256((UInt128)n, UInt128.Zero);
+        }
+
+        public static explicit operator int(UInt256 n)
+        {
+            return (int)n._lo;
         }
 
         public static UInt256 operator +(UInt256 a, UInt256 b) 
@@ -108,9 +148,9 @@ namespace QuadrupleLib
             switch (amt)
             {
                 case >= 128:
-                    return new(n._lo << (amt - 128), UInt128.Zero);
+                    return new(UInt128.Zero, n._lo << (amt - 128));
                 default:
-                    return new(n._lo << amt, (n._hi << amt) | (n._lo & (UInt128.MaxValue << (128 - amt))));
+                    return new(n._lo << amt, (n._hi << amt) | ((n._lo & (UInt128.MaxValue << (128 - amt))) >> (128 - amt)));
             }
         }
 
@@ -134,9 +174,29 @@ namespace QuadrupleLib
             return new(~n._lo, ~n._hi);
         }
 
-        public static UInt256 LeadingZeroCount() 
-        { 
-            // TODO: division scaling by implementing this
+        public static UInt256 LeadingZeroCount(UInt256 n) 
+        {
+            return n._hi == 0 ? 128 + UInt128.LeadingZeroCount(n._lo) : UInt128.LeadingZeroCount(n._hi);
+        }
+
+        public static UInt256 TrailingZeroCount(UInt256 n)
+        {
+            return n._lo == 0 ? 128 + UInt128.TrailingZeroCount(n._hi) : UInt128.TrailingZeroCount(n._lo);
+        }
+
+        public static UInt256 PopCount(UInt256 n) 
+        {
+            return UInt128.PopCount(n._lo) + (UInt256)UInt128.PopCount(n._hi);
+        }
+
+        public static UInt256 Min(UInt256 a, UInt256 b) 
+        {
+            return a < b ? a : b;
+        }
+
+        public static UInt256 Max(UInt256 a, UInt256 b)
+        {
+            return a > b ? a : b;
         }
 
         public static bool operator >(UInt256 a, UInt256 b) 
