@@ -163,6 +163,79 @@ public partial struct Float128
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct BigMul512
+    {
+
+#if BIGENDIAN
+        public UInt128 _3;
+        public UInt128 _2;
+        public UInt128 _1;
+        public UInt128 _0;
+#else
+        public UInt128 _0;
+        public UInt128 _1;
+        public UInt128 _2;
+        public UInt128 _3;
+#endif
+
+        private static BigMul512 Add(BigMul512 left, BigMul512 right)
+        {
+            UInt128 carry;
+            BigMul512 result = new BigMul512();
+
+            result._0 = left._0 + right._0;
+
+            carry = (UInt128)Int128.Max(0, left._0.CompareTo(result._0));
+            result._1 = left._1 + right._1 + carry;
+
+            carry = (UInt128)Int128.Max(0, left._1.CompareTo(result._1));
+            result._2 = left._2 + right._2 + carry;
+
+            carry = (UInt128)Int128.Max(0, left._2.CompareTo(result._2));
+            result._3 = left._3 + right._3 + carry;
+
+            return result;
+        }
+
+        private static BigMul512 Multiply(UInt256 left, UInt128 right)
+        {
+            var result = new BigMul512();
+
+            BigMul256 prod1 = BigMul256.Multiply((UInt128)left, right);
+
+            var lo1 = prod1._0 | ((UInt128)prod1._1 << 64);
+            var hi1 = prod1._2 | ((UInt128)prod1._3 << 64);
+
+            result._0 = lo1;
+
+            BigMul256 prod2 = BigMul256.Multiply((UInt128)(left >> 128), right);
+
+            var lo2 = prod2._0 | ((UInt128)prod2._1 << 64);
+            var hi2 = prod2._2 | ((UInt128)prod2._3 << 64);
+
+            result._1 = lo2 + hi1;
+            result._2 = hi2 + (UInt128)Int128.Max(0, lo2.CompareTo(lo2 + hi1));
+
+            return result;
+        }
+
+        public static BigMul512 Multiply(UInt256 left, UInt256 right)
+        {
+            var leftProd = Multiply(left, (UInt128)right);
+            var rightProd = Multiply(left, (UInt128)(right >> 128));
+
+            var rightShift = new BigMul512 // 128-bit left-shift
+            {
+                _1 = rightProd._0,
+                _2 = rightProd._1,
+                _3 = rightProd._2,
+            };
+
+            return Add(leftProd, rightShift);
+        }
+    }
+
     #endregion
 
     #region Private API: Software-based 128-bit Division Routines
@@ -170,7 +243,7 @@ public partial struct Float128
     private static ulong Divide(ulong n, uint d, out uint r)
     {
         uint n_lo = (uint)n;
-        uint n_hi = (uint)(n >> 64);
+        uint n_hi = (uint)(n >> 32);
 
         (ulong q_hi, ulong r_hi) = Math.DivRem(n_hi, d);
         (ulong q_lo, ulong r_lo) = Math.DivRem((r_hi << 32) | n_lo, d);
@@ -208,27 +281,24 @@ public partial struct Float128
             while (_r >= d)
             {
                 var p = Divide(_r, dHiBits, out uint _);
-                var p_hi = (ulong)(p >> 64);
-
-                var prod = BigMul128.Multiply(d, p_hi);
-                ulong s = prod._0 | ((ulong)prod._1 << 32);
-                while (p_hi > 0 && _r < s)
+                var prod = BigMul256.Multiply(d, p);
+                UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
+                while (p > 0 && _r < s)
                 {
-                    prod = BigMul128.Multiply(d, p_hi >>= 1);
-                    s = prod._0 | ((ulong)prod._1 << 32);
+                    prod = BigMul256.Multiply(d, p >>= 1);
+                    s = prod._0 | ((UInt128)prod._1 << 64);
                 }
 
-                if (p_hi == 0)
+                if (p == 0)
                 {
                     ++q; _r -= d;
                     break;
                 }
                 else
                 {
-                    q += p_hi; _r -= s;
+                    q += p; _r -= s;
                 }
             }
-
             r = (ulong)_r; return q;
         }
         else
@@ -698,7 +768,7 @@ public partial struct Float128
                 quotSignificand = Divide(numSignificand, divSignificand, out _);
             }
 
-            BigMul256 bigSignificand = BigMul256.Multiply(left.Significand, (UInt128)(quotSignificand >> 128));
+            BigMul256 bigSignificand = BigMul256.Multiply(left.Significand, (UInt128)quotSignificand);
 
             var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
             var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);

@@ -134,6 +134,11 @@ namespace QuadrupleLib
             return new(~n._lo, ~n._hi);
         }
 
+        public static UInt256 LeadingZeroCount() 
+        { 
+            // TODO: division scaling by implementing this
+        }
+
         public static bool operator >(UInt256 a, UInt256 b) 
         {
             return a.CompareTo(b) > 0;
