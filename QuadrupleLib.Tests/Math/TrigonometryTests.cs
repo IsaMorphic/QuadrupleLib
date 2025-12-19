@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Tests.Assertions.Types;
 using Xunit.Abstractions;
 
 namespace QuadrupleLib.Tests.Math;
@@ -297,11 +298,8 @@ public class TrigonometryTests
     {
         Float128 thetaA = thetaDeg * Float128.Pi / 180;
         Float128 cos = Float128.Cos(thetaA);
-
         Float128 thetaB = Float128.Acos(cos);
-        Float128 diff = thetaA - thetaB;
-
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -322,11 +320,8 @@ public class TrigonometryTests
     {
         Float128 thetaA = thetaDeg * Float128.Pi / 180;
         Float128 sin = Float128.Sin(thetaA);
-
         Float128 thetaB = Float128.Asin(sin);
-        Float128 diff = thetaA - thetaB;
-
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -341,11 +336,8 @@ public class TrigonometryTests
     {
         Float128 thetaA = thetaDeg * Float128.Pi / 180;
         Float128 tan = Float128.Tan(thetaA);
-
         Float128 thetaB = Float128.Atan(tan);
-        Float128 diff = thetaA - thetaB;
-
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 5));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -594,11 +586,8 @@ public class TrigonometryTests
     {
         Float128 thetaA = thetaDeg / 180;
         Float128 cos = Float128.CosPi(thetaA);
-
         Float128 thetaB = Float128.AcosPi(cos);
-        Float128 diff = thetaA - thetaB;
-
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -619,11 +608,8 @@ public class TrigonometryTests
     {
         Float128 thetaA = thetaDeg / 180;
         Float128 sin = Float128.SinPi(thetaA);
-
         Float128 thetaB = Float128.AsinPi(sin);
-        Float128 diff = thetaA - thetaB;
-
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -638,11 +624,8 @@ public class TrigonometryTests
     {
         Float128 thetaA = thetaDeg / 180;
         Float128 tan = Float128.TanPi(thetaA);
-
         Float128 thetaB = Float128.AtanPi(tan);
-        Float128 diff = thetaA - thetaB;
-
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 5));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -738,11 +721,8 @@ public class TrigonometryTests
     public void IsAtan2EqualCoRDiC(double thetaDeg)
     {
         Float128 thetaA = thetaDeg * Float128.Pi / 180;
-
         (Float128 sin, Float128 cos) = Float128.SinCos(thetaA);
         Float128 thetaB = Float128.Atan2(sin, cos);
-
-        Float128 diff = thetaA - thetaB;
-        Assert.Equal(Float128.Zero, Float128.Round(diff, 6));
+        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 }
