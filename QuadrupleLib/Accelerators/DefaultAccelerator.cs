@@ -16,29 +16,19 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Numerics;
+namespace QuadrupleLib.Accelerators;
 
-namespace QuadrupleLib;
-
-public partial struct Float128<TAccelerator> : 
-    IBinaryFloatingPointIeee754<Float128<TAccelerator>>
-    where TAccelerator : IAccelerator
+public sealed class DefaultAccelerator : IAccelerator
 {
-    static Float128()
-    {
-        // Rounding related
-        Float128<TAccelerator> pow10 = One;
-        List<Float128<TAccelerator>> pow10List = new();
-        for (int i = 0; i < 38; i++)
-        {
-            pow10List.Add(pow10);
-            pow10 *= 10;
-        }
-        _pow10Table = pow10List.ToArray();
+    private DefaultAccelerator() { }
 
-        // CoRDiC implementation
-        _thetaTable = Enumerable.Range(0, SINCOS_ITER_COUNT)
-            .Select(AtanPow2).ToArray();
-        _invK_n = ComputeInverseK(SINCOS_ITER_COUNT);
+    static ulong IAccelerator.BigMul(ulong a, ulong b, out ulong low)
+    {
+        return Math.BigMul(a, b, out low);
+    }
+
+    static (UInt128 Quotient, UInt128 Remainder) IAccelerator.DivRem(UInt128 a, UInt128 b)
+    {
+        return UInt128.DivRem(a, b);
     }
 }

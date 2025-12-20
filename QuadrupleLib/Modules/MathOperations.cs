@@ -18,19 +18,19 @@
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (trig functions)
 
     private const int SINCOS_ITER_COUNT = 64;
 
-    private static readonly Float128[] _thetaTable;
+    private static readonly Float128<TAccelerator>[] _thetaTable;
 
-    private static readonly Float128 _invK_n;
+    private static readonly Float128<TAccelerator> _invK_n;
 
-    private static Float128 AtanPow2(int k)
+    private static Float128<TAccelerator> AtanPow2(int k)
     {
-        Float128 x_n = One;
+        Float128<TAccelerator> x_n = One;
         if (k == 0) return QuarterPi;
         for (int n = 0; n < 25; n++)
         {
@@ -71,9 +71,9 @@ public partial struct Float128
         return x_n;
     }
 
-    private static Float128 ComputeInverseK(int n)
+    private static Float128<TAccelerator> ComputeInverseK(int n)
     {
-        Float128 K_i = One;
+        Float128<TAccelerator> K_i = One;
         for (int i = 0; i < n; i++)
         {
             K_i = FusedMultiplyAdd(K_i, ScaleB(One, i * -2), K_i);
@@ -81,35 +81,35 @@ public partial struct Float128
         return Sqrt(K_i);
     }
 
-    public static Float128 Hypot(Float128 x, Float128 y)
+    public static Float128<TAccelerator> Hypot(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         return Sqrt(x * x + y * y);
     }
 
-    public static Float128 Cos(Float128 x)
+    public static Float128<TAccelerator> Cos(Float128<TAccelerator> x)
     {
         return SinCos(x).Cos;
     }
 
-    public static Float128 CosPi(Float128 x)
+    public static Float128<TAccelerator> CosPi(Float128<TAccelerator> x)
     {
         return SinCosPi(x).CosPi;
     }
 
-    public static Float128 Sin(Float128 x)
+    public static Float128<TAccelerator> Sin(Float128<TAccelerator> x)
     {
         return SinCos(x).Sin;
     }
 
-    public static Float128 SinPi(Float128 x)
+    public static Float128<TAccelerator> SinPi(Float128<TAccelerator> x)
     {
         return SinCosPi(x).SinPi;
     }
 
-    public static (Float128 Sin, Float128 Cos) SinCos(Float128 alpha)
+    public static (Float128<TAccelerator> Sin, Float128<TAccelerator> Cos) SinCos(Float128<TAccelerator> alpha)
     {
-        Float128 x = One, y = Zero;
-        Float128 phi = Ieee754Remainder(alpha, Tau);
+        Float128<TAccelerator> x = One, y = Zero;
+        Float128<TAccelerator> phi = Ieee754Remainder(alpha, Tau);
         if (phi > HalfPi)
         {
             do
@@ -132,7 +132,7 @@ public partial struct Float128
             return (y, x);
         }
         
-        Float128 sigma, sigma_neg, theta = Zero;
+        Float128<TAccelerator> sigma, sigma_neg, theta = Zero;
         for (int i = 0; i < SINCOS_ITER_COUNT; i++)
         {
             bool stopFlag;
@@ -164,12 +164,12 @@ public partial struct Float128
         return (y / _invK_n, x / _invK_n);
     }
 
-    public static (Float128 SinPi, Float128 CosPi) SinCosPi(Float128 x)
+    public static (Float128<TAccelerator> SinPi, Float128<TAccelerator> CosPi) SinCosPi(Float128<TAccelerator> x)
     {
         return SinCos(x * Pi);
     }
 
-    public static Float128 Asin(Float128 x)
+    public static Float128<TAccelerator> Asin(Float128<TAccelerator> x)
     {
         if (x > One || x < NegativeOne)
         {
@@ -177,17 +177,17 @@ public partial struct Float128
         }
         else
         {
-            Float128 y_n = Zero;
+            Float128<TAccelerator> y_n = Zero;
             for (int n = 0; n < 25; n++)
             {
-                (Float128 sin, Float128 cos) = SinCos(y_n);
+                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCos(y_n);
                 y_n += (x - sin) / cos;
             }
             return y_n;
         }
     }
 
-    public static Float128 AsinPi(Float128 x)
+    public static Float128<TAccelerator> AsinPi(Float128<TAccelerator> x)
     {
         if (x > One || x < NegativeOne)
         {
@@ -195,17 +195,17 @@ public partial struct Float128
         }
         else
         {
-            Float128 y_n = Zero;
+            Float128<TAccelerator> y_n = Zero;
             for (int n = 0; n < 25; n++)
             {
-                (Float128 sin, Float128 cos) = SinCosPi(y_n);
+                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCosPi(y_n);
                 y_n += (x - sin) / (cos * Pi);
             }
             return y_n;
         }
     }
 
-    public static Float128 Acos(Float128 x)
+    public static Float128<TAccelerator> Acos(Float128<TAccelerator> x)
     {
         if (x > One || x < NegativeOne)
         {
@@ -213,17 +213,17 @@ public partial struct Float128
         }
         else
         {
-            Float128 y_n = One;
+            Float128<TAccelerator> y_n = One;
             for (int n = 0; n < 25; n++)
             {
-                (Float128 sin, Float128 cos) = SinCos(y_n);
+                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCos(y_n);
                 y_n += (cos - x) / sin;
             }
             return y_n;
         }
     }
 
-    public static Float128 AcosPi(Float128 x)
+    public static Float128<TAccelerator> AcosPi(Float128<TAccelerator> x)
     {
         if (x > One || x < NegativeOne)
         {
@@ -231,51 +231,51 @@ public partial struct Float128
         }
         else
         {
-            Float128 y_n = One / Pi;
+            Float128<TAccelerator> y_n = One / Pi;
             for (int n = 0; n < 25; n++)
             {
-                (Float128 sin, Float128 cos) = SinCosPi(y_n);
+                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCosPi(y_n);
                 y_n += (cos - x) / (sin * Pi);
             }
             return y_n;
         }
     }
 
-    public static Float128 Tan(Float128 alpha)
+    public static Float128<TAccelerator> Tan(Float128<TAccelerator> alpha)
     {
-        (Float128 y, Float128 x) = SinCos(alpha);
+        (Float128<TAccelerator> y, Float128<TAccelerator> x) = SinCos(alpha);
         return y / x;
     }
 
-    public static Float128 TanPi(Float128 alpha)
+    public static Float128<TAccelerator> TanPi(Float128<TAccelerator> alpha)
     {
-        (Float128 y, Float128 x) = SinCosPi(alpha);
+        (Float128<TAccelerator> y, Float128<TAccelerator> x) = SinCosPi(alpha);
         return y / x;
     }
 
-    public static Float128 Atan(Float128 x)
+    public static Float128<TAccelerator> Atan(Float128<TAccelerator> x)
     {
-        Float128 y_n = Zero;
+        Float128<TAccelerator> y_n = Zero;
         for (int n = 0; n < 25; n++)
         {
-            (Float128 sin, Float128 cos) = SinCos(y_n);
+            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCos(y_n);
             y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos, y_n);
         }
         return y_n;
     }
 
-    public static Float128 AtanPi(Float128 x)
+    public static Float128<TAccelerator> AtanPi(Float128<TAccelerator> x)
     {
-        Float128 y_n = Zero;
+        Float128<TAccelerator> y_n = Zero;
         for (int n = 0; n < 25; n++)
         {
-            (Float128 sin, Float128 cos) = SinCosPi(y_n);
+            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCosPi(y_n);
             y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos / Pi, y_n);
         }
         return y_n;
     }
 
-    public static Float128 Atan2(Float128 y, Float128 x)
+    public static Float128<TAccelerator> Atan2(Float128<TAccelerator> y, Float128<TAccelerator> x)
     {
         if (x > Zero)
         {
@@ -303,7 +303,7 @@ public partial struct Float128
         }
     }
 
-    public static Float128 Atan2Pi(Float128 y, Float128 x)
+    public static Float128<TAccelerator> Atan2Pi(Float128<TAccelerator> y, Float128<TAccelerator> x)
     {
         if (x > Zero)
         {
@@ -335,22 +335,22 @@ public partial struct Float128
 
     #region Public API (hyperbolic trig functions)
 
-    public static Float128 Cosh(Float128 x)
+    public static Float128<TAccelerator> Cosh(Float128<TAccelerator> x)
     {
         return (Exp(x) + Exp(-x)) * 0.5;
     }
 
-    public static Float128 Sinh(Float128 x)
+    public static Float128<TAccelerator> Sinh(Float128<TAccelerator> x)
     {
         return (Exp(x) - Exp(-x)) * 0.5;
     }
 
-    public static Float128 Tanh(Float128 x)
+    public static Float128<TAccelerator> Tanh(Float128<TAccelerator> x)
     {
         return (Exp(x) - Exp(-x)) / (Exp(x) + Exp(-x));
     }
 
-    public static Float128 Acosh(Float128 x)
+    public static Float128<TAccelerator> Acosh(Float128<TAccelerator> x)
     {
         if (x >= One)
         {
@@ -362,12 +362,12 @@ public partial struct Float128
         }
     }
 
-    public static Float128 Asinh(Float128 x)
+    public static Float128<TAccelerator> Asinh(Float128<TAccelerator> x)
     {
         return Log(x + Sqrt(x * x + One));
     }
 
-    public static Float128 Atanh(Float128 x)
+    public static Float128<TAccelerator> Atanh(Float128<TAccelerator> x)
     {
         if (Abs(x) < One)
         {
@@ -383,12 +383,12 @@ public partial struct Float128
 
     #region Public API (logarithm functions)
 
-    public static int ILogB(Float128 x)
+    public static int ILogB(Float128<TAccelerator> x)
     {
         return x.Exponent - (int)UInt128.LeadingZeroCount(x.Significand) + 15;
     }
 
-    private static Float128 _Log2(Float128 y, int N)
+    private static Float128<TAccelerator> _Log2(Float128<TAccelerator> y, int N)
     {
         if (N == 0)
         {
@@ -403,7 +403,7 @@ public partial struct Float128
         }
     }
 
-    public static Float128 Log2(Float128 x)
+    public static Float128<TAccelerator> Log2(Float128<TAccelerator> x)
     {
         if (x <= Zero)
         {
@@ -411,7 +411,7 @@ public partial struct Float128
         }
 
         int n = ILogB(x);
-        Float128 y = ScaleB(x, -n);
+        Float128<TAccelerator> y = ScaleB(x, -n);
         if (y == One)
         {
             return n;
@@ -422,17 +422,17 @@ public partial struct Float128
         }
     }
 
-    public static Float128 Log(Float128 x)
+    public static Float128<TAccelerator> Log(Float128<TAccelerator> x)
     {
         return Log2(x) / Log2(E);
     }
 
-    public static Float128 Log(Float128 x, Float128 newBase)
+    public static Float128<TAccelerator> Log(Float128<TAccelerator> x, Float128<TAccelerator> newBase)
     {
         return Log2(x) / Log2(newBase);
     }
 
-    public static Float128 Log10(Float128 x)
+    public static Float128<TAccelerator> Log10(Float128<TAccelerator> x)
     {
         return Log2(x) / Log2(10);
     }
@@ -441,9 +441,9 @@ public partial struct Float128
 
     #region Public API (exponential functions)
 
-    public static Float128 Exp(Float128 y)
+    public static Float128<TAccelerator> Exp(Float128<TAccelerator> y)
     {
-        Float128 x_n = One;
+        Float128<TAccelerator> x_n = One;
         if (y > 0)
         {
             for (int i = 0; i < y; i++)
@@ -467,9 +467,9 @@ public partial struct Float128
         return x_n;
     }
 
-    public static Float128 Exp10(Float128 y)
+    public static Float128<TAccelerator> Exp10(Float128<TAccelerator> y)
     {
-        Float128 x_n = One;
+        Float128<TAccelerator> x_n = One;
         if (y > 0)
         {
             for (int i = 0; i < y; i++)
@@ -485,7 +485,7 @@ public partial struct Float128
             }
         }
 
-        Float128 log10 = Log(10);
+        Float128<TAccelerator> log10 = Log(10);
         for (int n = 0; n < 25; n++)
         {
             x_n = FusedMultiplyAdd(x_n * log10, y - Log10(x_n), x_n);
@@ -494,11 +494,11 @@ public partial struct Float128
         return x_n;
     }
 
-    public static Float128 Exp2(Float128 y)
+    public static Float128<TAccelerator> Exp2(Float128<TAccelerator> y)
     {
-        Float128 x_n = ScaleB(One, (int)Floor(y));
+        Float128<TAccelerator> x_n = ScaleB(One, (int)Floor(y));
 
-        Float128 log2 = Log(2);
+        Float128<TAccelerator> log2 = Log(2);
         for (int n = 0; n < 25; n++)
         {
             x_n = FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n);
@@ -507,7 +507,7 @@ public partial struct Float128
         return x_n;
     }
 
-    public static Float128 Pow(Float128 x, Float128 y)
+    public static Float128<TAccelerator> Pow(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         return Exp(y * Log(x));
     }
@@ -516,9 +516,9 @@ public partial struct Float128
 
     #region Public API (root functions)
 
-    public static Float128 Sqrt(Float128 x)
+    public static Float128<TAccelerator> Sqrt(Float128<TAccelerator> x)
     {
-        Float128 y_n = x * 0.5;
+        Float128<TAccelerator> y_n = x * 0.5;
         for (int n = 0; n < 25; n++)
         {
             y_n = 0.5 * (y_n + x / y_n);
@@ -526,21 +526,21 @@ public partial struct Float128
         return y_n;
     }
 
-    public static Float128 Cbrt(Float128 x)
+    public static Float128<TAccelerator> Cbrt(Float128<TAccelerator> x)
     {
-        Float128 y_n = x * 0.5;
+        Float128<TAccelerator> y_n = x * 0.5;
         for (int n = 0; n < 25; n++)
         {
-            Float128 sq = y_n * y_n;
-            Float128 cb = sq * y_n;
+            Float128<TAccelerator> sq = y_n * y_n;
+            Float128<TAccelerator> cb = sq * y_n;
             y_n = x + 2.0 * cb / (3.0 * sq);
         }
         return y_n;
     }
 
-    public static Float128 RootN(Float128 A, int n)
+    public static Float128<TAccelerator> RootN(Float128<TAccelerator> A, int n)
     {
-        Float128 x_k = A, f0 = (n - One) / n, f1 = A / n;
+        Float128<TAccelerator> x_k = A, f0 = (n - One) / n, f1 = A / n;
         for (int k = 0; k < 25; k++)
         {
             x_k = FusedMultiplyAdd(x_k, f0, f1 * Pow(x_k, 1 - n));

@@ -20,11 +20,11 @@ using System.Numerics;
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (conversion methods)
 
-    static bool INumberBase<Float128>.TryConvertFromChecked<TOther>(TOther value, out Float128 result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result)
     {
         switch (value)
         {
@@ -36,12 +36,12 @@ public partial struct Float128
                 result = x;
                 return true;
             case Half x:
-                result = (Float128)x;
+                result = (Float128<TAccelerator>)x;
                 return true;
 
             // Signed integer conversions
             case Int128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case long n:
                 result = n;
@@ -58,7 +58,7 @@ public partial struct Float128
 
             // Unsigned integer conversions
             case UInt128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case ulong n:
                 result = n;
@@ -76,7 +76,7 @@ public partial struct Float128
 
         try
         {
-            result = (Float128)(object)value;
+            result = (Float128<TAccelerator>)(object)value;
             return true;
         }
         catch (InvalidCastException)
@@ -86,7 +86,7 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertFromSaturating<TOther>(TOther value, out Float128 result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
         switch (value)
         {
@@ -98,12 +98,12 @@ public partial struct Float128
                 result = x;
                 return true;
             case Half x:
-                result = (Float128)x;
+                result = (Float128<TAccelerator>)x;
                 return true;
 
             // Signed integer conversions
             case Int128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case long n:
                 result = n;
@@ -120,7 +120,7 @@ public partial struct Float128
 
             // Unsigned integer conversions
             case UInt128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case ulong n:
                 result = n;
@@ -138,7 +138,7 @@ public partial struct Float128
 
         try
         {
-            result = (Float128)(object)value;
+            result = (Float128<TAccelerator>)(object)value;
             return true;
         }
         catch (InvalidCastException)
@@ -148,7 +148,7 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertFromTruncating<TOther>(TOther value, out Float128 result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
         switch (value)
         {
@@ -160,12 +160,12 @@ public partial struct Float128
                 result = x;
                 return true;
             case Half x:
-                result = (Float128)x;
+                result = (Float128<TAccelerator>)x;
                 return true;
 
             // Signed integer conversions
             case Int128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case long n:
                 result = n;
@@ -182,7 +182,7 @@ public partial struct Float128
 
             // Unsigned integer conversions
             case UInt128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case ulong n:
                 result = n;
@@ -200,7 +200,7 @@ public partial struct Float128
 
         try
         {
-            result = (Float128)(object)value;
+            result = (Float128<TAccelerator>)(object)value;
             return true;
         }
         catch (InvalidCastException)
@@ -210,7 +210,7 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertToChecked<TOther>(Float128 value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToChecked<TOther>(Float128<TAccelerator> value, out TOther result)
     {
         switch (Type.GetTypeCode(typeof(TOther)))
         {
@@ -240,7 +240,7 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertToSaturating<TOther>(Float128 value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToSaturating<TOther>(Float128<TAccelerator> value, out TOther result)
     {
         switch (Type.GetTypeCode(typeof(TOther)))
         {
@@ -270,7 +270,7 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertToTruncating<TOther>(Float128 value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToTruncating<TOther>(Float128<TAccelerator> value, out TOther result)
     {
         switch (Type.GetTypeCode(typeof(TOther)))
         {

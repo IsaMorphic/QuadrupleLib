@@ -18,7 +18,7 @@
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Private API (constants)
 
@@ -31,43 +31,43 @@ public partial struct Float128
 
     #region Public API (constants)
 
-    private static readonly Float128 _qNaN = new Float128(UInt128.One, short.MaxValue, false);
-    private static readonly Float128 _sNaN = new Float128(UInt128.One, short.MaxValue, true);
+    private static readonly Float128<TAccelerator> _qNaN = new Float128<TAccelerator>(UInt128.One, short.MaxValue, false);
+    private static readonly Float128<TAccelerator> _sNaN = new Float128<TAccelerator>(UInt128.One, short.MaxValue, true);
 
-    private static readonly Float128 _pInf = new Float128(UInt128.Zero, short.MaxValue, false);
-    private static readonly Float128 _nInf = new Float128(UInt128.Zero, short.MaxValue, true);
+    private static readonly Float128<TAccelerator> _pInf = new Float128<TAccelerator>(UInt128.Zero, short.MaxValue, false);
+    private static readonly Float128<TAccelerator> _nInf = new Float128<TAccelerator>(UInt128.Zero, short.MaxValue, true);
 
-    public static Float128 PositiveInfinity => _pInf;
-    public static Float128 NegativeInfinity => _nInf;
-    public static Float128 NaN => _qNaN;
+    public static Float128<TAccelerator> PositiveInfinity => _pInf;
+    public static Float128<TAccelerator> NegativeInfinity => _nInf;
+    public static Float128<TAccelerator> NaN => _qNaN;
 
-    private static readonly Float128 _epsilon = new Float128(UInt128.One, -EXPONENT_BIAS + 1, false);
-    public static Float128 Epsilon => _epsilon;
+    private static readonly Float128<TAccelerator> _epsilon = new Float128<TAccelerator>(UInt128.One, -EXPONENT_BIAS + 1, false);
+    public static Float128<TAccelerator> Epsilon => _epsilon;
 
-    public static Float128 One => 1.0;
-    public static Float128 Zero => new();
-    public static Float128 NegativeOne => -1.0;
+    public static Float128<TAccelerator> One => 1.0;
+    public static Float128<TAccelerator> Zero => new();
+    public static Float128<TAccelerator> NegativeOne => -1.0;
 
     public static int Radix => 2;
-    public static Float128 AdditiveIdentity => Zero;
-    public static Float128 MultiplicativeIdentity => One;
+    public static Float128<TAccelerator> AdditiveIdentity => Zero;
+    public static Float128<TAccelerator> MultiplicativeIdentity => One;
 
-    public static Float128 NegativeZero => new(UInt128.Zero, 0, true);
+    public static Float128<TAccelerator> NegativeZero => new(UInt128.Zero, 0, true);
 
-    private static readonly Float128 _e = Parse("2.7182818284590452353602874713526625");
-    public static Float128 E => _e;
+    private static readonly Float128<TAccelerator> _e = Parse("2.7182818284590452353602874713526625");
+    public static Float128<TAccelerator> E => _e;
     
-    private static readonly Float128 _quarterPi = Parse("0.7853981633974483096156608458198757");
-    public static Float128 QuarterPi = _quarterPi;
+    private static readonly Float128<TAccelerator> _quarterPi = Parse("0.7853981633974483096156608458198757");
+    public static Float128<TAccelerator> QuarterPi = _quarterPi;
 
-    private static readonly Float128 _halfPi = Parse("1.5707963267948966192313216916397514");
-    public static Float128 HalfPi = _halfPi;
+    private static readonly Float128<TAccelerator> _halfPi = Parse("1.5707963267948966192313216916397514");
+    public static Float128<TAccelerator> HalfPi = _halfPi;
 
-    private static readonly Float128 _pi = Parse("3.1415926535897932384626433832795028");
-    public static Float128 Pi => _pi;
+    private static readonly Float128<TAccelerator> _pi = Parse("3.1415926535897932384626433832795028");
+    public static Float128<TAccelerator> Pi => _pi;
 
-    private static readonly Float128 _tau = Parse("6.2831853071795864769252867665590058");
-    public static Float128 Tau => _tau;
+    private static readonly Float128<TAccelerator> _tau = Parse("6.2831853071795864769252867665590058");
+    public static Float128<TAccelerator> Tau => _tau;
 
     #endregion
 }

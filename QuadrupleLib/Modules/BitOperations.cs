@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (storage representation related)
 
@@ -98,35 +98,35 @@ public partial struct Float128
         return flag;
     }
 
-    public static Float128 BitDecrement(Float128 x)
+    public static Float128<TAccelerator> BitDecrement(Float128<TAccelerator> x)
     {
         UInt128 newSignificand = x.Significand - 1;
         int normDist = (int)UInt128.LeadingZeroCount(newSignificand) - 15;
         if (normDist > 0)
         {
-            return new Float128(newSignificand << normDist, x.Exponent - normDist, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand << normDist, x.Exponent - normDist, x.RawSignBit);
         }
         else
         {
-            return new Float128(newSignificand, x.Exponent, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand, x.Exponent, x.RawSignBit);
         }
     }
 
-    public static Float128 BitIncrement(Float128 x)
+    public static Float128<TAccelerator> BitIncrement(Float128<TAccelerator> x)
     {
         UInt128 newSignificand = x.Significand + 1;
         int normDist = 15 - (int)UInt128.LeadingZeroCount(newSignificand);
         if (normDist > 0)
         {
-            return new Float128(newSignificand >> normDist, x.Exponent + normDist, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand >> normDist, x.Exponent + normDist, x.RawSignBit);
         }
         else
         {
-            return new Float128(newSignificand, x.Exponent, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand, x.Exponent, x.RawSignBit);
         }
     }
 
-    public static Float128 ScaleB(Float128 x, int n)
+    public static Float128<TAccelerator> ScaleB(Float128<TAccelerator> x, int n)
     {
         if (IsNaN(x)) return _qNaN;
         else if (x == Zero) return Zero;
@@ -153,33 +153,33 @@ public partial struct Float128
                 newSignificand++; // increment pth bit from the left
             }
 
-            return new Float128(newSignificand >> 3, -EXPONENT_BIAS + 1, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand >> 3, -EXPONENT_BIAS + 1, x.RawSignBit);
         }
         else
         {
             normDist = (int)UInt128.LeadingZeroCount(x.Significand) - 15;
-            return new Float128(x.RawSignificand << normDist, newExponent - normDist, x.RawSignBit);
+            return new Float128<TAccelerator>(x.RawSignificand << normDist, newExponent - normDist, x.RawSignBit);
         }
     }
 
-    public static Float128 operator &(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator &(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        return new Float128(left._rawBits & right._rawBits);
+        return new Float128<TAccelerator>(left._rawBits & right._rawBits);
     }
 
-    public static Float128 operator |(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator |(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        return new Float128(left._rawBits | right._rawBits);
+        return new Float128<TAccelerator>(left._rawBits | right._rawBits);
     }
 
-    public static Float128 operator ^(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator ^(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        return new Float128(left._rawBits ^ right._rawBits);
+        return new Float128<TAccelerator>(left._rawBits ^ right._rawBits);
     }
 
-    public static Float128 operator ~(Float128 value)
+    public static Float128<TAccelerator> operator ~(Float128<TAccelerator> value)
     {
-        return new Float128(~value._rawBits);
+        return new Float128<TAccelerator>(~value._rawBits);
     }
 
     #endregion
