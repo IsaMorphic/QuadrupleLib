@@ -26,71 +26,6 @@ public partial struct Float128
     #region Private API: Full-width 256-bit Multiplication Utility
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct BigMul128
-    {
-
-#if BIGENDIAN
-        public uint _3;
-        public uint _2;
-        public uint _1;
-        public uint _0;
-#else
-        public uint _0;
-        public uint _1;
-        public uint _2;
-        public uint _3;
-#endif
-
-        private static BigMul128 Add(BigMul128 left, BigMul128 right)
-        {
-            uint carry;
-            BigMul128 result = new BigMul128();
-
-            result._0 = left._0 + right._0;
-
-            carry = (uint)Math.Max(0, left._0.CompareTo(result._0));
-            result._1 = left._1 + right._1 + carry;
-
-            carry = (uint)Math.Max(0, left._1.CompareTo(result._1));
-            result._2 = left._2 + right._2 + carry;
-
-            carry = (uint)Math.Max(0, left._2.CompareTo(result._2));
-            result._3 = left._3 + right._3 + carry;
-
-            return result;
-        }
-
-        private static BigMul128 Multiply(ulong left, uint right)
-        {
-            var result = new BigMul128();
-
-            ulong prod1 = (uint)left * (ulong)right;
-            result._0 = (uint)prod1;
-
-            ulong prod2 = (left >> 32) * right;
-            result._1 = (uint)prod2 + (uint)(prod1 >> 32);
-            result._2 = (uint)(prod2 >> 32) + (uint)Math.Max(0, ((uint)prod2).CompareTo((uint)prod2 + (uint)(prod1 >> 32)));
-
-            return result;
-        }
-
-        public static BigMul128 Multiply(ulong left, ulong right)
-        {
-            var leftProd = Multiply(left, (uint)right);
-            var rightProd = Multiply(left, (uint)(right >> 32));
-
-            var rightShift = new BigMul128 // 32-bit left-shift
-            {
-                _1 = rightProd._0,
-                _2 = rightProd._1,
-                _3 = rightProd._2,
-            };
-
-            return Add(leftProd, rightShift);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     private struct BigMul256
     {
 
@@ -129,18 +64,10 @@ public partial struct Float128
         {
             var result = new BigMul256();
 
-            BigMul128 prod1 = BigMul128.Multiply((ulong)left, right);
-
-            var lo1 = prod1._0 | ((ulong)prod1._1 << 32);
-            var hi1 = prod1._2 | ((ulong)prod1._3 << 32);
-
+            ulong hi1 = Math.BigMul((ulong)left, right, out ulong lo1);
             result._0 = lo1;
 
-            BigMul128 prod2 = BigMul128.Multiply((ulong)(left >> 64), right);
-
-            var lo2 = prod2._0 | ((ulong)prod2._1 << 32);
-            var hi2 = prod2._2 | ((ulong)prod2._3 << 32);
-
+            ulong hi2 = Math.BigMul((ulong)(left >> 64), right, out ulong lo2);
             result._1 = lo2 + hi1;
             result._2 = hi2 + (ulong)Math.Max(0, lo2.CompareTo(lo2 + hi1));
 
