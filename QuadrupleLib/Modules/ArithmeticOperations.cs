@@ -616,7 +616,7 @@ public partial struct Float128
 
             // set sticky bit
             quotSignificand &= UInt128.MaxValue << 1;
-            quotSignificand |= (UInt128)UInt256.Min(remSignificand + (normDist < 0 ? fullSignificand & ((UInt256.One << -normDist) - 1) : 0), 1);
+            quotSignificand |= (UInt128)UInt256.Min(remSignificand + fullSignificand & ((UInt256.One << normDist) - 1), 1);
 
             if ((((quotSignificand & 1) |
                  ((quotSignificand >> 2) & 1)) &
@@ -627,7 +627,7 @@ public partial struct Float128
 
             if (quotExponent < -EXPONENT_BIAS + 1)
             {
-                var finalAdjust = (int)UInt256.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
+                var finalAdjust = (int)UInt128.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
                 return new Float128(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
             }
             else
