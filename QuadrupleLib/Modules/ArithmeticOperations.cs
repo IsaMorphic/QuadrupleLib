@@ -16,147 +16,12 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Runtime.InteropServices;
+using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
 {
-
-    #region Private API: Full-width 256-bit Multiplication Utility
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct BigMul256
-    {
-
-#if BIGENDIAN
-        public ulong _3;
-        public ulong _2;
-        public ulong _1;
-        public ulong _0;
-#else
-        public ulong _0;
-        public ulong _1;
-        public ulong _2;
-        public ulong _3;
-#endif
-
-        private static BigMul256 Add(BigMul256 left, BigMul256 right)
-        {
-            ulong carry;
-            BigMul256 result = new BigMul256();
-
-            result._0 = left._0 + right._0;
-
-            carry = (ulong)Math.Max(0, left._0.CompareTo(result._0));
-            result._1 = left._1 + right._1 + carry;
-
-            carry = (ulong)Math.Max(0, left._1.CompareTo(result._1));
-            result._2 = left._2 + right._2 + carry;
-
-            carry = (ulong)Math.Max(0, left._2.CompareTo(result._2));
-            result._3 = left._3 + right._3 + carry;
-
-            return result;
-        }
-
-        private static BigMul256 Multiply(UInt128 left, ulong right)
-        {
-            var result = new BigMul256();
-
-            (ulong lo1, ulong hi1) = TAccelerator.BigMul((ulong)left, right);
-            result._0 = lo1;
-
-            (ulong lo2, ulong hi2) = TAccelerator.BigMul((ulong)(left >> 64), right);
-            result._1 = lo2 + hi1;
-            result._2 = hi2 + (ulong)Math.Max(0, lo2.CompareTo(lo2 + hi1));
-
-            return result;
-        }
-
-        public static BigMul256 Multiply(UInt128 left, UInt128 right)
-        {
-            var leftProd = Multiply(left, (ulong)right);
-            var rightProd = Multiply(left, (ulong)(right >> 64));
-
-            var rightShift = new BigMul256 // 64-bit left-shift
-            {
-                _1 = rightProd._0,
-                _2 = rightProd._1,
-                _3 = rightProd._2,
-            };
-
-            return Add(leftProd, rightShift);
-        }
-    }
-
-    #endregion
-
-    #region Private API: Software-based 128-bit Division Routine
-
-    private static UInt128 Divide(UInt128 n, ulong d, out ulong r)
-    {
-        uint n_0 = (uint)n;
-        uint n_1 = (uint)(n >> 32);
-        ulong n_2 = (ulong)(n >> 64);
-
-        (UInt128 q_2, ulong r_2) = Math.DivRem(n_2, d);
-        (UInt128 q_1, ulong r_1) = Math.DivRem((r_2 << 32) | n_1, d);
-        (UInt128 q_0, r) = Math.DivRem((r_1 << 32) | n_0, d);
-
-        return q_0 | (q_1 << 32) | (q_2 << 64);
-    }
-
-    private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
-    {
-        var dLoBits = (ulong)d;
-        var dHiBits = (ulong)(d >> 64);
-        if (d != 0 && d > n)
-        {
-            r = n; return UInt128.Zero;
-        }
-        else if (d == n)
-        {
-            r = UInt128.Zero; return UInt128.One;
-        }
-        else if (dHiBits > 0)
-        {
-            UInt128 q = UInt128.Zero; r = n;
-            while (r >= d)
-            {
-                var p = Divide(r, dHiBits, out ulong _);
-                var p_hi = (ulong)(p >> 64);
-
-                var prod = BigMul256.Multiply(d, p_hi);
-                UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
-                while (p_hi > 0 && r < s)
-                {
-                    prod = BigMul256.Multiply(d, p_hi >>= 1);
-                    s = prod._0 | ((UInt128)prod._1 << 64);
-                }
-
-                if (p_hi == 0)
-                {
-                    ++q; r -= d;
-                    break;
-                }
-                else
-                {
-                    q += p_hi; r -= s;
-                }
-            }
-
-            return q;
-        }
-        else
-        {
-            var q = Divide(n, dLoBits, out ulong _r);
-            r = _r; return q;
-        }
-    }
-
-    #endregion
-
     #region Private API: Software-based 256-bit Division Routine
 
     private static UInt256 Divide(UInt256 n, UInt128 d, out UInt128 r)
@@ -165,9 +30,9 @@ public partial struct Float128<TAccelerator>
         ulong n_1 = (ulong)(n >> 64);
         UInt128 n_2 = (UInt128)(n >> 128);
 
-        UInt256 q_2 = Divide(n_2, d, out UInt128 r_2);
-        UInt256 q_1 = Divide((r_2 << 64) | n_1, d, out UInt128 r_1);
-        UInt256 q_0 = Divide((r_1 << 64) | n_0, d, out r);
+        (UInt256 q_2, UInt128 r_2) = TAccelerator.DivRem(n_2, d);
+        (UInt256 q_1, UInt128 r_1) = TAccelerator.DivRem((r_2 << 64) | n_1, d);
+        (UInt256 q_0, r) = TAccelerator.DivRem((r_1 << 64) | n_0, d);
 
         return q_0 | (q_1 << 64) | (q_2 << 128);
     }
@@ -197,7 +62,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+            bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
         }
 
         var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
@@ -434,7 +299,7 @@ public partial struct Float128<TAccelerator>
             }
             else
             {
-                bigSignificand = BigMul256.Multiply(left.Significand, right.Significand);
+                bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
             }
 
             var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);

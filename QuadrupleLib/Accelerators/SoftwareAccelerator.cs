@@ -1,83 +1,85 @@
-﻿using System.Runtime.InteropServices;
+﻿using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib.Accelerators;
 
 public sealed class SoftwareAccelerator : IAccelerator
 {
-    [StructLayout(LayoutKind.Sequential)]
-    private struct BigMul128
+    #region Private API: unsigned 128-bit division routine
+
+    private static UInt128 Divide(UInt128 n, ulong d, out ulong r)
     {
+        uint n_0 = (uint)n;
+        uint n_1 = (uint)(n >> 32);
+        ulong n_2 = (ulong)(n >> 64);
 
-#if BIGENDIAN
-        public uint _3;
-        public uint _2;
-        public uint _1;
-        public uint _0;
-#else
-        public uint _0;
-        public uint _1;
-        public uint _2;
-        public uint _3;
-#endif
+        (UInt128 q_2, ulong r_2) = Math.DivRem(n_2, d);
+        (UInt128 q_1, ulong r_1) = Math.DivRem((r_2 << 32) | n_1, d);
+        (UInt128 q_0, r) = Math.DivRem((r_1 << 32) | n_0, d);
 
-        private static BigMul128 Add(BigMul128 left, BigMul128 right)
+        return q_0 | (q_1 << 32) | (q_2 << 64);
+    }
+
+    private static UInt128 Divide(UInt128 n, UInt128 d, out UInt128 r)
+    {
+        var dLoBits = (ulong)d;
+        var dHiBits = (ulong)(d >> 64);
+        if (d != 0 && d > n)
         {
-            uint carry;
-            BigMul128 result = new BigMul128();
-
-            result._0 = left._0 + right._0;
-
-            carry = (uint)Math.Max(0, left._0.CompareTo(result._0));
-            result._1 = left._1 + right._1 + carry;
-
-            carry = (uint)Math.Max(0, left._1.CompareTo(result._1));
-            result._2 = left._2 + right._2 + carry;
-
-            carry = (uint)Math.Max(0, left._2.CompareTo(result._2));
-            result._3 = left._3 + right._3 + carry;
-
-            return result;
+            r = n; return UInt128.Zero;
         }
-
-        private static BigMul128 Multiply(ulong left, uint right)
+        else if (d == n)
         {
-            var result = new BigMul128();
-
-            ulong prod1 = (uint)left * (ulong)right;
-            result._0 = (uint)prod1;
-
-            ulong prod2 = (left >> 32) * right;
-            result._1 = (uint)prod2 + (uint)(prod1 >> 32);
-            result._2 = (uint)(prod2 >> 32) + (uint)Math.Max(0, ((uint)prod2).CompareTo((uint)prod2 + (uint)(prod1 >> 32)));
-
-            return result;
+            r = UInt128.Zero; return UInt128.One;
         }
-
-        public static BigMul128 Multiply(ulong left, ulong right)
+        else if (dHiBits > 0)
         {
-            var leftProd = Multiply(left, (uint)right);
-            var rightProd = Multiply(left, (uint)(right >> 32));
-
-            var rightShift = new BigMul128 // 32-bit left-shift
+            UInt128 q = UInt128.Zero; r = n;
+            while (r >= d)
             {
-                _1 = rightProd._0,
-                _2 = rightProd._1,
-                _3 = rightProd._2,
-            };
+                var p = Divide(r, dHiBits, out ulong _);
+                var p_hi = (ulong)(p >> 64);
 
-            return Add(leftProd, rightShift);
+                var prod = BigMul256.Multiply<SoftwareAccelerator>(d, p_hi);
+                UInt128 s = prod._0 | ((UInt128)prod._1 << 64);
+                while (p_hi > 0 && r < s)
+                {
+                    prod = BigMul256.Multiply<SoftwareAccelerator>(d, p_hi >>= 1);
+                    s = prod._0 | ((UInt128)prod._1 << 64);
+                }
+
+                if (p_hi == 0)
+                {
+                    ++q; r -= d;
+                    break;
+                }
+                else
+                {
+                    q += p_hi; r -= s;
+                }
+            }
+
+            return q;
+        }
+        else
+        {
+            var q = Divide(n, dLoBits, out ulong _r);
+            r = _r; return q;
         }
     }
 
+    #endregion
+
     private SoftwareAccelerator() { }
 
-    static (ulong lo, ulong hi) IAccelerator.BigMul(ulong a, ulong b)
+    static ulong IAccelerator.BigMul(ulong a, ulong b, out ulong low)
     {
         BigMul128 prod = BigMul128.Multiply(a, b);
+        low = prod._0 | ((ulong)prod._1 << 32);
+        return prod._2 | ((ulong)prod._3 << 32);
+    }
 
-        ulong lo = prod._0 | ((ulong)prod._1 << 32);
-        ulong hi = prod._2 | ((ulong)prod._3 << 32);
-
-        return (lo, hi);
+    static (UInt128 Quotient, UInt128 Remainder) IAccelerator.DivRem(UInt128 a, UInt128 b)
+    {
+        return (Divide(a, b, out UInt128 r), r);
     }
 }

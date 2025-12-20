@@ -4,9 +4,13 @@ public sealed class DefaultAccelerator : IAccelerator
 {
     private DefaultAccelerator() { }
 
-    static (ulong lo, ulong hi) IAccelerator.BigMul(ulong a, ulong b)
+    static ulong IAccelerator.BigMul(ulong a, ulong b, out ulong low)
     {
-        ulong hi = Math.BigMul(a, b, out ulong lo);
-        return (lo, hi);
+        return Math.BigMul(a, b, out low);
+    }
+
+    static (UInt128 Quotient, UInt128 Remainder) IAccelerator.DivRem(UInt128 a, UInt128 b)
+    {
+        return UInt128.DivRem(a, b);
     }
 }

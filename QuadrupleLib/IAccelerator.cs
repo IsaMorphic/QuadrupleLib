@@ -20,5 +20,7 @@ namespace QuadrupleLib;
 
 public interface IAccelerator
 {
-    static abstract (ulong lo, ulong hi) BigMul(ulong a, ulong b);
+    static abstract ulong BigMul(ulong a, ulong b, out ulong low);
+
+    static abstract (UInt128 Quotient, UInt128 Remainder) DivRem(UInt128 a, UInt128 b);
 }
