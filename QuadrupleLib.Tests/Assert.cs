@@ -16,6 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+global using Float128 = QuadrupleLib.Float128<QuadrupleLib.Accelerators.DefaultAccelerator>;
+
 using QuadrupleLib.Tests.Assertions.Exceptions;
 using QuadrupleLib.Tests.Assertions.Types;
 using System.Numerics;
