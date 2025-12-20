@@ -20,7 +20,7 @@ using System.Numerics;
 
 namespace QuadrupleLib;
 
-public partial struct Float128<TAccelerator> : 
+public partial struct Float128<TAccelerator> :
     IBinaryFloatingPointIeee754<Float128<TAccelerator>>
     where TAccelerator : IAccelerator
 {
@@ -40,5 +40,17 @@ public partial struct Float128<TAccelerator> :
         _thetaTable = Enumerable.Range(0, SINCOS_ITER_COUNT)
             .Select(AtanPow2).ToArray();
         _invK_n = ComputeInverseK(SINCOS_ITER_COUNT);
+    }
+
+    public static Float128<UAccelerator> WithAccelerator<UAccelerator>(Float128<TAccelerator> x)
+        where UAccelerator : IAccelerator
+    {
+        return new Float128<UAccelerator>(x._rawBits);
+    }
+
+    public Float128<UAccelerator> WithAccelerator<UAccelerator>()
+        where UAccelerator : IAccelerator
+    {
+        return new Float128<UAccelerator>(_rawBits);
     }
 }
