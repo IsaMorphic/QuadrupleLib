@@ -21,21 +21,21 @@ using System.Runtime.CompilerServices;
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (complex number related)
 
-    public static bool IsRealNumber(Float128 value)
+    public static bool IsRealNumber(Float128<TAccelerator> value)
     {
         return true;
     }
 
-    public static bool IsImaginaryNumber(Float128 value)
+    public static bool IsImaginaryNumber(Float128<TAccelerator> value)
     {
         return false;
     }
 
-    public static bool IsComplexNumber(Float128 value)
+    public static bool IsComplexNumber(Float128<TAccelerator> value)
     {
         return false;
     }
@@ -44,22 +44,22 @@ public partial struct Float128
 
     #region Public API (infinity related)
 
-    public static bool IsFinite(Float128 value)
+    public static bool IsFinite(Float128<TAccelerator> value)
     {
         return value.RawExponent != short.MaxValue;
     }
 
-    public static bool IsInfinity(Float128 value)
+    public static bool IsInfinity(Float128<TAccelerator> value)
     {
         return value.RawExponent == short.MaxValue && value.RawSignificand == UInt128.Zero;
     }
 
-    public static bool IsPositiveInfinity(Float128 value)
+    public static bool IsPositiveInfinity(Float128<TAccelerator> value)
     {
         return !value.RawSignBit && value.RawExponent == short.MaxValue && value.RawSignificand == UInt128.Zero;
     }
 
-    public static bool IsNegativeInfinity(Float128 value)
+    public static bool IsNegativeInfinity(Float128<TAccelerator> value)
     {
         return value.RawSignBit && value.RawExponent == short.MaxValue && value.RawSignificand == UInt128.Zero;
     }
@@ -68,28 +68,28 @@ public partial struct Float128
 
     #region Public API (representation related)
 
-    public static bool IsPow2(Float128 value)
+    public static bool IsPow2(Float128<TAccelerator> value)
     {
         return (value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) ||
             value.RawSignificand == UInt128.Zero;
     }
 
-    public static bool IsCanonical(Float128 value)
+    public static bool IsCanonical(Float128<TAccelerator> value)
     {
         return UInt128.LeadingZeroCount(value.RawSignificand) - 15 == 0;
     }
 
-    public static bool IsNormal(Float128 value)
+    public static bool IsNormal(Float128<TAccelerator> value)
     {
         return value.RawExponent != 0;
     }
 
-    public static bool IsSubnormal(Float128 value)
+    public static bool IsSubnormal(Float128<TAccelerator> value)
     {
         return value.RawExponent == 0;
     }
 
-    public static bool IsNaN(Float128 value)
+    public static bool IsNaN(Float128<TAccelerator> value)
     {
         return value.RawExponent == short.MaxValue && value.RawSignificand != UInt128.Zero;
     }
@@ -98,38 +98,38 @@ public partial struct Float128
 
     #region Public API (sign-magnitude related)
 
-    public static Float128 operator +(Float128 value)
+    public static Float128<TAccelerator> operator +(Float128<TAccelerator> value)
     {
         return value;
     }
 
-    public static Float128 operator -(Float128 value)
+    public static Float128<TAccelerator> operator -(Float128<TAccelerator> value)
     {
         value.RawSignBit = !value.RawSignBit;
         return value;
     }
 
-    public static bool IsNegative(Float128 value)
+    public static bool IsNegative(Float128<TAccelerator> value)
     {
         return value.RawSignBit && (value.RawExponent != short.MaxValue || value.RawSignificand == UInt128.Zero);
     }
 
-    public static bool IsPositive(Float128 value)
+    public static bool IsPositive(Float128<TAccelerator> value)
     {
         return !value.RawSignBit && (value.RawExponent != short.MaxValue || value.RawSignificand == UInt128.Zero);
     }
 
-    public static bool IsZero(Float128 value)
+    public static bool IsZero(Float128<TAccelerator> value)
     {
         return value.RawExponent == 0 && value.RawSignificand == UInt128.Zero;
     }
 
-    public static Float128 Abs(Float128 value)
+    public static Float128<TAccelerator> Abs(Float128<TAccelerator> value)
     {
-        return new Float128(value._rawBits & ~SIGNBIT_MASK);
+        return new Float128<TAccelerator>(value._rawBits & ~SIGNBIT_MASK);
     }
 
-    private static Float128 Sign(Float128 value)
+    private static Float128<TAccelerator> Sign(Float128<TAccelerator> value)
     {
         if (IsZero(value))
             return Zero;
@@ -141,7 +141,7 @@ public partial struct Float128
             return value;
     }
 
-    public static Float128 MaxMagnitude(Float128 x, Float128 y)
+    public static Float128<TAccelerator> MaxMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (x > y)
             return x;
@@ -149,7 +149,7 @@ public partial struct Float128
             return y;
     }
 
-    public static Float128 MaxMagnitudeNumber(Float128 x, Float128 y)
+    public static Float128<TAccelerator> MaxMagnitudeNumber(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (IsNaN(x))
             return y;
@@ -161,7 +161,7 @@ public partial struct Float128
             return y;
     }
 
-    public static Float128 MinMagnitude(Float128 x, Float128 y)
+    public static Float128<TAccelerator> MinMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (x < y)
             return x;
@@ -169,7 +169,7 @@ public partial struct Float128
             return y;
     }
 
-    public static Float128 MinMagnitudeNumber(Float128 x, Float128 y)
+    public static Float128<TAccelerator> MinMagnitudeNumber(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (IsNaN(x))
             return y;
@@ -185,7 +185,7 @@ public partial struct Float128
 
     #region Public API (conversion operators)
 
-    public static explicit operator Float128(Half x)
+    public static explicit operator Float128<TAccelerator>(Half x)
     {
         if (Half.IsNaN(x))
         {
@@ -215,7 +215,7 @@ public partial struct Float128
         }
     }
 
-    public static explicit operator Half(Float128 x)
+    public static explicit operator Half(Float128<TAccelerator> x)
     {
         if (IsNaN(x))
         {
@@ -265,7 +265,7 @@ public partial struct Float128
         }
     }
 
-    public static implicit operator Float128(float x)
+    public static implicit operator Float128<TAccelerator>(float x)
     {
         if (float.IsNaN(x))
         {
@@ -295,7 +295,7 @@ public partial struct Float128
         }
     }
 
-    public static explicit operator float(Float128 x)
+    public static explicit operator float(Float128<TAccelerator> x)
     {
         if (IsNaN(x))
         {
@@ -345,7 +345,7 @@ public partial struct Float128
         }
     }
 
-    public static implicit operator Float128(double x)
+    public static implicit operator Float128<TAccelerator>(double x)
     {
         if (double.IsNaN(x))
         {
@@ -375,7 +375,7 @@ public partial struct Float128
         }
     }
 
-    public static explicit operator double(Float128 x)
+    public static explicit operator double(Float128<TAccelerator> x)
     {
         if (IsNaN(x))
         {

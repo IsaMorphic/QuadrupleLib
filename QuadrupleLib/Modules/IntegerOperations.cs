@@ -18,21 +18,21 @@
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (integer related)
 
-    public static bool IsInteger(Float128 value)
+    public static bool IsInteger(Float128<TAccelerator> value)
     {
         return value == Round(value);
     }
 
-    public static bool IsEvenInteger(Float128 value)
+    public static bool IsEvenInteger(Float128<TAccelerator> value)
     {
         return IsInteger(value) && value.Exponent >= 1;
     }
 
-    public static bool IsOddInteger(Float128 value)
+    public static bool IsOddInteger(Float128<TAccelerator> value)
     {
         return IsInteger(value) && value.Exponent < 1;
     }
@@ -41,9 +41,9 @@ public partial struct Float128
 
     #region Public API (rounding related)
 
-    private static readonly Float128[] _pow10Table;
+    private static readonly Float128<TAccelerator>[] _pow10Table;
 
-    public static Float128 Round(Float128 x, int digits, MidpointRounding mode = MidpointRounding.ToEven)
+    public static Float128<TAccelerator> Round(Float128<TAccelerator> x, int digits, MidpointRounding mode = MidpointRounding.ToEven)
     {
         if (mode != MidpointRounding.ToEven)
         {
@@ -61,14 +61,14 @@ public partial struct Float128
         }
         else
         {
-            Float128 scaled = x * _pow10Table[digits];
+            Float128<TAccelerator> scaled = x * _pow10Table[digits];
             return Round(scaled) / _pow10Table[digits];
         }
     }
 
-    public static Float128 Round(Float128 value)
+    public static Float128<TAccelerator> Round(Float128<TAccelerator> value)
     {
-        Float128 result;
+        Float128<TAccelerator> result;
         int unbiasedExponent = value.Exponent;
 
         if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
@@ -87,9 +87,9 @@ public partial struct Float128
         return result;
     }
 
-    public static Float128 Floor(Float128 value)
+    public static Float128<TAccelerator> Floor(Float128<TAccelerator> value)
     {
-        Float128 result;
+        Float128<TAccelerator> result;
         int unbiasedExponent = value.Exponent;
 
         if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
@@ -115,9 +115,9 @@ public partial struct Float128
         return result;
     }
 
-    public static Float128 Ceiling(Float128 value)
+    public static Float128<TAccelerator> Ceiling(Float128<TAccelerator> value)
     {
-        Float128 result;
+        Float128<TAccelerator> result;
         int unbiasedExponent = value.Exponent;
 
         if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
@@ -147,7 +147,7 @@ public partial struct Float128
 
     #region Public API (conversion operators)
 
-    public static implicit operator Float128(sbyte n)
+    public static implicit operator Float128<TAccelerator>(sbyte n)
     {
         bool signBit;
         UInt128 mantissa;
@@ -166,16 +166,16 @@ public partial struct Float128
         }
 
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
-    public static explicit operator sbyte(Float128 x)
+    public static explicit operator sbyte(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return x.RawSignBit ? (sbyte)-n : (sbyte)n;
     }
 
-    public static implicit operator Float128(short n)
+    public static implicit operator Float128<TAccelerator>(short n)
     {
         bool signBit;
         UInt128 mantissa;
@@ -194,16 +194,16 @@ public partial struct Float128
         }
 
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
-    public static explicit operator short(Float128 x)
+    public static explicit operator short(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return x.RawSignBit ? (short)-n : (short)n;
     }
 
-    public static implicit operator Float128(int n)
+    public static implicit operator Float128<TAccelerator>(int n)
     {
         bool signBit;
         UInt128 mantissa;
@@ -222,16 +222,16 @@ public partial struct Float128
         }
 
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
-    public static explicit operator int(Float128 x)
+    public static explicit operator int(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return x.RawSignBit ? (int)-n : (int)n;
     }
 
-    public static implicit operator Float128(long n)
+    public static implicit operator Float128<TAccelerator>(long n)
     {
         bool signBit;
         UInt128 mantissa;
@@ -250,16 +250,16 @@ public partial struct Float128
         }
 
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, signBit);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
-    public static explicit operator long(Float128 x)
+    public static explicit operator long(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return x.RawSignBit ? (long)-n : (long)n;
     }
 
-    public static explicit operator Float128(Int128 n)
+    public static explicit operator Float128<TAccelerator>(Int128 n)
     {
         bool signBit;
         UInt128 mantissa;
@@ -300,68 +300,68 @@ public partial struct Float128
                 break;
         }
 
-        return new Float128(rounded >> 3, 112 - expShift, signBit);
+        return new Float128<TAccelerator>(rounded >> 3, 112 - expShift, signBit);
     }
 
-    public static explicit operator Int128(Float128 x)
+    public static explicit operator Int128(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return x.RawSignBit ? -n : n;
     }
 
-    public static implicit operator Float128(byte n)
+    public static implicit operator Float128<TAccelerator>(byte n)
     {
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
-    public static explicit operator byte(Float128 x)
+    public static explicit operator byte(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return (byte)(x.RawSignBit ? -n : n);
     }
 
-    public static implicit operator Float128(ushort n)
+    public static implicit operator Float128<TAccelerator>(ushort n)
     {
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
-    public static explicit operator ushort(Float128 x)
+    public static explicit operator ushort(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return (ushort)(x.RawSignBit ? -n : n);
     }
 
-    public static implicit operator Float128(uint n)
+    public static implicit operator Float128<TAccelerator>(uint n)
     {
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
-    public static explicit operator uint(Float128 x)
+    public static explicit operator uint(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return (uint)(x.RawSignBit ? -n : n);
     }
 
-    public static implicit operator Float128(ulong n)
+    public static implicit operator Float128<TAccelerator>(ulong n)
     {
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
-        return new Float128(mantissa << leftShift, 112 - leftShift, false);
+        return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
-    public static explicit operator ulong(Float128 x)
+    public static explicit operator ulong(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return (ulong)(x.RawSignBit ? -n : n);
     }
 
-    public static explicit operator Float128(UInt128 n)
+    public static explicit operator Float128<TAccelerator>(UInt128 n)
     {
         UInt128 rounded;
         int expShift = (int)UInt128.LeadingZeroCount(n) - 15;
@@ -386,10 +386,10 @@ public partial struct Float128
                 break;
         }
 
-        return new Float128(rounded >> 3, 112 - expShift, false);
+        return new Float128<TAccelerator>(rounded >> 3, 112 - expShift, false);
     }
 
-    public static explicit operator UInt128(Float128 x)
+    public static explicit operator UInt128(Float128<TAccelerator> x)
     {
         Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
         return (UInt128)(x.RawSignBit ? -n : n);

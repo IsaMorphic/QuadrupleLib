@@ -20,75 +20,10 @@ using System.Runtime.InteropServices;
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
 
     #region Private API: Full-width 256-bit Multiplication Utility
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct BigMul128
-    {
-
-#if BIGENDIAN
-        public uint _3;
-        public uint _2;
-        public uint _1;
-        public uint _0;
-#else
-        public uint _0;
-        public uint _1;
-        public uint _2;
-        public uint _3;
-#endif
-
-        private static BigMul128 Add(BigMul128 left, BigMul128 right)
-        {
-            uint carry;
-            BigMul128 result = new BigMul128();
-
-            result._0 = left._0 + right._0;
-
-            carry = (uint)Math.Max(0, left._0.CompareTo(result._0));
-            result._1 = left._1 + right._1 + carry;
-
-            carry = (uint)Math.Max(0, left._1.CompareTo(result._1));
-            result._2 = left._2 + right._2 + carry;
-
-            carry = (uint)Math.Max(0, left._2.CompareTo(result._2));
-            result._3 = left._3 + right._3 + carry;
-
-            return result;
-        }
-
-        private static BigMul128 Multiply(ulong left, uint right)
-        {
-            var result = new BigMul128();
-
-            ulong prod1 = (uint)left * (ulong)right;
-            result._0 = (uint)prod1;
-
-            ulong prod2 = (left >> 32) * right;
-            result._1 = (uint)prod2 + (uint)(prod1 >> 32);
-            result._2 = (uint)(prod2 >> 32) + (uint)Math.Max(0, ((uint)prod2).CompareTo((uint)prod2 + (uint)(prod1 >> 32)));
-
-            return result;
-        }
-
-        public static BigMul128 Multiply(ulong left, ulong right)
-        {
-            var leftProd = Multiply(left, (uint)right);
-            var rightProd = Multiply(left, (uint)(right >> 32));
-
-            var rightShift = new BigMul128 // 32-bit left-shift
-            {
-                _1 = rightProd._0,
-                _2 = rightProd._1,
-                _3 = rightProd._2,
-            };
-
-            return Add(leftProd, rightShift);
-        }
-    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct BigMul256
@@ -129,18 +64,10 @@ public partial struct Float128
         {
             var result = new BigMul256();
 
-            BigMul128 prod1 = BigMul128.Multiply((ulong)left, right);
-
-            var lo1 = prod1._0 | ((ulong)prod1._1 << 32);
-            var hi1 = prod1._2 | ((ulong)prod1._3 << 32);
-
+            (ulong lo1, ulong hi1) = TAccelerator.BigMul((ulong)left, right);
             result._0 = lo1;
 
-            BigMul128 prod2 = BigMul128.Multiply((ulong)(left >> 64), right);
-
-            var lo2 = prod2._0 | ((ulong)prod2._1 << 32);
-            var hi2 = prod2._2 | ((ulong)prod2._3 << 32);
-
+            (ulong lo2, ulong hi2) = TAccelerator.BigMul((ulong)(left >> 64), right);
             result._1 = lo2 + hi1;
             result._2 = hi2 + (ulong)Math.Max(0, lo2.CompareTo(lo2 + hi1));
 
@@ -167,7 +94,7 @@ public partial struct Float128
 
     #region Private API: Software-based 128-bit Division Routine
 
-    private static UInt128 Divide(UInt128 n, ulong d, out ulong r) 
+    private static UInt128 Divide(UInt128 n, ulong d, out ulong r)
     {
         uint n_0 = (uint)n;
         uint n_1 = (uint)(n >> 32);
@@ -249,7 +176,7 @@ public partial struct Float128
 
     #region Public API (arithmetic related)
 
-    public static Float128 FusedMultiplyAdd(Float128 left, Float128 right, Float128 addend)
+    public static Float128<TAccelerator> FusedMultiplyAdd(Float128<TAccelerator> left, Float128<TAccelerator> right, Float128<TAccelerator> addend)
     {
         if (IsInfinity(left) || IsInfinity(right) || IsNaN(left) || IsNaN(right) || IsNaN(addend))
         {
@@ -326,7 +253,7 @@ public partial struct Float128
 
         if (leftExponent > -EXPONENT_BIAS + 1 && rightExponent <= -EXPONENT_BIAS + 1)
         {
-            return new Float128(leftSignificand, leftExponent, leftSign);
+            return new Float128<TAccelerator>(leftSignificand, leftExponent, leftSign);
         }
 
         // set tentative exponent
@@ -383,15 +310,15 @@ public partial struct Float128
             sumSignificand++; // increment pth bit from the left
         }
 
-        return new Float128(sumSignificand >> 3, sumExponent, sumSign);
+        return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, sumSign);
     }
 
-    public static Float128 Ieee754Remainder(Float128 left, Float128 right)
+    public static Float128<TAccelerator> Ieee754Remainder(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left - right * Round(left / right);
     }
 
-    public static Float128 operator +(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator +(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         if (IsInfinity(left) && IsInfinity(right))
         {
@@ -479,17 +406,17 @@ public partial struct Float128
                 sumSignificand++; // increment pth bit from the left
             }
 
-            return new Float128(sumSignificand >> 3, sumExponent, rawSignBit);
+            return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, rawSignBit);
         }
     }
 
-    public static Float128 operator -(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator -(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         right.RawSignBit = !right.RawSignBit;
         return left + right;
     }
 
-    public static Float128 operator *(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator *(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         if (IsInfinity(left) || IsInfinity(right) || IsNaN(left) || IsNaN(right))
         {
@@ -553,11 +480,11 @@ public partial struct Float128
                 highBits++; // increment pth bit from the left
             }
 
-            return new Float128(highBits >> 3, prodExponent, prodSign);
+            return new Float128<TAccelerator>(highBits >> 3, prodExponent, prodSign);
         }
     }
 
-    public static Float128 operator /(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator /(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         if (IsFinite(left) && IsInfinity(right))
         {
@@ -628,28 +555,28 @@ public partial struct Float128
             if (quotExponent < -EXPONENT_BIAS + 1)
             {
                 var finalAdjust = (int)UInt128.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
-                return new Float128(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
+                return new Float128<TAccelerator>(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
             }
             else
             {
-                return new Float128(quotSignificand >> 3, quotExponent, quotSign);
+                return new Float128<TAccelerator>(quotSignificand >> 3, quotExponent, quotSign);
             }
         }
     }
 
-    public static Float128 operator %(Float128 left, Float128 right)
+    public static Float128<TAccelerator> operator %(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return (Abs(left) - (Abs(right) *
         (Floor(Abs(left) / Abs(right))))) *
         Sign(left);
     }
 
-    public static Float128 operator ++(Float128 value)
+    public static Float128<TAccelerator> operator ++(Float128<TAccelerator> value)
     {
         return value + One;
     }
 
-    public static Float128 operator --(Float128 value)
+    public static Float128<TAccelerator> operator --(Float128<TAccelerator> value)
     {
         return value - One;
     }

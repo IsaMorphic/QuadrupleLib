@@ -18,7 +18,7 @@
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Raw storage properties
 

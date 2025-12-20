@@ -24,11 +24,11 @@ using System.Text.RegularExpressions;
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (parsing related)
 
-    public static Float128 Parse(string s, IFormatProvider? provider = null)
+    public static Float128<TAccelerator> Parse(string s, IFormatProvider? provider = null)
     {
         NumberFormatInfo formatter = NumberFormatInfo.GetInstance(provider);
         if (s == formatter.NaNSymbol)
@@ -114,7 +114,7 @@ public partial struct Float128
             var resultSignificand = (UInt128)wholePart;
             if (fracPart == 0)
             {
-                return new Float128(resultSignificand >> 3, resultExponent, resultSign);
+                return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
             }
             else
             {
@@ -152,7 +152,7 @@ public partial struct Float128
                 if (isSubNormal)
                 {
                     var expnDiff = -EXPONENT_BIAS + 1 - resultExponent + 3;
-                    return new Float128(resultSignificand >> expnDiff, -EXPONENT_BIAS + 1, resultSign);
+                    return new Float128<TAccelerator>(resultSignificand >> expnDiff, -EXPONENT_BIAS + 1, resultSign);
                 }
                 else
                 {
@@ -163,18 +163,18 @@ public partial struct Float128
                         resultSignificand >>= -normDist;
                     resultExponent -= normDist;
 
-                    return new Float128(resultSignificand >> 3, resultExponent, resultSign);
+                    return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
                 }
             }
         }
     }
 
-    public static Float128 Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider)
+    public static Float128<TAccelerator> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider)
     {
         return Parse(new string(s), style, provider);
     }
 
-    public static Float128 Parse(string s, NumberStyles style, IFormatProvider? provider)
+    public static Float128<TAccelerator> Parse(string s, NumberStyles style, IFormatProvider? provider)
     {
         if (style == NumberStyles.Float)
         {
@@ -186,17 +186,17 @@ public partial struct Float128
         }
     }
 
-    public static Float128 Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
+    public static Float128<TAccelerator> Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
     {
         return Parse(new string(s), provider);
     }
 
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
+    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         return TryParse(new string(s), style, provider, out result);
     }
 
-    public static bool TryParse([NotNullWhen(true)] string? s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
+    public static bool TryParse([NotNullWhen(true)] string? s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         if (string.IsNullOrWhiteSpace(s))
         {
@@ -209,12 +209,12 @@ public partial struct Float128
         return !IsNaN(result);
     }
 
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
+    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         return TryParse(new string(s), provider, out result);
     }
 
-    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
+    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         if (string.IsNullOrWhiteSpace(s))
         {
@@ -255,7 +255,7 @@ public partial struct Float128
         }
         else
         {
-            Float128 rounded = Round(this, formatter.NumberDecimalDigits);
+            Float128<TAccelerator> rounded = Round(this, formatter.NumberDecimalDigits);
             var builder = new StringBuilder();
 
             BigInteger fracPart;
