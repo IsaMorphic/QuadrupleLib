@@ -27,7 +27,7 @@ public class IntegerConversionTests
     [InlineData(12345L)]
     public void ConvertToInt128IsEqual(long x)
     {
-        Assert.Equal(x, (Int128)(Float128)x);
+        Assert.Equal(x, (Int128)(Quad)x);
     }
 
     [Theory]
@@ -37,7 +37,7 @@ public class IntegerConversionTests
     [InlineData(12345L)]
     public void ConvertToInt64IsEqual(long x)
     {
-        Assert.Equal(x, (long)(Float128)x);
+        Assert.Equal(x, (long)(Quad)x);
     }
 
     [Theory]
@@ -47,7 +47,7 @@ public class IntegerConversionTests
     [InlineData(12345)]
     public void ConvertToInt32IsEqual(int x)
     {
-        Assert.Equal(x, (int)(Float128)x);
+        Assert.Equal(x, (int)(Quad)x);
     }
 
     [Theory]
@@ -57,7 +57,7 @@ public class IntegerConversionTests
     [InlineData(12345)]
     public void ConvertToInt16IsEqual(short x)
     {
-        Assert.Equal(x, (short)(Float128)x);
+        Assert.Equal(x, (short)(Quad)x);
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public class IntegerConversionTests
     [InlineData(127)]
     public void ConvertToSByteIsEqual(sbyte x)
     {
-        Assert.Equal(x, (sbyte)(Float128)x);
+        Assert.Equal(x, (sbyte)(Quad)x);
     }
 
     [Theory]
@@ -77,7 +77,7 @@ public class IntegerConversionTests
     [InlineData(12345UL)]
     public void ConvertToUInt128IsEqual(ulong x)
     {
-        Assert.Equal(x, (UInt128)(Float128)x);
+        Assert.Equal(x, (UInt128)(Quad)x);
     }
 
     [Theory]
@@ -87,7 +87,7 @@ public class IntegerConversionTests
     [InlineData(12345UL)]
     public void ConvertToUInt64IsEqual(ulong x)
     {
-        Assert.Equal(x, (ulong)(Float128)x);
+        Assert.Equal(x, (ulong)(Quad)x);
     }
 
     [Theory]
@@ -97,7 +97,7 @@ public class IntegerConversionTests
     [InlineData(12345U)]
     public void ConvertToUInt32IsEqual(uint x)
     {
-        Assert.Equal(x, (uint)(Float128)x);
+        Assert.Equal(x, (uint)(Quad)x);
     }
 
     [Theory]
@@ -107,7 +107,7 @@ public class IntegerConversionTests
     [InlineData(12345U)]
     public void ConvertToUInt16IsEqual(ushort x)
     {
-        Assert.Equal(x, (ushort)(Float128)x);
+        Assert.Equal(x, (ushort)(Quad)x);
     }
 
     [Theory]
@@ -117,18 +117,6 @@ public class IntegerConversionTests
     [InlineData(0)]
     public void ConvertToByteIsEqual(byte x)
     {
-        Assert.Equal(x, (byte)(Float128)x);
-    }
-
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.300)]
-    [InlineData(-263.0)]
-    [InlineData(123.4567)]
-    public void ConvertToStringParseRoundtripIsEqual(double x)
-    {
-        string s_0 = $"{(Float128)x}";
-        string s_1 = $"{Float128.Parse(s_0)}";
-        Assert.Equal(s_0, s_1);
+        Assert.Equal(x, (byte)(Quad)x);
     }
 }

@@ -16,25 +16,19 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-global using Quad = QuadrupleLib.Float128<QuadrupleLib.Accelerators.DefaultAccelerator>;
+namespace QuadrupleLib.Tests.Conversion;
 
-using QuadrupleLib.Tests.Assertions.Exceptions;
-using QuadrupleLib.Tests.Assertions.Types;
-using System.Numerics;
-
-namespace QuadrupleLib.Tests;
-
-internal class Assert : Xunit.Assert
+public class StringConversionTests
 {
-    private Assert() { }
-
-    public static void NearlyEqual<T>(T expected, T actual, Precision precision)
-        where T : IBinaryFloatingPointIeee754<T>
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(1.300)]
+    [InlineData(-263.0)]
+    [InlineData(123.4567)]
+    public void ConvertToStringParseRoundtripIsEqual(double x)
     {
-        T roundedDiff = T.Round(expected - actual, (int)precision);
-        if (roundedDiff != T.Zero)
-        {
-            throw new NearlyEqualException($"Assert.NearlyEqual() failure: Values differ\nExpected (within {precision}): {expected}\nActual: {actual}.");
-        }
+        string s_0 = $"{(Quad)x}";
+        string s_1 = $"{Quad.Parse(s_0)}";
+        Assert.Equal(s_0, s_1);
     }
 }
