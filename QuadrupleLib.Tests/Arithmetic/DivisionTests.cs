@@ -27,7 +27,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideByNaNIsNaN(double x)
     {
-        Assert.True(Float128.IsNaN(x / Float128.NaN));
+        Assert.True(Quad.IsNaN(x / Quad.NaN));
     }
 
     [Theory]
@@ -37,7 +37,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideByNegativeInfinityIsZero(double x)
     {
-        Assert.True(Float128.IsZero(x / Float128.NegativeInfinity));
+        Assert.True(Quad.IsZero(x / Quad.NegativeInfinity));
     }
 
     [Theory]
@@ -47,7 +47,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideByNegativeOneIsNegate(double x)
     {
-        Assert.Equal(-x, x / Float128.NegativeOne);
+        Assert.Equal(-x, x / Quad.NegativeOne);
     }
 
     [Theory]
@@ -57,7 +57,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideByPositiveInfinityIsZero(double x)
     {
-        Assert.True(Float128.IsZero(x / Float128.PositiveInfinity));
+        Assert.True(Quad.IsZero(x / Quad.PositiveInfinity));
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideByOneIsIdentity(double x)
     {
-        Assert.Equal(x, x / Float128.One);
+        Assert.Equal(x, x / Quad.One);
     }
 
     [Theory]
@@ -77,7 +77,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideByZeroIsInfinity(double x)
     {
-        Assert.True(Float128.IsInfinity(x / Float128.Zero));
+        Assert.True(Quad.IsInfinity(x / Quad.Zero));
     }
 
     [Theory]
@@ -91,7 +91,7 @@ public class DivisionTests
     [InlineData(3.33)]
     public void DivideBySelfIsOne(double x)
     {
-        Assert.Equal(Float128.One, (Float128)x / x);
+        Assert.Equal(Quad.One, (Quad)x / x);
     }
 
     [Theory]
@@ -101,7 +101,7 @@ public class DivisionTests
     [InlineData([-5.0, -0.625, 8.0])]
     public void DivideGeneralIsCorrect(double x, double y, double z)
     {
-        Assert.Equal(z, (Float128)x / y);
+        Assert.Equal(z, (Quad)x / y);
     }
 
     [Theory]
@@ -115,8 +115,8 @@ public class DivisionTests
     [InlineData(3.33)]
     public void DivideByBigNumberIsSubnormal(double x)
     {
-        Float128 y = x / Float128.ScaleB(Float128.One, short.MaxValue / 2 + 1);
-        Assert.True(Float128.IsSubnormal(y));
+        Quad y = x / Quad.ScaleB(Quad.One, short.MaxValue / 2 + 1);
+        Assert.True(Quad.IsSubnormal(y));
     }
 
     [Theory]
@@ -126,14 +126,14 @@ public class DivisionTests
     [InlineData(0.33)]
     public void DivideNormalBySubnormalIsInfinity(double x)
     {
-        Assert.True(Float128.IsInfinity(x / Float128.Epsilon));
+        Assert.True(Quad.IsInfinity(x / Quad.Epsilon));
     }
 
     [Fact]
     public void DivideSubnormalIsCorrect()
     {
-        Float128 twoEps = Float128.BitIncrement(Float128.Epsilon);
-        Assert.Equal(Float128.Epsilon, twoEps / 2.0);
+        Quad twoEps = Quad.BitIncrement(Quad.Epsilon);
+        Assert.Equal(Quad.Epsilon, twoEps / 2.0);
     }
 
     [Theory]
@@ -143,43 +143,43 @@ public class DivisionTests
     [InlineData(0.33)]
     public void NegateIsDivideByNegativeOne(double x)
     {
-        Assert.Equal(x / Float128.NegativeOne, -x);
+        Assert.Equal(x / Quad.NegativeOne, -x);
     }
 
     [Fact]
     public void PositiveInfinityDividedByPositiveInfinityIsNaN()
     {
-        Assert.True(Float128.IsNaN(Float128.PositiveInfinity / Float128.PositiveInfinity));
+        Assert.True(Quad.IsNaN(Quad.PositiveInfinity / Quad.PositiveInfinity));
     }
 
     [Fact]
     public void PositiveInfinityDividedByNegativeInfinityIsNaN()
     {
-        Assert.True(Float128.IsNaN(Float128.PositiveInfinity / Float128.NegativeInfinity));
+        Assert.True(Quad.IsNaN(Quad.PositiveInfinity / Quad.NegativeInfinity));
     }
 
     [Fact]
     public void NegativeInfinityDividedByNegativeInfinityIsNaN()
     {
-        Assert.True(Float128.IsNaN(Float128.NegativeInfinity / Float128.NegativeInfinity));
+        Assert.True(Quad.IsNaN(Quad.NegativeInfinity / Quad.NegativeInfinity));
     }
 
     [Fact]
     public void NegativeInfinityDividedByPositiveInfinityIsNaN()
     {
-        Assert.True(Float128.IsNaN(Float128.NegativeInfinity / Float128.PositiveInfinity));
+        Assert.True(Quad.IsNaN(Quad.NegativeInfinity / Quad.PositiveInfinity));
     }
 
     [Fact]
     public void PositiveInfinityDividedByZeroIsNaN()
     {
-        Assert.True(Float128.IsNaN(Float128.PositiveInfinity / Float128.Zero));
+        Assert.True(Quad.IsNaN(Quad.PositiveInfinity / Quad.Zero));
     }
 
     [Fact]
     public void NegativeInfinityDividedByZeroIsNaN()
     {
-        Assert.True(Float128.IsNaN(Float128.NegativeInfinity / Float128.Zero));
+        Assert.True(Quad.IsNaN(Quad.NegativeInfinity / Quad.Zero));
     }
 
     [Theory]
@@ -189,7 +189,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void PositiveInfinityDividedByPositiveIsPositiveInfinity(double x)
     {
-        Assert.Equal(Float128.PositiveInfinity, Float128.PositiveInfinity / x);
+        Assert.Equal(Quad.PositiveInfinity, Quad.PositiveInfinity / x);
     }
 
     [Theory]
@@ -199,7 +199,7 @@ public class DivisionTests
     [InlineData(0.33)]
     public void NegativeInfinityDividedByPositiveIsNegativeInfinity(double x)
     {
-        Assert.Equal(Float128.NegativeInfinity, Float128.NegativeInfinity / x);
+        Assert.Equal(Quad.NegativeInfinity, Quad.NegativeInfinity / x);
     }
 
     [Theory]
@@ -209,7 +209,7 @@ public class DivisionTests
     [InlineData(-0.33)]
     public void PositiveInfinityDividedByNegativeIsNegativeInfinity(double x)
     {
-        Assert.Equal(Float128.NegativeInfinity, Float128.PositiveInfinity / x);
+        Assert.Equal(Quad.NegativeInfinity, Quad.PositiveInfinity / x);
     }
 
     [Theory]
@@ -219,6 +219,6 @@ public class DivisionTests
     [InlineData(-0.33)]
     public void NegativeInfinityDividedByNegativeIsPositiveInfinity(double x)
     {
-        Assert.Equal(Float128.PositiveInfinity, Float128.NegativeInfinity / x);
+        Assert.Equal(Quad.PositiveInfinity, Quad.NegativeInfinity / x);
     }
 }

@@ -27,7 +27,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyByNaNIsNaN(double x)
     {
-        Assert.True(Float128.IsNaN(x * Float128.NaN));
+        Assert.True(Quad.IsNaN(x * Quad.NaN));
     }
 
     [Theory]
@@ -37,7 +37,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyByNegativeInfinityIsNaN(double x)
     {
-        Assert.True(Float128.IsNaN(x * Float128.NegativeInfinity));
+        Assert.True(Quad.IsNaN(x * Quad.NegativeInfinity));
     }
 
     [Theory]
@@ -47,7 +47,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyByNegativeOneIsNegate(double x)
     {
-        Assert.Equal(-x, x * Float128.NegativeOne);
+        Assert.Equal(-x, x * Quad.NegativeOne);
     }
 
     [Theory]
@@ -57,7 +57,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyByPositiveInfinityIsNaN(double x)
     {
-        Assert.True(Float128.IsNaN(x * Float128.PositiveInfinity));
+        Assert.True(Quad.IsNaN(x * Quad.PositiveInfinity));
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyByOneIsIdentity(double x)
     {
-        Assert.Equal(x, x * Float128.One);
+        Assert.Equal(x, x * Quad.One);
     }
 
     [Theory]
@@ -77,7 +77,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyByZeroIsZero(double x)
     {
-        Assert.Equal(Float128.Zero, x * Float128.Zero);
+        Assert.Equal(Quad.Zero, x * Quad.Zero);
     }
 
     [Theory]
@@ -87,7 +87,7 @@ public class MultiplicationTests
     [InlineData([-5.0, -0.625, 3.125])]
     public void MultiplyGeneralIsCorrect(double x, double y, double z)
     {
-        Assert.Equal(z, (Float128)x * y);
+        Assert.Equal(z, (Quad)x * y);
     }
 
     [Theory]
@@ -97,7 +97,7 @@ public class MultiplicationTests
     [InlineData(-3.33)]
     public void MultiplyNegativeByBigNumberIsNegativeInfinity(double x)
     {
-        Assert.Equal(Float128.NegativeInfinity, x * Float128.ScaleB(Float128.One, short.MaxValue / 2));
+        Assert.Equal(Quad.NegativeInfinity, x * Quad.ScaleB(Quad.One, short.MaxValue / 2));
     }
 
     [Theory]
@@ -107,7 +107,7 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void MultiplyNormalBySubnormalIsSubnormal(double x)
     {
-        Assert.True(Float128.IsSubnormal(x * Float128.Epsilon));
+        Assert.True(Quad.IsSubnormal(x * Quad.Epsilon));
     }
 
     [Theory]
@@ -117,14 +117,14 @@ public class MultiplicationTests
     [InlineData(3.33)]
     public void MultiplyPositiveByBigNumberIsPositiveInfinity(double x)
     {
-        Assert.Equal(Float128.PositiveInfinity, x * Float128.ScaleB(Float128.One, short.MaxValue / 2));
+        Assert.Equal(Quad.PositiveInfinity, x * Quad.ScaleB(Quad.One, short.MaxValue / 2));
     }
 
     [Fact]
     public void MultiplySubnormalIsCorrect()
     {
-        Float128 twoEps = Float128.BitIncrement(Float128.Epsilon);
-        Assert.Equal(twoEps, Float128.Epsilon * 2.0);
+        Quad twoEps = Quad.BitIncrement(Quad.Epsilon);
+        Assert.Equal(twoEps, Quad.Epsilon * 2.0);
     }
 
     [Theory]
@@ -134,6 +134,6 @@ public class MultiplicationTests
     [InlineData(0.33)]
     public void NegateIsMultiplyByNegativeOne(double x)
     {
-        Assert.Equal(x * Float128.NegativeOne, -x);
+        Assert.Equal(x * Quad.NegativeOne, -x);
     }
 }
