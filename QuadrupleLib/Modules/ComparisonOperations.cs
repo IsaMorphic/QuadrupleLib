@@ -35,7 +35,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            throw new InvalidOperationException();
+            throw new ArgumentException($"Provided value must be of type {nameof(Float128<TAccelerator>)}.", nameof(obj));
         }
     }
 
