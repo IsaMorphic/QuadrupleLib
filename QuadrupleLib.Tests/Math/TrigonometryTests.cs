@@ -36,7 +36,7 @@ public class TrigonometryTests
         _outputHelper.WriteLine($"{new string(' ', 2)}x{new string(' ', 36)}sin(x){new string(' ', 36)}cos(x)");
         for (int i = 0; i <= 360; i += 15)
         {
-            (Float128 sin, Float128 cos) = Float128.SinCos(i * Float128.Pi / 180);
+            (Quad sin, Quad cos) = Quad.SinCos(i * Quad.Pi / 180);
             _outputHelper.WriteLine($"{i,3}{sin,42}{cos,42}");
         }
     }
@@ -54,8 +54,8 @@ public class TrigonometryTests
     [InlineData(-345)]
     public void IsFirstQuadrantCoRDiC(double thetaDeg)
     {
-        (Float128 y, Float128 x) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Assert.True(y > Float128.Zero && x > Float128.Zero);
+        (Quad y, Quad x) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Assert.True(y > Quad.Zero && x > Quad.Zero);
     }
 
     [Theory]
@@ -71,8 +71,8 @@ public class TrigonometryTests
     [InlineData(-255)]
     public void IsSecondQuadrantCoRDiC(double thetaDeg)
     {
-        (Float128 y, Float128 x) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Assert.True(y > Float128.Zero && x < Float128.Zero);
+        (Quad y, Quad x) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Assert.True(y > Quad.Zero && x < Quad.Zero);
     }
 
     [Theory]
@@ -88,8 +88,8 @@ public class TrigonometryTests
     [InlineData(-165)]
     public void IsThirdQuadrantCoRDiC(double thetaDeg)
     {
-        (Float128 y, Float128 x) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Assert.True(y < Float128.Zero && x < Float128.Zero);
+        (Quad y, Quad x) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Assert.True(y < Quad.Zero && x < Quad.Zero);
     }
 
     [Theory]
@@ -105,8 +105,8 @@ public class TrigonometryTests
     [InlineData(-75)]
     public void IsFourthQuadrantCoRDiC(double thetaDeg)
     {
-        (Float128 y, Float128 x) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Assert.True(y < Float128.Zero && x > Float128.Zero);
+        (Quad y, Quad x) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Assert.True(y < Quad.Zero && x > Quad.Zero);
     }
 
     [Theory]
@@ -161,8 +161,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsSinEqualCoRDiC(double thetaDeg)
     {
-        (Float128 sinA, _) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Float128 sinB = Float128.Sin(thetaDeg * Float128.Pi / 180);
+        (Quad sinA, _) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Quad sinB = Quad.Sin(thetaDeg * Quad.Pi / 180);
         Assert.Equal(sinA, sinB);
     }
 
@@ -218,8 +218,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsCosEqualCoRDiC(double thetaDeg)
     {
-        (_, Float128 cosA) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Float128 cosB = Float128.Cos(thetaDeg * Float128.Pi / 180);
+        (_, Quad cosA) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Quad cosB = Quad.Cos(thetaDeg * Quad.Pi / 180);
         Assert.Equal(cosA, cosB);
     }
 
@@ -275,8 +275,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsTanEqualCoRDiC(double thetaDeg)
     {
-        (Float128 sin, Float128 cos) = Float128.SinCos(thetaDeg * Float128.Pi / 180);
-        Float128 tan = Float128.Tan(thetaDeg * Float128.Pi / 180);
+        (Quad sin, Quad cos) = Quad.SinCos(thetaDeg * Quad.Pi / 180);
+        Quad tan = Quad.Tan(thetaDeg * Quad.Pi / 180);
         Assert.Equal(sin / cos, tan);
     }
 
@@ -296,9 +296,9 @@ public class TrigonometryTests
     [InlineData(180)]
     public void IsInverseCosEqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg * Float128.Pi / 180;
-        Float128 cos = Float128.Cos(thetaA);
-        Float128 thetaB = Float128.Acos(cos);
+        Quad thetaA = thetaDeg * Quad.Pi / 180;
+        Quad cos = Quad.Cos(thetaA);
+        Quad thetaB = Quad.Acos(cos);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
@@ -318,9 +318,9 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsInverseSinEqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg * Float128.Pi / 180;
-        Float128 sin = Float128.Sin(thetaA);
-        Float128 thetaB = Float128.Asin(sin);
+        Quad thetaA = thetaDeg * Quad.Pi / 180;
+        Quad sin = Quad.Sin(thetaA);
+        Quad thetaB = Quad.Asin(sin);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
@@ -334,9 +334,9 @@ public class TrigonometryTests
     [InlineData(-45)]
     public void IsInverseTanEqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg * Float128.Pi / 180;
-        Float128 tan = Float128.Tan(thetaA);
-        Float128 thetaB = Float128.Atan(tan);
+        Quad thetaA = thetaDeg * Quad.Pi / 180;
+        Quad tan = Quad.Tan(thetaA);
+        Quad thetaB = Quad.Atan(tan);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
@@ -392,8 +392,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsSinPiEqualCoRDiC(double thetaDeg)
     {
-        (Float128 sinPiA, _) = Float128.SinCosPi(thetaDeg / 180);
-        Float128 sinPiB = Float128.SinPi(thetaDeg / 180);
+        (Quad sinPiA, _) = Quad.SinCosPi(thetaDeg / 180);
+        Quad sinPiB = Quad.SinPi(thetaDeg / 180);
         Assert.Equal(sinPiA, sinPiB);
     }
 
@@ -449,8 +449,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsCosPiEqualCoRDiC(double thetaDeg)
     {
-        (_, Float128 cosPiA) = Float128.SinCosPi(thetaDeg / 180);
-        Float128 cosPiB = Float128.CosPi(thetaDeg / 180);
+        (_, Quad cosPiA) = Quad.SinCosPi(thetaDeg / 180);
+        Quad cosPiB = Quad.CosPi(thetaDeg / 180);
         Assert.Equal(cosPiA, cosPiB);
     }
     
@@ -506,8 +506,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsTanPiEqualCoRDiC(double thetaDeg)
     {
-        (Float128 sinPi, Float128 cosPi) = Float128.SinCosPi(thetaDeg / 180);
-        Float128 tanPi = Float128.TanPi(thetaDeg / 180);
+        (Quad sinPi, Quad cosPi) = Quad.SinCosPi(thetaDeg / 180);
+        Quad tanPi = Quad.TanPi(thetaDeg / 180);
         Assert.Equal(sinPi / cosPi, tanPi);
     }
 
@@ -563,8 +563,8 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsSinCosPiEqualToSinCosCoRDiC(double thetaDeg)
     {
-        var pairA = Float128.SinCos(thetaDeg / 180 * Float128.Pi);
-        var pairB = Float128.SinCosPi(thetaDeg / 180);
+        var pairA = Quad.SinCos(thetaDeg / 180 * Quad.Pi);
+        var pairB = Quad.SinCosPi(thetaDeg / 180);
         Assert.Equal(pairA, pairB);
     }
 
@@ -584,9 +584,9 @@ public class TrigonometryTests
     [InlineData(180)]
     public void IsInverseCosPiEqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg / 180;
-        Float128 cos = Float128.CosPi(thetaA);
-        Float128 thetaB = Float128.AcosPi(cos);
+        Quad thetaA = thetaDeg / 180;
+        Quad cos = Quad.CosPi(thetaA);
+        Quad thetaB = Quad.AcosPi(cos);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
@@ -606,9 +606,9 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsInverseSinPiEqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg / 180;
-        Float128 sin = Float128.SinPi(thetaA);
-        Float128 thetaB = Float128.AsinPi(sin);
+        Quad thetaA = thetaDeg / 180;
+        Quad sin = Quad.SinPi(thetaA);
+        Quad thetaB = Quad.AsinPi(sin);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
@@ -622,9 +622,9 @@ public class TrigonometryTests
     [InlineData(-45)]
     public void IsInverseTanPiEqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg / 180;
-        Float128 tan = Float128.TanPi(thetaA);
-        Float128 thetaB = Float128.AtanPi(tan);
+        Quad thetaA = thetaDeg / 180;
+        Quad tan = Quad.TanPi(thetaA);
+        Quad thetaB = Quad.AtanPi(tan);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
@@ -634,8 +634,8 @@ public class TrigonometryTests
     [InlineData(123.456)]
     public void IsInverseSinNaN(double x)
     {
-        Float128 y = Float128.Asin(x);
-        Assert.True(Float128.IsNaN(y));
+        Quad y = Quad.Asin(x);
+        Assert.True(Quad.IsNaN(y));
     }
 
     [Theory]
@@ -644,8 +644,8 @@ public class TrigonometryTests
     [InlineData(123.456)]
     public void IsInverseCosNaN(double x)
     {
-        Float128 y = Float128.Acos(x);
-        Assert.True(Float128.IsNaN(y));
+        Quad y = Quad.Acos(x);
+        Assert.True(Quad.IsNaN(y));
     }
 
     [Theory]
@@ -654,8 +654,8 @@ public class TrigonometryTests
     [InlineData(123.456)]
     public void IsInverseSinPiNaN(double x)
     {
-        Float128 y = Float128.AsinPi(x);
-        Assert.True(Float128.IsNaN(y));
+        Quad y = Quad.AsinPi(x);
+        Assert.True(Quad.IsNaN(y));
     }
 
     [Theory]
@@ -664,8 +664,8 @@ public class TrigonometryTests
     [InlineData(123.456)]
     public void IsInverseCosPiNaN(double x)
     {
-        Float128 y = Float128.AcosPi(x);
-        Assert.True(Float128.IsNaN(y));
+        Quad y = Quad.AcosPi(x);
+        Assert.True(Quad.IsNaN(y));
     }
 
     [Theory]
@@ -720,9 +720,9 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsAtan2EqualCoRDiC(double thetaDeg)
     {
-        Float128 thetaA = thetaDeg * Float128.Pi / 180;
-        (Float128 sin, Float128 cos) = Float128.SinCos(thetaA);
-        Float128 thetaB = Float128.Atan2(sin, cos);
+        Quad thetaA = thetaDeg * Quad.Pi / 180;
+        (Quad sin, Quad cos) = Quad.SinCos(thetaA);
+        Quad thetaB = Quad.Atan2(sin, cos);
         Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 }

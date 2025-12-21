@@ -27,7 +27,7 @@ public class FloatConversionTests
     [InlineData(123.4567)]
     public void ConvertToDoubleIsEqual(double x)
     {
-        Assert.Equal(x, (double)(Float128)x);
+        Assert.Equal(x, (double)(Quad)x);
     }
 
     [Theory]
@@ -37,7 +37,7 @@ public class FloatConversionTests
     [InlineData(123.4567f)]
     public void ConvertToSingleIsEqual(float x)
     {
-        Assert.Equal(x, (float)(Float128)x);
+        Assert.Equal(x, (float)(Quad)x);
     }
 
     [Theory]
@@ -47,6 +47,6 @@ public class FloatConversionTests
     [InlineData(123.4567f)]
     public void ConvertToHalfIsEqual(float x)
     {
-        Assert.Equal((Half)x, (Half)(Float128)x);
+        Assert.Equal((Half)x, (Half)(Quad)x);
     }
 }
