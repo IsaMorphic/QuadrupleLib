@@ -27,7 +27,12 @@ public partial struct Float128<TAccelerator>
 
     static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result)
     {
-        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        if (value is Float128<TAccelerator> _x)
+        {
+            result = _x;
+            return true;
+        }
+        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
             result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
             return true;
@@ -95,7 +100,12 @@ public partial struct Float128<TAccelerator>
 
     static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
-        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        if (value is Float128<TAccelerator> _x)
+        {
+            result = _x;
+            return true;
+        }
+        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
             result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
             return true;
@@ -163,7 +173,12 @@ public partial struct Float128<TAccelerator>
 
     static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
-        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        if (value is Float128<TAccelerator> _x) 
+        { 
+            result = _x;
+            return true;
+        }
+        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
             result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
             return true;
