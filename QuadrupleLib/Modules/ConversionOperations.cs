@@ -266,6 +266,13 @@ public partial struct Float128<TAccelerator>
             case TypeCode.UInt64:
                 return TOther.TryConvertFromChecked((UInt128)value, out result!);
 
+            case TypeCode.Single:
+                result = (TOther)(object)(float)value;
+                return true;
+            case TypeCode.Double:
+                result = (TOther)(object)(double)value;
+                return true;
+
             default:
                 try
                 {
@@ -302,6 +309,13 @@ public partial struct Float128<TAccelerator>
             case TypeCode.UInt64:
                 return TOther.TryConvertFromSaturating((UInt128)value, out result!);
 
+            case TypeCode.Single:
+                result = (TOther)(object)(float)value;
+                return true;
+            case TypeCode.Double:
+                result = (TOther)(object)(double)value;
+                return true;
+
             default:
                 try
                 {
@@ -337,6 +351,13 @@ public partial struct Float128<TAccelerator>
             case TypeCode.UInt32:
             case TypeCode.UInt64:
                 return TOther.TryConvertFromTruncating((UInt128)value, out result!);
+
+            case TypeCode.Single:
+                result = (TOther)(object)(float)value;
+                return true;
+            case TypeCode.Double:
+                result = (TOther)(object)(double)value;
+                return true;
 
             default:
                 try
