@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Chosen Few Software
+ *  Copyright 2024-2026 Chosen Few Software
  *  This file is part of QuadrupleLib.
  *
  *  QuadrupleLib is free software: you can redistribute it and/or modify
@@ -17,15 +17,27 @@
  */
 
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (conversion methods)
 
-    static bool INumberBase<Float128>.TryConvertFromChecked<TOther>(TOther value, out Float128 result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result)
     {
+        if (value is Float128<TAccelerator> _x)
+        {
+            result = _x;
+            return true;
+        }
+        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        {
+            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
+            return true;
+        }
+
         switch (value)
         {
             // Floating-point conversions
@@ -36,12 +48,12 @@ public partial struct Float128
                 result = x;
                 return true;
             case Half x:
-                result = (Float128)x;
+                result = (Float128<TAccelerator>)x;
                 return true;
 
             // Signed integer conversions
             case Int128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case long n:
                 result = n;
@@ -58,7 +70,7 @@ public partial struct Float128
 
             // Unsigned integer conversions
             case UInt128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case ulong n:
                 result = n;
@@ -76,7 +88,7 @@ public partial struct Float128
 
         try
         {
-            result = (Float128)(object)value;
+            result = (Float128<TAccelerator>)(object)value;
             return true;
         }
         catch (InvalidCastException)
@@ -86,8 +98,19 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertFromSaturating<TOther>(TOther value, out Float128 result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
+        if (value is Float128<TAccelerator> _x)
+        {
+            result = _x;
+            return true;
+        }
+        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        {
+            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
+            return true;
+        }
+
         switch (value)
         {
             // Floating-point conversions
@@ -98,12 +121,12 @@ public partial struct Float128
                 result = x;
                 return true;
             case Half x:
-                result = (Float128)x;
+                result = (Float128<TAccelerator>)x;
                 return true;
 
             // Signed integer conversions
             case Int128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case long n:
                 result = n;
@@ -120,7 +143,7 @@ public partial struct Float128
 
             // Unsigned integer conversions
             case UInt128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case ulong n:
                 result = n;
@@ -138,7 +161,7 @@ public partial struct Float128
 
         try
         {
-            result = (Float128)(object)value;
+            result = (Float128<TAccelerator>)(object)value;
             return true;
         }
         catch (InvalidCastException)
@@ -148,8 +171,19 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertFromTruncating<TOther>(TOther value, out Float128 result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
+        if (value is Float128<TAccelerator> _x) 
+        { 
+            result = _x;
+            return true;
+        }
+        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        {
+            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
+            return true;
+        }
+
         switch (value)
         {
             // Floating-point conversions
@@ -160,12 +194,12 @@ public partial struct Float128
                 result = x;
                 return true;
             case Half x:
-                result = (Float128)x;
+                result = (Float128<TAccelerator>)x;
                 return true;
 
             // Signed integer conversions
             case Int128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case long n:
                 result = n;
@@ -182,7 +216,7 @@ public partial struct Float128
 
             // Unsigned integer conversions
             case UInt128 n:
-                result = (Float128)n;
+                result = (Float128<TAccelerator>)n;
                 return true;
             case ulong n:
                 result = n;
@@ -200,7 +234,7 @@ public partial struct Float128
 
         try
         {
-            result = (Float128)(object)value;
+            result = (Float128<TAccelerator>)(object)value;
             return true;
         }
         catch (InvalidCastException)
@@ -210,21 +244,34 @@ public partial struct Float128
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertToChecked<TOther>(Float128 value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToChecked<TOther>(Float128<TAccelerator> value, out TOther result)
     {
+        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        {
+            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            return true;
+        }
+
         switch (Type.GetTypeCode(typeof(TOther)))
         {
             case TypeCode.SByte:
             case TypeCode.Int16:
             case TypeCode.Int32:
             case TypeCode.Int64:
-                return TOther.TryConvertFromChecked((Int128)value, out result);
+                return TOther.TryConvertFromChecked((Int128)value, out result!);
 
             case TypeCode.Byte:
             case TypeCode.UInt16:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
-                return TOther.TryConvertFromChecked((UInt128)value, out result);
+                return TOther.TryConvertFromChecked((UInt128)value, out result!);
+
+            case TypeCode.Single:
+                result = (TOther)(object)(float)value;
+                return true;
+            case TypeCode.Double:
+                result = (TOther)(object)(double)value;
+                return true;
 
             default:
                 try
@@ -234,27 +281,40 @@ public partial struct Float128
                 }
                 catch (InvalidCastException)
                 {
-                    result = default;
+                    result = TOther.Zero;
                     return false;
                 }
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertToSaturating<TOther>(Float128 value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToSaturating<TOther>(Float128<TAccelerator> value, out TOther result)
     {
+        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        {
+            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            return true;
+        }
+
         switch (Type.GetTypeCode(typeof(TOther)))
         {
             case TypeCode.SByte:
             case TypeCode.Int16:
             case TypeCode.Int32:
             case TypeCode.Int64:
-                return TOther.TryConvertFromSaturating((Int128)value, out result);
+                return TOther.TryConvertFromSaturating((Int128)value, out result!);
 
             case TypeCode.Byte:
             case TypeCode.UInt16:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
-                return TOther.TryConvertFromSaturating((UInt128)value, out result);
+                return TOther.TryConvertFromSaturating((UInt128)value, out result!);
+
+            case TypeCode.Single:
+                result = (TOther)(object)(float)value;
+                return true;
+            case TypeCode.Double:
+                result = (TOther)(object)(double)value;
+                return true;
 
             default:
                 try
@@ -264,27 +324,40 @@ public partial struct Float128
                 }
                 catch (InvalidCastException)
                 {
-                    result = default;
+                    result = TOther.Zero;
                     return false;
                 }
         }
     }
 
-    static bool INumberBase<Float128>.TryConvertToTruncating<TOther>(Float128 value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToTruncating<TOther>(Float128<TAccelerator> value, out TOther result)
     {
+        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        {
+            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            return true;
+        }
+
         switch (Type.GetTypeCode(typeof(TOther)))
         {
             case TypeCode.SByte:
             case TypeCode.Int16:
             case TypeCode.Int32:
             case TypeCode.Int64:
-                return TOther.TryConvertFromTruncating((Int128)value, out result);
+                return TOther.TryConvertFromTruncating((Int128)value, out result!);
 
             case TypeCode.Byte:
             case TypeCode.UInt16:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
-                return TOther.TryConvertFromTruncating((UInt128)value, out result);
+                return TOther.TryConvertFromTruncating((UInt128)value, out result!);
+
+            case TypeCode.Single:
+                result = (TOther)(object)(float)value;
+                return true;
+            case TypeCode.Double:
+                result = (TOther)(object)(double)value;
+                return true;
 
             default:
                 try
@@ -294,7 +367,7 @@ public partial struct Float128
                 }
                 catch (InvalidCastException)
                 {
-                    result = default;
+                    result = TOther.Zero;
                     return false;
                 }
         }
