@@ -16,6 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Xunit;
+
 namespace QuadrupleLib.Tests.Arithmetic;
 
 public class AdditionTests
