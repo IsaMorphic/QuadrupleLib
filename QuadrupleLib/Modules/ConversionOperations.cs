@@ -34,7 +34,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
-            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
+            result = Unsafe.As<TOther, Float128<TAccelerator>>(ref value);
             return true;
         }
 
@@ -107,7 +107,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
-            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
+            result = Unsafe.As<TOther, Float128<TAccelerator>>(ref value);
             return true;
         }
 
@@ -180,7 +180,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
-            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
+            result = Unsafe.As<TOther, Float128<TAccelerator>>(ref value);
             return true;
         }
 
@@ -248,7 +248,7 @@ public partial struct Float128<TAccelerator>
     {
         if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
-            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            result = Unsafe.As<Float128<TAccelerator>, TOther>(ref value);
             return true;
         }
 
@@ -291,7 +291,7 @@ public partial struct Float128<TAccelerator>
     {
         if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
-            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            result = Unsafe.As<Float128<TAccelerator>, TOther>(ref value);
             return true;
         }
 
@@ -334,7 +334,7 @@ public partial struct Float128<TAccelerator>
     {
         if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
-            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            result = Unsafe.As<Float128<TAccelerator>, TOther>(ref value);
             return true;
         }
 
