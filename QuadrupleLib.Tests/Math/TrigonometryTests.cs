@@ -17,7 +17,7 @@
  */
 
 using QuadrupleLib.Tests.Assertions.Types;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace QuadrupleLib.Tests.Math;
 
@@ -299,7 +299,7 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg * Quad.Pi / 180;
         Quad cos = Quad.Cos(thetaA);
         Quad thetaB = Quad.Acos(cos);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -321,7 +321,7 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg * Quad.Pi / 180;
         Quad sin = Quad.Sin(thetaA);
         Quad thetaB = Quad.Asin(sin);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -337,7 +337,7 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg * Quad.Pi / 180;
         Quad tan = Quad.Tan(thetaA);
         Quad thetaB = Quad.Atan(tan);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -587,7 +587,7 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg / 180;
         Quad cos = Quad.CosPi(thetaA);
         Quad thetaB = Quad.AcosPi(cos);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -609,7 +609,7 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg / 180;
         Quad sin = Quad.SinPi(thetaA);
         Quad thetaB = Quad.AsinPi(sin);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -625,7 +625,7 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg / 180;
         Quad tan = Quad.TanPi(thetaA);
         Quad thetaB = Quad.AtanPi(tan);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -723,6 +723,6 @@ public class TrigonometryTests
         Quad thetaA = thetaDeg * Quad.Pi / 180;
         (Quad sin, Quad cos) = Quad.SinCos(thetaA);
         Quad thetaB = Quad.Atan2(sin, cos);
-        Assert.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
     }
 }
