@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Chosen Few Software
+ *  Copyright 2024-2026 Chosen Few Software
  *  This file is part of QuadrupleLib.
  *
  *  QuadrupleLib is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Raw storage properties
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 Chosen Few Software
+ *  Copyright 2024-2026 Chosen Few Software
  *  This file is part of QuadrupleLib.
  *
  *  QuadrupleLib is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 namespace QuadrupleLib;
 
-public partial struct Float128
+public partial struct Float128<TAccelerator>
 {
     #region Public API (equality & comparison related)
 
@@ -29,17 +29,17 @@ public partial struct Float128
 
     public int CompareTo(object? obj)
     {
-        if (obj is Float128 other)
+        if (obj is Float128<TAccelerator> other)
         {
             return CompareTo(other);
         }
         else
         {
-            throw new InvalidOperationException();
+            throw new ArgumentException($"Provided value must be of type {nameof(Float128<TAccelerator>)}.", nameof(obj));
         }
     }
 
-    public int CompareTo(Float128 other)
+    public int CompareTo(Float128<TAccelerator> other)
     {
         if (Equals(other))
             return 0;
@@ -58,40 +58,40 @@ public partial struct Float128
 
     public override bool Equals(object? obj)
     {
-        return obj is Float128 && Equals((Float128)obj);
+        return obj is Float128<TAccelerator> && Equals((Float128<TAccelerator>)obj);
     }
 
-    public bool Equals(Float128 other)
+    public bool Equals(Float128<TAccelerator> other)
     {
         return (_rawBits == other._rawBits || (IsZero(this) && IsZero(other))) && (!IsNaN(this) && !IsNaN(other));
     }
 
-    public static bool operator ==(Float128 left, Float128 right)
+    public static bool operator ==(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.Equals(right);
     }
 
-    public static bool operator !=(Float128 left, Float128 right)
+    public static bool operator !=(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return !left.Equals(right);
     }
 
-    public static bool operator <(Float128 left, Float128 right)
+    public static bool operator <(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return (left.CompareTo(right) < 0) && (!IsNaN(left) && !IsNaN(right));
     }
 
-    public static bool operator >(Float128 left, Float128 right)
+    public static bool operator >(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.CompareTo(right) > 0 && (!IsNaN(left) && !IsNaN(right));
     }
 
-    public static bool operator <=(Float128 left, Float128 right)
+    public static bool operator <=(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.CompareTo(right) <= 0 && (!IsNaN(left) && !IsNaN(right));
     }
 
-    public static bool operator >=(Float128 left, Float128 right)
+    public static bool operator >=(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.CompareTo(right) >= 0 && (!IsNaN(left) && !IsNaN(right));
     }
