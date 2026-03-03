@@ -415,8 +415,23 @@ public partial struct Float128
             // set tentative exponent
             int sumExponent = left.Exponent;
 
-            // align significands
+            // difference in exponents tells us how far we must shift the smaller
             var exponentDiff = left.Exponent - right.Exponent;
+            // If right is astronomically smaller than left (beyond precision), its
+            // contribution will be lost and the result should be exactly left.  A
+            // previous bug caused adding an extremely tiny value to a moderate
+            // value to produce a completely unrelated result when the shift
+            // exceeded the internal word size.  Guard against that by returning
+            // early when the gap is too large.
+            if (exponentDiff > 120)
+            {
+                // Note: sticky-bit rounding of such a minuscule operand will never
+                // change the left value in any practical scenario, so we simply
+                // return left.
+                return left;
+            }
+
+            // align significands
             var sumSignificand = (right.Significand << 3) >> exponentDiff;
 
             // set sticky bit
