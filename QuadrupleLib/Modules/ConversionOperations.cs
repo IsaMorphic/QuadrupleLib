@@ -25,7 +25,7 @@ public partial struct Float128<TAccelerator>
 {
     #region Public API (conversion methods)
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result) where TOther : unmanaged
     {
         if (value is Float128<TAccelerator> _x)
         {
@@ -98,7 +98,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result) where TOther : unmanaged
     {
         if (value is Float128<TAccelerator> _x)
         {
@@ -171,10 +171,10 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result) where TOther : unmanaged
     {
-        if (value is Float128<TAccelerator> _x) 
-        { 
+        if (value is Float128<TAccelerator> _x)
+        {
             result = _x;
             return true;
         }
@@ -244,7 +244,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertToChecked<TOther>(Float128<TAccelerator> value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToChecked<TOther>(Float128<TAccelerator> value, out TOther result) where TOther : unmanaged
     {
         if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
@@ -287,7 +287,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertToSaturating<TOther>(Float128<TAccelerator> value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToSaturating<TOther>(Float128<TAccelerator> value, out TOther result) where TOther : unmanaged
     {
         if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
@@ -330,7 +330,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertToTruncating<TOther>(Float128<TAccelerator> value, out TOther result)
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToTruncating<TOther>(Float128<TAccelerator> value, out TOther result) where TOther : unmanaged
     {
         if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
         {
