@@ -25,18 +25,15 @@ public partial struct Float128<TAccelerator>
 {
     #region Public API (conversion methods)
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result) where TOther : unmanaged
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromChecked<TOther>(TOther value, out Float128<TAccelerator> result)
     {
         if (value is Float128<TAccelerator> _x)
         {
             result = _x;
             return true;
         }
-        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
-        {
-            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
-            return true;
-        }
+        // Note: Can't use Unsafe.BitCast here since TOther lacks unmanaged constraint
+        // in explicit interface implementations. Fall through to general case instead.
 
         switch (value)
         {
@@ -98,18 +95,15 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result) where TOther : unmanaged
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromSaturating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
         if (value is Float128<TAccelerator> _x)
         {
             result = _x;
             return true;
         }
-        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
-        {
-            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
-            return true;
-        }
+        // Note: Can't use Unsafe.BitCast here since TOther lacks unmanaged constraint
+        // in explicit interface implementations. Fall through to general case instead.
 
         switch (value)
         {
@@ -171,18 +165,15 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result) where TOther : unmanaged
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
         if (value is Float128<TAccelerator> _x)
         {
             result = _x;
             return true;
         }
-        else if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
-        {
-            result = Unsafe.BitCast<TOther, Float128<TAccelerator>>(value);
-            return true;
-        }
+        // Note: Can't use Unsafe.BitCast here since TOther lacks unmanaged constraint
+        // in explicit interface implementations. Fall through to general case instead.
 
         switch (value)
         {
@@ -244,11 +235,15 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertToChecked<TOther>(Float128<TAccelerator> value, out TOther result) where TOther : unmanaged
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToChecked<TOther>(Float128<TAccelerator> value, out TOther result)
     {
-        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        // Note: Can't use Unsafe.BitCast here since TOther lacks unmanaged constraint
+        // in explicit interface implementations. Handle known types and fall back
+        // to general case for Float128<> types.
+
+        if (typeof(TOther) == typeof(Float128<TAccelerator>))
         {
-            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            result = (TOther)(object)value;
             return true;
         }
 
@@ -287,11 +282,15 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertToSaturating<TOther>(Float128<TAccelerator> value, out TOther result) where TOther : unmanaged
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToSaturating<TOther>(Float128<TAccelerator> value, out TOther result)
     {
-        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        // Note: Can't use Unsafe.BitCast here since TOther lacks unmanaged constraint
+        // in explicit interface implementations. Handle known types and fall back
+        // to general case for Float128<> types.
+
+        if (typeof(TOther) == typeof(Float128<TAccelerator>))
         {
-            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            result = (TOther)(object)value;
             return true;
         }
 
@@ -330,11 +329,15 @@ public partial struct Float128<TAccelerator>
         }
     }
 
-    static bool INumberBase<Float128<TAccelerator>>.TryConvertToTruncating<TOther>(Float128<TAccelerator> value, out TOther result) where TOther : unmanaged
+    static bool INumberBase<Float128<TAccelerator>>.TryConvertToTruncating<TOther>(Float128<TAccelerator> value, out TOther result)
     {
-        if (typeof(TOther) is { IsGenericType: true } t && t.GetGenericTypeDefinition() == typeof(Float128<>))
+        // Note: Can't use Unsafe.BitCast here since TOther lacks unmanaged constraint
+        // in explicit interface implementations. Handle known types and fall back
+        // to general case for Float128<> types.
+
+        if (typeof(TOther) == typeof(Float128<TAccelerator>))
         {
-            result = Unsafe.BitCast<Float128<TAccelerator>, TOther>(value);
+            result = (TOther)(object)value;
             return true;
         }
 
