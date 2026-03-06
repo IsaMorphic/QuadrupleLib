@@ -120,24 +120,38 @@ public partial struct Float128<TAccelerator>
         Float128<TAccelerator> result;
         int unbiasedExponent = value.Exponent;
 
-        if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
+        if (unbiasedExponent == short.MaxValue)
+        {
+            // NaN, +inf, -inf leave unchanged
+            result = value;
+        }
         else if (unbiasedExponent < 0)
         {
+            // |value| < 1
             if (value.RawSignBit)
             {
+                // negative numbers between -1 and 0 have ceiling 0
                 result = 0;
             }
             else
             {
+                // positive numbers between 0 and 1 have ceiling 1
                 result = 1;
             }
         }
         else
         {
+            // truncate toward zero by erasing fractional bits
             result = value;
             int bitsToErase = 112 - unbiasedExponent;
             result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
-            if (value.RawSignBit) result += 1;
+
+            // if positive and we lost a fractional part, bump up by 1
+            if (!value.RawSignBit && result != value)
+            {
+                result += 1;
+            }
+            // negative values: truncation toward zero already yields the ceiling
         }
 
         return result;
