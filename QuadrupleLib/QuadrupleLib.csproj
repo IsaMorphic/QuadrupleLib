@@ -3,12 +3,18 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
+
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
+    <PackageId>QuadrupleLib</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>GreatCoder1000</Authors>
+    <Description>Provides 128-bit float and 256-bit unsigned integer support for high-precision arithmetic.</Description>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/GreatCoder1000/QuadrupleLib</RepositoryUrl>
   </PropertyGroup>
 
 </Project>
