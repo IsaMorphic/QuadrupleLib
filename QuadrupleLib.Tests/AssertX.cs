@@ -23,10 +23,8 @@ using System.Numerics;
 namespace QuadrupleLib.Tests;
 
 // Assertion extensions
-internal class AssertX
+internal static class AssertX
 {
-    private AssertX() { }
-
     public static void NearlyEqual<T>(T expected, T actual, Precision precision)
         where T : IBinaryFloatingPointIeee754<T>
     {
