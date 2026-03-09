@@ -210,7 +210,10 @@ public partial struct Float128<TAccelerator>
                 right = temp;
             }
 
-            if (IsNormal(left) && IsSubnormal(right))
+            // From @GreatCoder1000 (https://github.com/GreatCoder1000):
+            // when exponent difference is beyond rounding precision, 
+            // do not do any adding (leave left addend untouched). 
+            if (left.Exponent - right.Exponent > 115)
             {
                 return left;
             }
