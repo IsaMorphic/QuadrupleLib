@@ -137,7 +137,11 @@ public partial struct Float128<TAccelerator>
             result = value;
             int bitsToErase = 112 - unbiasedExponent;
             result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
-            if (value.RawSignBit) result += 1;
+
+            // From @GreatCoder1000 (https://github.com/GreatCoder1000):
+            // if positive and we lost a fractional part, bump up by 1,
+            // for negative values, truncation toward zero already yields the ceiling
+            if (!value.RawSignBit && result != value) result += 1;
         }
 
         return result;
