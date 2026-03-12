@@ -177,13 +177,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = Zero;
-            for (int n = 0; n < 25; n++)
-            {
-                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCos(y_n);
-                y_n += (x - sin) / cos;
-            }
-            return y_n;
+            return Atan2(x, Sqrt((One + x) * (One - x)));
         }
     }
 
@@ -195,13 +189,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = Zero;
-            for (int n = 0; n < 25; n++)
-            {
-                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCosPi(y_n);
-                y_n += (x - sin) / (cos * Pi);
-            }
-            return y_n;
+            return Atan2Pi(x, Sqrt((One + x) * (One - x)));
         }
     }
 
@@ -213,13 +201,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = One;
-            for (int n = 0; n < 25; n++)
-            {
-                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCos(y_n);
-                y_n += (cos - x) / sin;
-            }
-            return y_n;
+            return Atan2(Sqrt((One + x) * (One - x)), x);
         }
     }
 
@@ -231,13 +213,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = One / Pi;
-            for (int n = 0; n < 25; n++)
-            {
-                (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCosPi(y_n);
-                y_n += (cos - x) / (sin * Pi);
-            }
-            return y_n;
+            return Atan2Pi(Sqrt((One + x) * (One - x)), x);
         }
     }
 
@@ -253,30 +229,29 @@ public partial struct Float128<TAccelerator>
         return y / x;
     }
 
-    public static Float128<TAccelerator> Atan(Float128<TAccelerator> x)
+    public static Float128<TAccelerator> Atan(Float128<TAccelerator> z)
     {
-        Float128<TAccelerator> y_n = Zero;
-        for (int n = 0; n < 25; n++)
+        Float128<TAccelerator> x = One, y = z, theta = Zero, sigma;
+        for (int i = 0; i < SINCOS_ITER_COUNT; i++) 
         {
-            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCos(y_n);
-            y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos, y_n);
+            sigma = y >= 0 ? NegativeOne : One;
+            (x, y) = (FusedMultiplyAdd(y, ScaleB(-sigma, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
+            theta -= sigma * _thetaTable[i];
         }
-        return y_n;
+        return theta;
     }
 
     public static Float128<TAccelerator> AtanPi(Float128<TAccelerator> x)
     {
-        Float128<TAccelerator> y_n = Zero;
-        for (int n = 0; n < 25; n++)
-        {
-            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = SinCosPi(y_n);
-            y_n = FusedMultiplyAdd(FusedMultiplyAdd(x, cos, -sin), cos / Pi, y_n);
-        }
-        return y_n;
+        return Atan(x) / Pi;
     }
 
     public static Float128<TAccelerator> Atan2(Float128<TAccelerator> y, Float128<TAccelerator> x)
     {
+        if (IsNaN(y) || IsNaN(x)) 
+        {
+            return _sNaN;
+        }
         if (x > Zero)
         {
             return Atan(y / x);
@@ -305,30 +280,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Atan2Pi(Float128<TAccelerator> y, Float128<TAccelerator> x)
     {
-        if (x > Zero)
-        {
-            return AtanPi(y / x);
-        }
-        else if (y >= Zero && x < 0)
-        {
-            return AtanPi(y / x) + Pi;
-        }
-        else if (y < Zero && x < 0)
-        {
-            return AtanPi(y / x) - Pi;
-        }
-        else if (y > Zero && x == Zero)
-        {
-            return Pi / 2.0;
-        }
-        else if (y < Zero && x == Zero)
-        {
-            return Pi / -2.0;
-        }
-        else
-        {
-            return _sNaN;
-        }
+        return Atan2(y, x) / Pi;
     }
 
     #endregion
