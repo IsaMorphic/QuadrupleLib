@@ -22,7 +22,7 @@ public partial struct Float128<TAccelerator>
 {
     #region Public API (trig functions)
 
-    private const int SINCOS_ITER_COUNT = 64;
+    private const int SINCOS_ITER_COUNT = 32;
 
     private static readonly Float128<TAccelerator>[] _thetaTable;
 
@@ -158,7 +158,7 @@ public partial struct Float128<TAccelerator>
             if (stopFlag) break;
 
             (x, y) = (FusedMultiplyAdd(y, ScaleB(sigma_neg, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
-            theta = FusedMultiplyAdd(sigma, _thetaTable[i], theta);
+            theta += sigma * _thetaTable[i];
         }
 
         return (y / _invK_n, x / _invK_n);
