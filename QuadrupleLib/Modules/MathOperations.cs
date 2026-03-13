@@ -371,6 +371,15 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y)
     {
+        if (y <= Zero)
+        {
+            return _sNaN;
+        }
+        else if (y == One)
+        {
+            return Zero;
+        }
+
         Float128<TAccelerator> k = Log2(E);
         Float128<TAccelerator> x_n = Log2(y) / k;
         for (int i = 0; i < 25; i++) 
@@ -383,6 +392,15 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y, Float128<TAccelerator> newBase)
     {
+        if (y <= Zero || newBase <= Zero)
+        {
+            return _sNaN;
+        }
+        else if (y == One)
+        {
+            return Zero;
+        }
+
         Float128<TAccelerator> k = Log2(newBase);
         Float128<TAccelerator> x_n = Log2(y) / k;
         for (int i = 0; i < 25; i++)
@@ -395,6 +413,15 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log10(Float128<TAccelerator> y)
     {
+        if (y <= Zero)
+        {
+            return _sNaN;
+        }
+        else if (y == One)
+        {
+            return Zero;
+        }
+
         Float128<TAccelerator> k = Log2(10);
         Float128<TAccelerator> x_n = Log2(y) / k;
         for (int i = 0; i < 25; i++)
