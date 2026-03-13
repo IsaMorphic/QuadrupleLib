@@ -438,8 +438,7 @@ public partial struct Float128<TAccelerator>
             }
         }
 
-        y %= One;
-        if (y != Zero)
+        if (y % One != Zero)
         {
             for (int n = 0; n < 25; n++)
             {
@@ -468,8 +467,7 @@ public partial struct Float128<TAccelerator>
             }
         }
 
-        y %= One;
-        if (y != Zero)
+        if (y % One != Zero)
         {
             Float128<TAccelerator> log10 = Log(10);
             for (int n = 0; n < 25; n++)
