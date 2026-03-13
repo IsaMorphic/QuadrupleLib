@@ -175,8 +175,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator sbyte(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return x.RawSignBit ? (sbyte)-n : (sbyte)n;
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (sbyte)-n : (sbyte)n;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(short n)
@@ -203,8 +211,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator short(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return x.RawSignBit ? (short)-n : (short)n;
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (short)-n : (short)n;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(int n)
@@ -231,8 +247,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator int(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return x.RawSignBit ? (int)-n : (int)n;
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (int)-n : (int)n;
+        }
+        else 
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(long n)
@@ -259,8 +283,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator long(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return x.RawSignBit ? (long)-n : (long)n;
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (long)-n : (long)n;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static explicit operator Float128<TAccelerator>(Int128 n)
@@ -309,8 +341,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator Int128(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return x.RawSignBit ? -n : n;
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? -n : n;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(byte n)
@@ -322,8 +362,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator byte(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return (byte)(x.RawSignBit ? -n : n);
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (byte)(x.RawSignBit ? -n : n);
+        }
+        else 
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(ushort n)
@@ -335,8 +383,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator ushort(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return (ushort)(x.RawSignBit ? -n : n);
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (ushort)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(uint n)
@@ -348,8 +404,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator uint(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return (uint)(x.RawSignBit ? -n : n);
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (uint)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static implicit operator Float128<TAccelerator>(ulong n)
@@ -361,8 +425,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator ulong(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return (ulong)(x.RawSignBit ? -n : n);
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (ulong)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public static explicit operator Float128<TAccelerator>(UInt128 n)
@@ -395,8 +467,16 @@ public partial struct Float128<TAccelerator>
 
     public static explicit operator UInt128(Float128<TAccelerator> x)
     {
-        Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
-        return (UInt128)(x.RawSignBit ? -n : n);
+        int rightShift = 112 - x.Exponent;
+        if (rightShift <= 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (UInt128)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     #endregion

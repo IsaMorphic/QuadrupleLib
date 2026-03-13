@@ -131,7 +131,7 @@ public partial struct Float128<TAccelerator>
         {
             return (y, x);
         }
-        
+
         Float128<TAccelerator> sigma, sigma_neg, theta = Zero;
         for (int i = 0; i < SINCOS_ITER_COUNT; i++)
         {
@@ -219,13 +219,13 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Atan(Float128<TAccelerator> z)
     {
         Float128<TAccelerator> x = One, y = z, theta = Zero, sigma, sigma_neg;
-        for (int i = 0; i < SINCOS_ITER_COUNT; i++) 
+        for (int i = 0; i < SINCOS_ITER_COUNT; i++)
         {
             if (y > Zero)
             {
                 (sigma, sigma_neg) = (NegativeOne, One);
             }
-            else 
+            else
             {
                 (sigma, sigma_neg) = (One, NegativeOne);
             }
@@ -243,7 +243,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Atan2(Float128<TAccelerator> y, Float128<TAccelerator> x)
     {
-        if (IsNaN(y) || IsNaN(x)) 
+        if (IsNaN(y) || IsNaN(x))
         {
             return _sNaN;
         }
@@ -337,7 +337,7 @@ public partial struct Float128<TAccelerator>
 
     private static Float128<TAccelerator> _Log2(Float128<TAccelerator> y, int N)
     {
-        if (N == 0)
+        if (N == 0 || y == One)
         {
             return Zero;
         }
@@ -382,7 +382,7 @@ public partial struct Float128<TAccelerator>
 
         Float128<TAccelerator> k = Log2(E);
         Float128<TAccelerator> x_n = Log2(y) / k;
-        for (int i = 0; i < 25; i++) 
+        for (int i = 0; i < 25; i++)
         {
             x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
         }
@@ -412,7 +412,7 @@ public partial struct Float128<TAccelerator>
 
             return x_n;
         }
-        else 
+        else
         {
             for (int i = 0; i < 25; i++)
             {
@@ -451,16 +451,16 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Exp(Float128<TAccelerator> y)
     {
         Float128<TAccelerator> x_n = One;
-        if (y > 0)
+        if (y > Zero)
         {
-            for (int i = 0; i < y; i++)
+            for (int i = 1; i <= y; i++)
             {
                 x_n *= E;
             }
         }
         else
         {
-            for (int i = 0; i > y; i--)
+            for (int i = -1; i >= y; i--)
             {
                 x_n /= E;
             }
@@ -468,7 +468,7 @@ public partial struct Float128<TAccelerator>
 
         if (y % One != Zero)
         {
-            for (int n = 0; n < 25; n++)
+            for (int n = 0; n < 5; n++)
             {
                 x_n = FusedMultiplyAdd(x_n, y - Log(x_n), x_n);
             }
@@ -480,16 +480,16 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Exp10(Float128<TAccelerator> y)
     {
         Float128<TAccelerator> x_n = One;
-        if (y > 0)
+        if (y > Zero)
         {
-            for (int i = 0; i < y; i++)
+            for (int i = 1; i <= y; i++)
             {
                 x_n *= 10;
             }
         }
         else
         {
-            for (int i = 0; i > y; i--)
+            for (int i = -1; i >= y; i--)
             {
                 x_n /= 10;
             }
@@ -498,9 +498,9 @@ public partial struct Float128<TAccelerator>
         if (y % One != Zero)
         {
             Float128<TAccelerator> log10 = Log(10);
-            for (int n = 0; n < 25; n++)
+            for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n * log10, y - Log10(x_n), x_n);
+                x_n = FusedMultiplyAdd(x_n * log10, x_n < Zero ? Zero : y - Log10(x_n), x_n);
             }
         }
 
@@ -509,12 +509,12 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Exp2(Float128<TAccelerator> y)
     {
-        Float128<TAccelerator> x_n = ScaleB(One, (int)Floor(y));
+        Float128<TAccelerator> x_n = ScaleB(One, (int)y);
 
         if (y % One != Zero)
         {
             Float128<TAccelerator> log2 = One / Log2(E);
-            for (int n = 0; n < 25; n++)
+            for (int n = 0; n < 5; n++)
             {
                 x_n = FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n);
             }
