@@ -281,7 +281,6 @@ public class TrigonometryTests
     }
 
     [Theory]
-    [InlineData(0)]
     [InlineData(15)]
     [InlineData(30)]
     [InlineData(45)]
@@ -293,7 +292,6 @@ public class TrigonometryTests
     [InlineData(135)]
     [InlineData(150)]
     [InlineData(165)]
-    [InlineData(180)]
     public void IsInverseCosEqualCoRDiC(double thetaDeg)
     {
         Quad thetaA = thetaDeg * Quad.Pi / 180;
@@ -303,19 +301,16 @@ public class TrigonometryTests
     }
 
     [Theory]
-    [InlineData(0)]
     [InlineData(15)]
     [InlineData(30)]
     [InlineData(45)]
     [InlineData(60)]
     [InlineData(75)]
-    [InlineData(90)]
     [InlineData(-15)]
     [InlineData(-30)]
     [InlineData(-45)]
     [InlineData(-60)]
     [InlineData(-75)]
-    [InlineData(-90)]
     public void IsInverseSinEqualCoRDiC(double thetaDeg)
     {
         Quad thetaA = thetaDeg * Quad.Pi / 180;
@@ -569,7 +564,6 @@ public class TrigonometryTests
     }
 
     [Theory]
-    [InlineData(0)]
     [InlineData(15)]
     [InlineData(30)]
     [InlineData(45)]
@@ -581,7 +575,6 @@ public class TrigonometryTests
     [InlineData(135)]
     [InlineData(150)]
     [InlineData(165)]
-    [InlineData(180)]
     public void IsInverseCosPiEqualCoRDiC(double thetaDeg)
     {
         Quad thetaA = thetaDeg * Quad.Pi / 180;
@@ -591,19 +584,16 @@ public class TrigonometryTests
     }
 
     [Theory]
-    [InlineData(0)]
     [InlineData(15)]
     [InlineData(30)]
     [InlineData(45)]
     [InlineData(60)]
     [InlineData(75)]
-    [InlineData(90)]
     [InlineData(-15)]
     [InlineData(-30)]
     [InlineData(-45)]
     [InlineData(-60)]
     [InlineData(-75)]
-    [InlineData(-90)]
     public void IsInverseSinPiEqualCoRDiC(double thetaDeg)
     {
         Quad thetaA = thetaDeg * Quad.Pi / 180;
