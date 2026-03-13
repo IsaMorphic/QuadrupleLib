@@ -584,10 +584,10 @@ public class TrigonometryTests
     [InlineData(180)]
     public void IsInverseCosPiEqualCoRDiC(double thetaDeg)
     {
-        Quad thetaA = thetaDeg / 180;
-        Quad cos = Quad.CosPi(thetaA);
+        Quad thetaA = thetaDeg * Quad.Pi / 180;
+        Quad cos = Quad.Cos(thetaA);
         Quad thetaB = Quad.AcosPi(cos);
-        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB * Quad.Pi, Precision.NearestThousandth);
     }
 
     [Theory]
@@ -606,10 +606,10 @@ public class TrigonometryTests
     [InlineData(-90)]
     public void IsInverseSinPiEqualCoRDiC(double thetaDeg)
     {
-        Quad thetaA = thetaDeg / 180;
-        Quad sin = Quad.SinPi(thetaA);
+        Quad thetaA = thetaDeg * Quad.Pi / 180;
+        Quad sin = Quad.Sin(thetaA);
         Quad thetaB = Quad.AsinPi(sin);
-        AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+        AssertX.NearlyEqual(thetaA, thetaB * Quad.Pi, Precision.NearestThousandth);
     }
 
     [Theory]
