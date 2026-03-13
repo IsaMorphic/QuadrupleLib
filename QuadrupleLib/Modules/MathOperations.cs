@@ -384,13 +384,25 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y, Float128<TAccelerator> newBase)
     {
         Float128<TAccelerator> k = Log2(newBase);
-        Float128<TAccelerator> x_n = Log2(y) / k;
-        for (int i = 0; i < 25; i++)
+        Float128<TAccelerator> x_n = Abs(Log2(y) / k);
+        if (k > Zero)
         {
-            x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
-        }
+            for (int i = 0; i < 25; i++)
+            {
+                x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
+            }
 
-        return x_n;
+            return x_n;
+        }
+        else 
+        {
+            for (int i = 0; i < 25; i++)
+            {
+                x_n += FusedMultiplyAdd(y, Exp2(k * x_n), NegativeOne);
+            }
+
+            return -x_n;
+        }
     }
 
     public static Float128<TAccelerator> Log10(Float128<TAccelerator> y)
