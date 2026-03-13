@@ -135,27 +135,14 @@ public partial struct Float128<TAccelerator>
         Float128<TAccelerator> sigma, sigma_neg, theta = Zero;
         for (int i = 0; i < SINCOS_ITER_COUNT; i++)
         {
-            bool stopFlag;
-            switch (theta.CompareTo(phi))
+            if (theta > phi)
             {
-                case < 0:
-                    sigma = One;
-                    sigma_neg = NegativeOne;
-                    stopFlag = false;
-                    break;
-                case > 0:
-                    sigma = NegativeOne;
-                    sigma_neg = One;
-                    stopFlag = false;
-                    break;
-                default:
-                    sigma = Zero;
-                    sigma_neg = Zero;
-                    stopFlag = true;
-                    break;
+                (sigma, sigma_neg) = (NegativeOne, One);
             }
-
-            if (stopFlag) break;
+            else
+            {
+                (sigma, sigma_neg) = (One, NegativeOne);
+            }
 
             (x, y) = (FusedMultiplyAdd(y, ScaleB(sigma_neg, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
             theta += sigma * _thetaTable[i];
@@ -177,7 +164,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Atan2(x, Sqrt((One + x) * (One - x)));
+            return Atan2(x, Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)));
         }
     }
 
@@ -189,7 +176,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Atan2Pi(x, Sqrt((One + x) * (One - x)));
+            return Atan2Pi(x, Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)));
         }
     }
 
@@ -201,7 +188,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Atan2(Sqrt((One + x) * (One - x)), x);
+            return Atan2(Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)), x);
         }
     }
 
@@ -213,7 +200,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Atan2Pi(Sqrt((One + x) * (One - x)), x);
+            return Atan2Pi(Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)), x);
         }
     }
 
@@ -231,12 +218,20 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Atan(Float128<TAccelerator> z)
     {
-        Float128<TAccelerator> x = One, y = z, theta = Zero, sigma;
+        Float128<TAccelerator> x = One, y = z, theta = Zero, sigma, sigma_neg;
         for (int i = 0; i < SINCOS_ITER_COUNT; i++) 
         {
-            sigma = y >= 0 ? NegativeOne : One;
-            (x, y) = (FusedMultiplyAdd(y, ScaleB(-sigma, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
-            theta -= sigma * _thetaTable[i];
+            if (y > Zero)
+            {
+                (sigma, sigma_neg) = (NegativeOne, One);
+            }
+            else 
+            {
+                (sigma, sigma_neg) = (One, NegativeOne);
+            }
+
+            (x, y) = (FusedMultiplyAdd(y, ScaleB(sigma_neg, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
+            theta += sigma_neg * _thetaTable[i];
         }
         return theta;
     }
@@ -252,15 +247,11 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
-        if (x > Zero)
-        {
-            return Atan(y / x);
-        }
-        else if (y >= Zero && x < 0)
+        else if (y >= Zero && x < Zero)
         {
             return Atan(y / x) + Pi;
         }
-        else if (y < Zero && x < 0)
+        else if (y < Zero && x < Zero)
         {
             return Atan(y / x) - Pi;
         }
@@ -271,6 +262,10 @@ public partial struct Float128<TAccelerator>
         else if (y < Zero && x == Zero)
         {
             return Pi / -2.0;
+        }
+        else if (x > Zero)
+        {
+            return Atan(y / x);
         }
         else
         {
