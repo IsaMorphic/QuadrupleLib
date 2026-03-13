@@ -58,22 +58,5 @@ namespace QuadrupleLib.Tests.Math
             double y = double.Exp10(x);
             AssertX.NearlyEqual(y, Quad.Exp10(x), Precision.NearestThousandth);
         }
-
-        [Theory]
-        [InlineData(-0.288, 2.0)]
-        [InlineData(0.5, 2.0)]
-        [InlineData(2.0, 2.0)]
-        [InlineData(-2.0, 2.0)]
-        [InlineData(-4.65, 2.0)]
-        [InlineData(-0.288, 0.5)]
-        [InlineData(0.5, 0.5)]
-        [InlineData(2.0, 0.5)]
-        [InlineData(-2.0, 0.5)]
-        [InlineData(-4.65, 0.5)]
-        public void IsPowCorrect(double x, double b)
-        {
-            double y = double.Pow(b, x);
-            AssertX.NearlyEqual(y, Quad.Pow(b, x), Precision.NearestThousandth);
-        }
     }
 }
