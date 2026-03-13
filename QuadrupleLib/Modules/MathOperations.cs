@@ -301,7 +301,7 @@ public partial struct Float128<TAccelerator>
     {
         if (x >= One)
         {
-            return Log(x + Sqrt(x * x - One));
+            return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
         }
         else
         {
@@ -311,7 +311,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Asinh(Float128<TAccelerator> x)
     {
-        return Log(x + Sqrt(x * x + One));
+        return Log(x + Sqrt(FusedMultiplyAdd(x, x, One)));
     }
 
     public static Float128<TAccelerator> Atanh(Float128<TAccelerator> x)
@@ -372,8 +372,6 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y)
     {
         Float128<TAccelerator> k = Log2(E);
-        Float128<TAccelerator> log2 = One / k;
-
         Float128<TAccelerator> x_n = Log2(y) / k;
         for (int i = 0; i < 25; i++) 
         {
@@ -386,8 +384,6 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y, Float128<TAccelerator> newBase)
     {
         Float128<TAccelerator> k = Log2(newBase);
-        Float128<TAccelerator> log2 = One / Log2(E);
-
         Float128<TAccelerator> x_n = Log2(y) / k;
         for (int i = 0; i < 25; i++)
         {
@@ -400,8 +396,6 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Log10(Float128<TAccelerator> y)
     {
         Float128<TAccelerator> k = Log2(10);
-        Float128<TAccelerator> log2 = One / Log2(E);
-
         Float128<TAccelerator> x_n = Log2(y) / k;
         for (int i = 0; i < 25; i++)
         {
