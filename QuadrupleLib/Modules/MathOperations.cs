@@ -548,20 +548,14 @@ public partial struct Float128<TAccelerator>
         for (int n = 0; n < 25; n++)
         {
             Float128<TAccelerator> sq = y_n * y_n;
-            Float128<TAccelerator> cb = sq * y_n;
-            y_n = x + 2.0 * cb / (3.0 * sq);
+            y_n = (x / sq + 2.0 * y_n) / 3.0;
         }
         return y_n;
     }
 
-    public static Float128<TAccelerator> RootN(Float128<TAccelerator> A, int n)
+    public static Float128<TAccelerator> RootN(Float128<TAccelerator> x, int n)
     {
-        Float128<TAccelerator> x_k = A, f0 = (n - One) / n, f1 = A / n;
-        for (int k = 0; k < 25; k++)
-        {
-            x_k = FusedMultiplyAdd(x_k, f0, f1 * Pow(x_k, 1 - n));
-        }
-        return x_k;
+        return Pow(x, One / n);
     }
 
     #endregion
