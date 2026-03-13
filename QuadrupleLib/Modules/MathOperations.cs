@@ -478,10 +478,13 @@ public partial struct Float128<TAccelerator>
     {
         Float128<TAccelerator> x_n = ScaleB(One, (int)Floor(y));
 
-        Float128<TAccelerator> log2 = One / Log2(E);
-        for (int n = 0; n < 25; n++)
+        if (y % One != Zero)
         {
-            x_n = FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n);
+            Float128<TAccelerator> log2 = One / Log2(E);
+            for (int n = 0; n < 25; n++)
+            {
+                x_n = FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n);
+            }
         }
 
         return x_n;
