@@ -308,10 +308,7 @@ public partial struct Float128<TAccelerator>
 
                     builder.Append(wholePart.ToString(newFormatter));
 
-                    resultStr = builder.ToString().Substring(0, Math.Min(builder.Length, 36));
-                    trimmedStr = resultStr.TrimEnd('0');
-
-                    numDigits += resultStr.Length - trimmedStr.Length;
+                    trimmedStr = builder.ToString().Substring(0, Math.Min(builder.Length, 36)).TrimEnd('0');
                     resultStr = $"{trimmedStr.Insert(1, formatter.NumberDecimalSeparator)}E{numDigits}";
                 }
                 else
