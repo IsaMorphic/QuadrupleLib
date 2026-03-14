@@ -20,18 +20,19 @@ using QuadrupleLib.Tests.Assertions.Exceptions;
 using QuadrupleLib.Tests.Assertions.Types;
 using System.Numerics;
 
-namespace QuadrupleLib.Tests;
-
-// Assertion extensions
-internal static class AssertX
+namespace QuadrupleLib.Tests
 {
-    public static void NearlyEqual<T>(T expected, T actual, Precision precision)
-        where T : IBinaryFloatingPointIeee754<T>
+    // Assertion extensions
+    internal static class AssertX
     {
-        T roundedDiff = T.Round(expected - actual, (int)precision);
-        if (roundedDiff != T.Zero)
+        public static void NearlyEqual<T>(T expected, T actual, Precision precision)
+            where T : IBinaryFloatingPointIeee754<T>
         {
-            throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(NearlyEqual)} failure: Values differ\nExpected (within {precision}): {expected}\nActual: {actual}.");
+            T roundedDiff = T.Round(expected - actual, (int)precision);
+            if (roundedDiff != T.Zero)
+            {
+                throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(NearlyEqual)} failure: Values differ\nExpected (within {precision}): {expected}\nActual: {actual}.");
+            }
         }
     }
 }

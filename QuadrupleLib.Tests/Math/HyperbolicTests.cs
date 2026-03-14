@@ -16,12 +16,14 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
 
 namespace QuadrupleLib.Tests.Math
 {
-    public class HyperbolicTests
+    public abstract class HyperbolicTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
         [Theory]
         [InlineData(-0.288)]
@@ -32,7 +34,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsSinhCorrect(double x)
         {
             double y = double.Sinh(x);
-            AssertX.NearlyEqual(y, Quad.Sinh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Sinh(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -44,7 +46,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsCoshCorrect(double x)
         {
             double y = double.Cosh(x);
-            AssertX.NearlyEqual(y, Quad.Cosh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Cosh(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -56,7 +58,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsTanhCorrect(double x)
         {
             double y = double.Tanh(x);
-            AssertX.NearlyEqual(y, Quad.Tanh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Tanh(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -68,7 +70,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsInverseSinhCorrect(double x)
         {
             double y = double.Asinh(x);
-            AssertX.NearlyEqual(y, Quad.Asinh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Asinh(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -78,7 +80,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsInverseCoshCorrect(double x)
         {
             double y = double.Acosh(x);
-            AssertX.NearlyEqual(y, Quad.Acosh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Acosh(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -86,8 +88,8 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(-1.5678)]
         public void IsInverseCoshNaN(double x)
         {
-            Quad y = Quad.Acosh(x);
-            Assert.True(Quad.IsNaN(y));
+            Float128<TAccelerator> y = Float128<TAccelerator>.Acosh(x);
+            Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
 
         [Theory]
@@ -96,7 +98,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsInverseTanhCorrect(double x)
         {
             double y = double.Atanh(x);
-            AssertX.NearlyEqual(y, Quad.Atanh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Atanh(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -106,8 +108,16 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(-1.5678)]
         public void IsInverseTanhNaN(double x)
         {
-            Quad y = Quad.Atanh(x);
-            Assert.True(Quad.IsNaN(y));
+            Float128<TAccelerator> y = Float128<TAccelerator>.Atanh(x);
+            Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
     }
+
+    public class HyperbolicTests_DefaultAccelerator :
+        HyperbolicTests<DefaultAccelerator>
+    { }
+
+    public class HyperbolicTests_SoftwareAccelerator :
+        HyperbolicTests<SoftwareAccelerator>
+    { }
 }

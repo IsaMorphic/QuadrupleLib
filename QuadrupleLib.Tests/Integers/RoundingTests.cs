@@ -16,12 +16,14 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
 
 namespace QuadrupleLib.Tests.Integers
 {
-    public class RoundingTests
+    public abstract class RoundingTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
         [Theory]
         [InlineData(1.0)]
@@ -35,7 +37,7 @@ namespace QuadrupleLib.Tests.Integers
         public void IsFloorCorrect(double x) 
         {
             double y0 = double.Floor(x);
-            Quad y1 = Quad.Floor(x);
+            Float128<TAccelerator> y1 = Float128<TAccelerator>.Floor(x);
             Assert.Equal(y0, y1);
         }
 
@@ -51,7 +53,7 @@ namespace QuadrupleLib.Tests.Integers
         public void IsCeilingCorrect(double x)
         {
             double y0 = double.Ceiling(x);
-            Quad y1 = Quad.Ceiling(x);
+            Float128<TAccelerator> y1 = Float128<TAccelerator>.Ceiling(x);
             Assert.Equal(y0, y1);
         }
 
@@ -67,7 +69,7 @@ namespace QuadrupleLib.Tests.Integers
         public void IsRoundCorrect(double x)
         {
             double y0 = double.Round(x);
-            Quad y1 = Quad.Round(x);
+            Float128<TAccelerator> y1 = Float128<TAccelerator>.Round(x);
             Assert.Equal(y0, y1);
         }
 
@@ -83,8 +85,16 @@ namespace QuadrupleLib.Tests.Integers
         public void IsRoundToCorrect(double x, int digits)
         {
             double y0 = double.Round(x, digits);
-            Quad y1 = Quad.Round(x, digits);
+            Float128<TAccelerator> y1 = Float128<TAccelerator>.Round(x, digits);
             AssertX.NearlyEqual(y0, y1, (Precision)digits);
         }
     }
+
+    public class RoundingTests_DefaultAccelerator :
+        RoundingTests<DefaultAccelerator>
+    { }
+
+    public class RoundingTests_SoftwareAccelerator :
+        RoundingTests<SoftwareAccelerator>
+    { }
 }

@@ -16,133 +16,144 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using Xunit;
 
-namespace QuadrupleLib.Tests.Arithmetic;
-
-public class SubtractionTests
+namespace QuadrupleLib.Tests.Arithmetic
 {
-    [Theory]
-    [InlineData([0.5, -0.5])]
-    [InlineData([1.0, 0.0])]
-    [InlineData([-1.0, -2.0])]
-    public void DecrementIsCorrect(double x, double y)
+    public abstract class SubtractionTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
-        Quad x_dec = (Quad)x;
-        Assert.Equal(y, --x_dec);
+        [Theory]
+        [InlineData([0.5, -0.5])]
+        [InlineData([1.0, 0.0])]
+        [InlineData([-1.0, -2.0])]
+        public void DecrementIsCorrect(double x, double y)
+        {
+            Float128<TAccelerator> x_dec = (Float128<TAccelerator>)x;
+            Assert.Equal(y, --x_dec);
+        }
+
+        [Fact]
+        public void NegativeInfinityMinusNegativeInfinityIsNaN()
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.NegativeInfinity - Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Fact]
+        public void NegativeInfinityMinusPositiveInfinityIsNegativeInfinity()
+        {
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, Float128<TAccelerator>.NegativeInfinity - Float128<TAccelerator>.PositiveInfinity);
+        }
+
+        [Fact]
+        public void PositiveInfinityMinusNegativeInfinityIsPositiveInfinity()
+        {
+            Assert.Equal(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.PositiveInfinity - Float128<TAccelerator>.NegativeInfinity);
+        }
+
+        [Fact]
+        public void PositiveInfinityMinusPositiveInfinityIsNaN()
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.PositiveInfinity - Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Theory]
+        [InlineData([0.5, 1.5, -1.0])]
+        [InlineData([1.0, -2.0, 3.0])]
+        [InlineData([-1.0, 3.5, -4.5])]
+        public void SubtractGeneralIsCorrect(double x, double y, double z)
+        {
+            Assert.Equal(z, (Float128<TAccelerator>)x - y);
+        }
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        [InlineData(-1.0)]
+        [InlineData(0.33)]
+        [InlineData(double.NaN)]
+        public void SubtractNaNIsNaN(double x)
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(x - Float128<TAccelerator>.NaN));
+        }
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        [InlineData(-1.0)]
+        [InlineData(0.33)]
+        public void SubtractNegativeInfinityIsPositiveInfinity(double x)
+        {
+            Assert.Equal(Float128<TAccelerator>.PositiveInfinity, x - Float128<TAccelerator>.NegativeInfinity);
+        }
+
+        [Theory]
+        [InlineData([0.5, -0.5])]
+        [InlineData([1.0, 0.0])]
+        [InlineData([-1.0, -2.0])]
+        public void SubtractOneIsCorrect(double x, double y)
+        {
+            Assert.Equal(y, x - Float128<TAccelerator>.One);
+        }
+
+        [Theory]
+        [InlineData([0.5, 1.5])]
+        [InlineData([1.0, 2.0])]
+        [InlineData([-1.0, 0.0])]
+        public void SubtractNegativeOneIsCorrect(double x, double y)
+        {
+            Assert.Equal(y, x - Float128<TAccelerator>.NegativeOne);
+        }
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        [InlineData(-1.0)]
+        [InlineData(0.33)]
+        public void SubtractPositiveInfinityIsNegativeInfinity(double x)
+        {
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, x - Float128<TAccelerator>.PositiveInfinity);
+        }
+
+        [Fact]
+        public void SubtractSubnormalIsSubnormal()
+        {
+            Assert.True(Float128<TAccelerator>.IsSubnormal(Float128<TAccelerator>.Epsilon - -Float128<TAccelerator>.Epsilon));
+        }
+
+        [Fact]
+        public void SubtractSubnormalIsCorrect()
+        {
+            Assert.Equal(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Epsilon - Float128<TAccelerator>.Epsilon);
+        }
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        [InlineData(-1.0)]
+        [InlineData(0.33)]
+        public void SubtractSubnormalIsIdentity(double x)
+        {
+            Assert.Equal(x, x - Float128<TAccelerator>.Epsilon);
+        }
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        [InlineData(-1.0)]
+        [InlineData(0.33)]
+        public void SubtractZeroIsIdentity(double x)
+        {
+            Assert.Equal(x, x - Float128<TAccelerator>.Zero);
+        }
     }
 
-    [Fact]
-    public void NegativeInfinityMinusNegativeInfinityIsNaN()
-    {
-        Assert.True(Quad.IsNaN(Quad.NegativeInfinity - Quad.NegativeInfinity));
-    }
+    public class SubtractionTests_DefaultAccelerator :
+        SubtractionTests<DefaultAccelerator>
+    { }
 
-    [Fact]
-    public void NegativeInfinityMinusPositiveInfinityIsNegativeInfinity()
-    {
-        Assert.Equal(Quad.NegativeInfinity, Quad.NegativeInfinity - Quad.PositiveInfinity);
-    }
-
-    [Fact]
-    public void PositiveInfinityMinusNegativeInfinityIsPositiveInfinity()
-    {
-        Assert.Equal(Quad.PositiveInfinity, Quad.PositiveInfinity - Quad.NegativeInfinity);
-    }
-
-    [Fact]
-    public void PositiveInfinityMinusPositiveInfinityIsNaN()
-    {
-        Assert.True(Quad.IsNaN(Quad.PositiveInfinity - Quad.PositiveInfinity));
-    }
-
-    [Theory]
-    [InlineData([0.5, 1.5, -1.0])]
-    [InlineData([1.0, -2.0, 3.0])]
-    [InlineData([-1.0, 3.5, -4.5])]
-    public void SubtractGeneralIsCorrect(double x, double y, double z)
-    {
-        Assert.Equal(z, (Quad)x - y);
-    }
-
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.0)]
-    [InlineData(-1.0)]
-    [InlineData(0.33)]
-    [InlineData(double.NaN)]
-    public void SubtractNaNIsNaN(double x)
-    {
-        Assert.True(Quad.IsNaN(x - Quad.NaN));
-    }
-
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.0)]
-    [InlineData(-1.0)]
-    [InlineData(0.33)]
-    public void SubtractNegativeInfinityIsPositiveInfinity(double x)
-    {
-        Assert.Equal(Quad.PositiveInfinity, x - Quad.NegativeInfinity);
-    }
-
-    [Theory]
-    [InlineData([0.5, -0.5])]
-    [InlineData([1.0, 0.0])]
-    [InlineData([-1.0, -2.0])]
-    public void SubtractOneIsCorrect(double x, double y)
-    {
-        Assert.Equal(y, x - Quad.One);
-    }
-
-    [Theory]
-    [InlineData([0.5, 1.5])]
-    [InlineData([1.0, 2.0])]
-    [InlineData([-1.0, 0.0])]
-    public void SubtractNegativeOneIsCorrect(double x, double y)
-    {
-        Assert.Equal(y, x - Quad.NegativeOne);
-    }
-
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.0)]
-    [InlineData(-1.0)]
-    [InlineData(0.33)]
-    public void SubtractPositiveInfinityIsNegativeInfinity(double x)
-    {
-        Assert.Equal(Quad.NegativeInfinity, x - Quad.PositiveInfinity);
-    }
-
-    [Fact]
-    public void SubtractSubnormalIsSubnormal()
-    {
-        Assert.True(Quad.IsSubnormal(Quad.Epsilon - -Quad.Epsilon));
-    }
-
-    [Fact]
-    public void SubtractSubnormalIsCorrect()
-    {
-        Assert.Equal(Quad.Zero, Quad.Epsilon - Quad.Epsilon);
-    }
-
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.0)]
-    [InlineData(-1.0)]
-    [InlineData(0.33)]
-    public void SubtractSubnormalIsIdentity(double x)
-    {
-        Assert.Equal(x, x - Quad.Epsilon);
-    }
-
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.0)]
-    [InlineData(-1.0)]
-    [InlineData(0.33)]
-    public void SubtractZeroIsIdentity(double x)
-    {
-        Assert.Equal(x, x - Quad.Zero);
-    }
+    public class SubtractionTests_SoftwareAccelerator :
+        SubtractionTests<SoftwareAccelerator>
+    { }
 }
