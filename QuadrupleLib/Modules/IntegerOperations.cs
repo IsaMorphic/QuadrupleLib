@@ -43,9 +43,9 @@ public partial struct Float128<TAccelerator>
 
     private static readonly Float128<TAccelerator>[] _pow10Table;
 
-    public static Float128<TAccelerator> Round(Float128<TAccelerator> x, int digits, MidpointRounding mode = MidpointRounding.ToEven)
+    public static Float128<TAccelerator> Round(Float128<TAccelerator> x, int digits, MidpointRounding mode = MidpointRounding.AwayFromZero)
     {
-        if (mode != MidpointRounding.ToEven)
+        if (mode != MidpointRounding.AwayFromZero)
         {
             throw new ArgumentException("The specified rounding mode is not supported", nameof(mode));
         }
@@ -81,7 +81,7 @@ public partial struct Float128<TAccelerator>
             bool roundUp = ((result.RawSignificand >> (111 - unbiasedExponent)) & 1) != 0;
             int bitsToErase = 112 - unbiasedExponent;
             result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
-            if (roundUp) result += 1;
+            if (roundUp) result += value.RawSignBit ? -1 : 1;
         }
 
         return result;
@@ -109,7 +109,7 @@ public partial struct Float128<TAccelerator>
             result = value;
             int bitsToErase = 112 - unbiasedExponent;
             result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
-            if (value.RawSignBit) result -= 1;
+            if (value.RawSignBit && result != value) result -= 1;
         }
 
         return result;
