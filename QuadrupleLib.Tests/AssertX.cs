@@ -28,7 +28,7 @@ internal static class AssertX
     public static void NearlyEqual<T>(T expected, T actual, Precision precision)
         where T : IBinaryFloatingPointIeee754<T>
     {
-        T roundedDiff = T.Round(expected - actual, (int)precision, MidpointRounding.AwayFromZero);
+        T roundedDiff = T.Round(expected - actual, (int)precision);
         if (roundedDiff != T.Zero)
         {
             throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(NearlyEqual)} failure: Values differ\nExpected (within {precision}): {expected}\nActual: {actual}.");

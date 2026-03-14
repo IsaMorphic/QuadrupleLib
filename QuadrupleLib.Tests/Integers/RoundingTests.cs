@@ -66,7 +66,7 @@ namespace QuadrupleLib.Tests.Integers
         [InlineData(-2.5)]
         public void IsRoundCorrect(double x)
         {
-            double y0 = double.Round(x, MidpointRounding.AwayFromZero);
+            double y0 = double.Round(x);
             Quad y1 = Quad.Round(x);
             Assert.Equal(y0, y1);
         }
@@ -82,7 +82,7 @@ namespace QuadrupleLib.Tests.Integers
         [InlineData(-1.12345, 3)]
         public void IsRoundToCorrect(double x, int digits)
         {
-            double y0 = double.Round(x, digits, MidpointRounding.AwayFromZero);
+            double y0 = double.Round(x, digits);
             Quad y1 = Quad.Round(x, digits);
             AssertX.NearlyEqual(y0, y1, (Precision)digits);
         }
