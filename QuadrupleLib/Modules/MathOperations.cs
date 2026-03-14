@@ -299,9 +299,13 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Acosh(Float128<TAccelerator> x)
     {
-        if (x >= One)
+        if (x > One)
         {
             return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
+        }
+        else if (x == One) 
+        {
+            return Zero;
         }
         else
         {
