@@ -116,7 +116,10 @@ public partial struct Float128<TAccelerator>
             (rightSign, rightExponent, rightSignificand) = (tempSign, tempExponent, tempSignificand);
         }
 
-        if (leftExponent > -EXPONENT_BIAS + 1 && rightExponent <= -EXPONENT_BIAS + 1)
+        // From @GreatCoder1000 (https://github.com/GreatCoder1000):
+        // when exponent difference is beyond rounding precision, 
+        // do not do any adding (leave left addend untouched). 
+        if (leftExponent - rightExponent > 115)
         {
             return new Float128<TAccelerator>(leftSignificand, leftExponent, leftSign);
         }
