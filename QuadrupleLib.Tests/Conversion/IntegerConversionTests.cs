@@ -121,4 +121,104 @@ public class IntegerConversionTests
     {
         Assert.Equal(x, (byte)(Quad)x);
     }
+
+    [Theory]
+    [InlineData(5.3)]
+    [InlineData(-1.12)]
+    [InlineData(-263.5)]
+    [InlineData(12345.0)]
+    public void ConvertToInt128IsTruncated(double x)
+    {
+        Assert.Equal((Int128)x, (Int128)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.3)]
+    [InlineData(-1.12)]
+    [InlineData(-263.5)]
+    [InlineData(12345.0)]
+    public void ConvertToInt64IsTruncated(double x)
+    {
+        Assert.Equal((long)x, (long)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.3)]
+    [InlineData(-1.12)]
+    [InlineData(-263.5)]
+    [InlineData(12345.0)]
+    public void ConvertToInt32IsTruncated(double x)
+    {
+        Assert.Equal((int)x, (int)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.3)]
+    [InlineData(-1.12)]
+    [InlineData(-263.5)]
+    [InlineData(12345.0)]
+    public void ConvertToInt16IsTruncated(double x)
+    {
+        Assert.Equal((short)x, (short)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.3)]
+    [InlineData(-1.12)]
+    [InlineData(-128.5)]
+    [InlineData(123.0)]
+    public void ConvertToSByteIsTruncated(double x)
+    {
+        Assert.Equal((sbyte)x, (sbyte)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.54)]
+    [InlineData(1.0)]
+    [InlineData(263.8677)]
+    [InlineData(12345.9)]
+    public void ConvertToUInt128IsTruncated(double x)
+    {
+        Assert.Equal((UInt128)x, (UInt128)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.54)]
+    [InlineData(1.0)]
+    [InlineData(263.8677)]
+    [InlineData(12345.9)]
+    public void ConvertToUInt64IsTruncated(double x)
+    {
+        Assert.Equal((ulong)x, (ulong)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.54)]
+    [InlineData(1.0)]
+    [InlineData(263.8677)]
+    [InlineData(12345.9)]
+    public void ConvertToUInt32IsTruncated(double x)
+    {
+        Assert.Equal((uint)x, (uint)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.54)]
+    [InlineData(1.0)]
+    [InlineData(263.8677)]
+    [InlineData(12345.9)]
+    public void ConvertToUInt16IsTruncated(double x)
+    {
+        Assert.Equal((ushort)x, (ushort)(Quad)x);
+    }
+
+    [Theory]
+    [InlineData(5.1)]
+    [InlineData(3.456)]
+    [InlineData(255.5)]
+    [InlineData(0.5)]
+    public void ConvertToByteIsTruncated(double x)
+    {
+        Assert.Equal((byte)x, (byte)(Quad)x);
+    }
 }
