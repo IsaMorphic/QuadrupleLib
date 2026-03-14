@@ -61,7 +61,7 @@ public partial struct Float128<TAccelerator>
                 var builder = new StringBuilder();
                 if (qExponent > 0)
                 {
-                    if (qExponent > allDigits.Length)
+                    if (qExponent >= allDigits.Length)
                     {
                         builder.Append(allDigits);
                         builder.Append(new string('0', qExponent - allDigits.Length + 1));
@@ -297,7 +297,7 @@ public partial struct Float128<TAccelerator>
                 fracDiff = 0;
             }
 
-            string resultStr;
+            string resultStr, trimmedStr;
             if (fracPart == 0)
             {
                 var numDigits = (int)Math.Floor(BigInteger.Log10(wholePart));
@@ -307,7 +307,12 @@ public partial struct Float128<TAccelerator>
                     newFormatter.NumberGroupSizes = [0];
 
                     builder.Append(wholePart.ToString(newFormatter));
-                    resultStr = $"{builder.ToString().Substring(0, 36).TrimEnd('0').Insert(1, formatter.NumberDecimalSeparator)}E{numDigits}";
+
+                    resultStr = builder.ToString().Substring(0, Math.Min(builder.Length, 36));
+                    trimmedStr = resultStr.TrimEnd('0');
+
+                    numDigits += resultStr.Length - trimmedStr.Length;
+                    resultStr = $"{trimmedStr.Insert(1, formatter.NumberDecimalSeparator)}E{numDigits}";
                 }
                 else
                 {
