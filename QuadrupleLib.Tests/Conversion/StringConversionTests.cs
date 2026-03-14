@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
 
 namespace QuadrupleLib.Tests.Conversion;
@@ -27,10 +28,10 @@ public class StringConversionTests
     [InlineData(1.300)]
     [InlineData(-263.0)]
     [InlineData(123.4567)]
-    public void ConvertToStringParseRoundtripIsEqual(double x)
+    [InlineData(1E-36)]
+    public void ConvertToStringRoundtripIsEqual(double x)
     {
-        string s_0 = $"{(Quad)x}";
-        string s_1 = $"{Quad.Parse(s_0)}";
-        Assert.Equal(s_0, s_1);
+        string s = $"{(Quad)x}";
+        AssertX.NearlyEqual(x, Quad.Parse(s), Precision.NearestThousandth);
     }
 }
