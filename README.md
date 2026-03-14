@@ -1,5 +1,8 @@
 # QuadrupleLib
 
+[![.NET](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml)
+[![NuGet](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml)
+
 QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating point number type for .NET 8 and above based on the `UInt128` built-in. The goal of this project is to create a fully fleshed out 128-bit floating point arithmetic library that includes all of the bells and whistles one could possibly want. 
 
 ### Project TODOs (Completed)
@@ -14,4 +17,4 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 - [x] Implements conversion methods to & from all standard number types
 - [x] Implements `IEEERemainder` as suggested in IEEE 754
 - [x] Implements typical library functions (`Pow`, `Atan2`, `Log`)
-- [x] Unit tests to check for specification coverage ([#11](https://github.com/IsaMorphic/QuadrupleLib/pull/11))
+- [x] Unit tests to check for specification coverage
