@@ -14,7 +14,4 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 - [x] Implements conversion methods to & from all standard number types
 - [x] Implements `IEEERemainder` as suggested in IEEE 754
 - [x] Implements typical library functions (`Pow`, `Atan2`, `Log`)
-
-### Project TODOs (WIP)
-
 - [x] Unit tests to check for specification coverage ([#11](https://github.com/IsaMorphic/QuadrupleLib/pull/11))
