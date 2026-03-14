@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="QuadrupleLib.Tests/QuadrupleLib.Tests.csproj" />
+  <Project Path="QuadrupleLib/QuadrupleLib.csproj" />
+</Solution>
