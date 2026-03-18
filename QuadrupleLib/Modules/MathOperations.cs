@@ -474,11 +474,11 @@ public partial struct Float128<TAccelerator>
         {
             for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n, y - Log(x_n), x_n);
+                x_n = FusedMultiplyAdd(x_n, y - Log(Abs(x_n)), x_n);
             }
         }
 
-        return x_n;
+        return Abs(x_n);
     }
 
     public static Float128<TAccelerator> Exp10(Float128<TAccelerator> y)
@@ -504,11 +504,11 @@ public partial struct Float128<TAccelerator>
             Float128<TAccelerator> log10 = Log(10);
             for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n * log10, x_n < Zero ? Zero : y - Log10(x_n), x_n);
+                x_n = FusedMultiplyAdd(x_n * log10, y - Log10(Abs(x_n)), x_n);
             }
         }
 
-        return x_n;
+        return Abs(x_n);
     }
 
     public static Float128<TAccelerator> Exp2(Float128<TAccelerator> y)
@@ -520,11 +520,11 @@ public partial struct Float128<TAccelerator>
             Float128<TAccelerator> log2 = One / Log2(E);
             for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n);
+                x_n = FusedMultiplyAdd(x_n * log2, y - Log2(Abs(x_n)), x_n);
             }
         }
 
-        return x_n;
+        return Abs(x_n);
     }
 
     public static Float128<TAccelerator> Pow(Float128<TAccelerator> x, Float128<TAccelerator> y)
