@@ -122,7 +122,7 @@ namespace QuadrupleLib
         public static UInt256 operator -(UInt256 a, UInt256 b)
         {
             UInt128 lo = a._lo - b._lo;
-            UInt128 borrow = (UInt128)Int128.Max(0, a._lo.CompareTo(lo));
+            UInt128 borrow = lo > a._lo ? UInt128.One : UInt128.Zero;
             UInt128 hi = a._hi - b._hi - borrow;
             return new(lo, hi);
         }
@@ -136,6 +136,8 @@ namespace QuadrupleLib
         {
             switch (amt) 
             {
+                case 0:
+                    return n;
                 case >= 128:
                     return new(n._hi >> (amt - 128), UInt128.Zero);
                 default:
@@ -147,6 +149,8 @@ namespace QuadrupleLib
         {
             switch (amt)
             {
+                case 0:
+                    return n;
                 case >= 128:
                     return new(UInt128.Zero, n._lo << (amt - 128));
                 default:

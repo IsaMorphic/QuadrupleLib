@@ -38,50 +38,46 @@ public sealed class SoftwareAccelerator : IAccelerator
         r = (uint)r_0; return q_0 | (q_1 << 32) | (q_2 << 64);
     }
 
-    private static UInt128 Divide(UInt128 n, ulong d, out ulong r)
+    private static UInt128 Divide(UInt128 x, ulong y, out ulong rem)
     {
-        uint dLoBits = (uint)d;
-        uint dHiBits = (uint)(d >> 32);
-        if (d != 0 && d > n)
+        int m = 2 - BitOperations.LeadingZeroCount(y) / 32;
+        int n = 4 - (int)UInt128.LeadingZeroCount(x) / 32;
+        if (m == 1)
         {
-            r = (ulong)n; return UInt128.Zero;
+            UInt128 q = Divide(x, (uint)y, out uint r);
+            rem = r;
+            return q;
         }
-        else if (d == n)
+        else if (m > n)
         {
-            r = 0UL; return UInt128.One;
-        }
-        else if (dHiBits > 0)
-        {
-            UInt128 quot = UInt128.Zero, rem = (uint)(n >> 96);
-            for (int i = 2; i >= 0; i--)
-            {
-                rem = (rem << 32) | (uint)(n >> (i * 32));
-
-                UInt128 _quot = Divide(rem, dHiBits, out uint _);
-                ulong _quotHi = (ulong)(_quot >> 32);
-
-                BigMul128 _prod = BigMul128.Multiply(_quotHi, d);
-                UInt128 prod = _prod._0 | ((UInt128)_prod._1 << 32) | 
-                    ((UInt128)_prod._2 << 64) | ((UInt128)_prod._3 << 96);
-
-                while (prod > rem && rem > 0)
-                {
-                    _prod = BigMul128.Multiply(--_quotHi, d);
-                    prod = _prod._0 | ((UInt128)_prod._1 << 32) | 
-                        ((UInt128)_prod._2 << 64) | ((UInt128)_prod._3 << 96);
-                }
-
-                quot = quot << 32 | _quotHi;
-                rem -= prod;
-            }
-
-            r = (ulong)rem;
-            return quot;
+            rem = (ulong)x;
+            return UInt128.Zero;
         }
         else
         {
-            var q = Divide(n, dLoBits, out uint _r);
-            r = _r; return q;
+            UInt128 q = UInt128.Zero, r = x; ulong d = y;
+            n = 8 - (int)UInt256.LeadingZeroCount(r) / 32;
+            for (int k = n - m; k > 0; k--)
+            {
+                int km = k + m;
+                ulong r2 = (ulong)(r >> (32 * (km - 2)));
+                uint d1 = (uint)(d >> (32 * (m - 1)));
+
+                ulong qt = Math.Min(r2 / d1, uint.MaxValue);
+                BigMul128 _dq = BigMul128.Multiply(d, qt);
+                UInt128 dq = _dq._0 | ((UInt128)_dq._1 << 32) | ((UInt128)_dq._2 << 64);
+                if (r < (dq << (32 * (k - 1))))
+                {
+                    _dq = BigMul128.Multiply(d, --qt);
+                    dq = _dq._0 | ((UInt128)_dq._1 << 32) | ((UInt128)_dq._2 << 64);
+                }
+
+                q = (q << 32) | qt;
+                r = r - (dq << (32 * (k - 1)));
+            }
+
+            rem = (ulong)r;
+            return q;
         }
     }
 
@@ -118,17 +114,17 @@ public sealed class SoftwareAccelerator : IAccelerator
                 UInt128 r3 = (UInt128)(r >> (32 * (km - 3))) & (UInt128.MaxValue >> 32);
                 ulong d2 = (ulong)(d >> (32 * (m - 2)));
 
-                UInt128 qt = Divide(r3, d2, out ulong _);
+                UInt128 qt = UInt128.Min(Divide(r3, d2, out ulong _), uint.MaxValue);
                 BigMul256 _dq = BigMul256.Multiply<SoftwareAccelerator>(d, qt);
                 UInt256 dq = _dq._0 | ((UInt256)_dq._1 << 64) | ((UInt256)_dq._2 << 128);
-                if (r < dq) 
+                if (r < (dq << (32 * (k - 1)))) 
                 {
                     _dq = BigMul256.Multiply<SoftwareAccelerator>(d, --qt);
                     dq = _dq._0 | ((UInt256)_dq._1 << 64) | ((UInt256)_dq._2 << 128);
                 }
 
                 q = (q << 32) | qt;
-                r = r - dq;
+                r = r - (dq << (32 * (k - 1)));
             }
 
             rem = Divide((UInt128)r, f, out ulong _);
@@ -152,14 +148,6 @@ public sealed class SoftwareAccelerator : IAccelerator
 
     static (UInt128 Quotient, UInt128 Remainder) IAccelerator.DivRem(UInt128 a, UInt128 b)
     {
-        var x = (Divide(a, b, out UInt128 r), r);
-        var y = UInt128.DivRem(a, b);
-
-        if (x != y)
-        {
-            Divide(a, b, out UInt128 _);
-        }
-
-        return y;
+        return (Divide(a, b, out UInt128 r), r);
     }
 }
