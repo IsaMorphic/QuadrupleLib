@@ -22,7 +22,7 @@ public partial struct Float128<TAccelerator>
 {
     #region Public API (trig functions)
 
-    private const int SINCOS_ITER_COUNT = 32;
+    private const int SINCOS_ITER_COUNT = 48;
 
     private static readonly Float128<TAccelerator>[] _thetaTable;
 

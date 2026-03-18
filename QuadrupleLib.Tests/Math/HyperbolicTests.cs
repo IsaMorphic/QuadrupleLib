@@ -34,7 +34,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsSinhCorrect(double x)
         {
             double y = double.Sinh(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Sinh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Sinh(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -46,7 +46,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsCoshCorrect(double x)
         {
             double y = double.Cosh(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Cosh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Cosh(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -58,7 +58,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsTanhCorrect(double x)
         {
             double y = double.Tanh(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Tanh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Tanh(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -70,7 +70,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsInverseSinhCorrect(double x)
         {
             double y = double.Asinh(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Asinh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Asinh(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -80,7 +80,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsInverseCoshCorrect(double x)
         {
             double y = double.Acosh(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Acosh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Acosh(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -98,7 +98,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsInverseTanhCorrect(double x)
         {
             double y = double.Atanh(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Atanh(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Atanh(x), Precision.NearestTenThousandth);
         }
 
         [Theory]

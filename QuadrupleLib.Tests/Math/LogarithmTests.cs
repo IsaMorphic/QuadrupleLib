@@ -34,7 +34,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLogCorrect(double x)
         {
             double y = double.Exp(x);
-            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log(y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log(y), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -55,7 +55,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLog2Correct(double x)
         {
             double y = double.Exp2(x);
-            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log2(y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log2(y), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -76,7 +76,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLog10Correct(double x)
         {
             double y = double.Exp10(x);
-            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log10(y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log10(y), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -102,7 +102,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLogBCorrect(double x, double b)
         {
             double y = double.Pow(b, x);
-            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log(y, b), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log(y, b), Precision.NearestTenThousandth);
         }
 
         [Theory]
