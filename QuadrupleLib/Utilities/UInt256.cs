@@ -16,8 +16,12 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace QuadrupleLib
+using System.Numerics;
+using System.Runtime.InteropServices;
+
+namespace QuadrupleLib.Utilities
 {
+    [StructLayout(LayoutKind.Sequential)]
     internal struct UInt256 : IEquatable<UInt256>, IComparable<UInt256>, IComparable
     {
         private static readonly UInt256 _zero = new();
@@ -34,11 +38,11 @@ namespace QuadrupleLib
 
 
 #if BIGENDIAN
-        private readonly UInt128 _hi;
-        private readonly UInt128 _lo;
+        public readonly UInt128 _hi;
+        public readonly UInt128 _lo;
 #else
-        private readonly UInt128 _lo;
-        private readonly UInt128 _hi;
+        public readonly UInt128 _lo;
+        public readonly UInt128 _hi;
 #endif
         private UInt256(UInt128 lo, UInt128 hi) 
         {
@@ -262,6 +266,13 @@ namespace QuadrupleLib
         public override int GetHashCode()
         {
             return HashCode.Combine(_lo, _hi);
+        }
+
+        public override string ToString()
+        {
+            BigInteger n = _hi; 
+            n = (n << 128) | _lo;
+            return n.ToString();
         }
     }
 }
