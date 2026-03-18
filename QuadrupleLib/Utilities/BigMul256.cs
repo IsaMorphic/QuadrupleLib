@@ -40,16 +40,20 @@ internal struct BigMul256
         ulong carry;
         BigMul256 result = new BigMul256();
 
-        result._0 = left._0 + right._0;
+        UInt128 r0 = (UInt128)left._0 + right._0;
+        result._0 = (ulong)r0;
+        carry = (ulong)(r0 >> 64);
 
-        carry = (ulong)Math.Max(0, left._0.CompareTo(result._0));
-        result._1 = left._1 + right._1 + carry;
+        UInt128 r1 = (UInt128)left._1 + right._1 + carry;
+        result._1 = (ulong)r1;
+        carry = (ulong)(r1 >> 64);
 
-        carry = (ulong)Math.Max(0, left._1.CompareTo(result._1));
-        result._2 = left._2 + right._2 + carry;
+        UInt128 r2 = (UInt128)left._2 + right._2 + carry;
+        result._2 = (ulong)r2;
+        carry = (ulong)(r2 >> 64);
 
-        carry = (ulong)Math.Max(0, left._2.CompareTo(result._2));
-        result._3 = left._3 + right._3 + carry;
+        UInt128 r3 = (UInt128)left._3 + right._3 + carry;
+        result._3 = (ulong)r3;
 
         return result;
     }
@@ -57,14 +61,16 @@ internal struct BigMul256
     private static BigMul256 Multiply<TAccelerator>(UInt128 left, ulong right)
         where TAccelerator : IAccelerator
     {
-        var result = new BigMul256();
+        BigMul256 result = new BigMul256();
 
-        ulong hi1 = TAccelerator.BigMul((ulong)left, right, out ulong lo1);
-        result._0 = lo1;
+        ulong hi0 = TAccelerator.BigMul((ulong)left, right, out ulong lo0);
+        result._0 = lo0;
 
-        ulong hi2 = TAccelerator.BigMul((ulong)(left >> 64), right, out ulong lo2);
-        result._1 = lo2 + hi1;
-        result._2 = hi2 + (ulong)Math.Max(0, lo2.CompareTo(lo2 + hi1));
+        UInt128 prod = (((UInt128)TAccelerator.BigMul(
+            (ulong)(left >> 64), right, out ulong lo1) << 64
+            ) | lo1) + hi0;
+        result._1 = (ulong)prod;
+        result._2 = (ulong)(prod >> 64);
 
         return result;
     }

@@ -16,22 +16,33 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
 
-namespace QuadrupleLib.Tests.Conversion;
-
-public class StringConversionTests
+namespace QuadrupleLib.Tests.Conversion
 {
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.300)]
-    [InlineData(-263.0)]
-    [InlineData(123.4567)]
-    [InlineData(1E-36)]
-    public void ConvertToStringRoundtripIsEqual(double x)
+    public abstract class StringConversionTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
-        string s = $"{(Quad)x}";
-        AssertX.NearlyEqual(x, Quad.Parse(s), Precision.NearestThousandth);
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.300)]
+        [InlineData(-263.0)]
+        [InlineData(123.4567)]
+        [InlineData(1E-36)]
+        public void ConvertToStringRoundtripIsEqual(double x)
+        {
+            string s = $"{(Float128<TAccelerator>)x}";
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Parse(s), Precision.NearestThousandth);
+        }
     }
+
+    public class StringConversionTests_DefaultAccelerator :
+        StringConversionTests<DefaultAccelerator>
+    { }
+
+    public class StringConversionTests_SoftwareAccelerator :
+        StringConversionTests<SoftwareAccelerator>
+    { }
 }

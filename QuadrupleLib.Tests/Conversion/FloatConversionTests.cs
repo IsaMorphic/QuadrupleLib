@@ -16,39 +16,50 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using Xunit;
 
-namespace QuadrupleLib.Tests.Conversion;
-
-public class FloatConversionTests
+namespace QuadrupleLib.Tests.Conversion
 {
-    [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.300)]
-    [InlineData(-263.0)]
-    [InlineData(123.4567)]
-    public void ConvertToDoubleIsEqual(double x)
+    public abstract class FloatConversionTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
-        Assert.Equal(x, (double)(Quad)x);
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.300)]
+        [InlineData(-263.0)]
+        [InlineData(123.4567)]
+        public void ConvertToDoubleIsEqual(double x)
+        {
+            Assert.Equal(x, (double)(Float128<TAccelerator>)x);
+        }
+
+        [Theory]
+        [InlineData(0.5f)]
+        [InlineData(1.300f)]
+        [InlineData(-263.0f)]
+        [InlineData(123.4567f)]
+        public void ConvertToSingleIsEqual(float x)
+        {
+            Assert.Equal(x, (float)(Float128<TAccelerator>)x);
+        }
+
+        [Theory]
+        [InlineData(0.5f)]
+        [InlineData(1.300f)]
+        [InlineData(-263.0f)]
+        [InlineData(123.4567f)]
+        public void ConvertToHalfIsEqual(float x)
+        {
+            Assert.Equal((Half)x, (Half)(Float128<TAccelerator>)x);
+        }
     }
 
-    [Theory]
-    [InlineData(0.5f)]
-    [InlineData(1.300f)]
-    [InlineData(-263.0f)]
-    [InlineData(123.4567f)]
-    public void ConvertToSingleIsEqual(float x)
-    {
-        Assert.Equal(x, (float)(Quad)x);
-    }
+    public class FloatConversionTests_DefaultAccelerator :
+        FloatConversionTests<DefaultAccelerator>
+    { }
 
-    [Theory]
-    [InlineData(0.5f)]
-    [InlineData(1.300f)]
-    [InlineData(-263.0f)]
-    [InlineData(123.4567f)]
-    public void ConvertToHalfIsEqual(float x)
-    {
-        Assert.Equal((Half)x, (Half)(Quad)x);
-    }
+    public class FloatConversionTests_SoftwareAccelerator :
+        FloatConversionTests<SoftwareAccelerator>
+    { }
 }

@@ -40,16 +40,20 @@ internal struct BigMul128
         uint carry;
         BigMul128 result = new BigMul128();
 
-        result._0 = left._0 + right._0;
+        ulong r0 = (ulong)left._0 + right._0;
+        result._0 = (uint)r0;
+        carry = (uint)(r0 >> 32);
 
-        carry = (uint)Math.Max(0, left._0.CompareTo(result._0));
-        result._1 = left._1 + right._1 + carry;
+        ulong r1 = (ulong)left._1 + right._1 + carry;
+        result._1 = (uint)r1;
+        carry = (uint)(r1 >> 32);
 
-        carry = (uint)Math.Max(0, left._1.CompareTo(result._1));
-        result._2 = left._2 + right._2 + carry;
+        ulong r2 = (ulong)left._2 + right._2 + carry;
+        result._2 = (uint)r2;
+        carry = (uint)(r2 >> 32);
 
-        carry = (uint)Math.Max(0, left._2.CompareTo(result._2));
-        result._3 = left._3 + right._3 + carry;
+        ulong r3 = (ulong)left._3 + right._3 + carry;
+        result._3 = (uint)r3;
 
         return result;
     }
@@ -59,11 +63,12 @@ internal struct BigMul128
         var result = new BigMul128();
 
         ulong prod1 = (uint)left * (ulong)right;
-        result._0 = (uint)prod1;
+        uint lo1 = (uint)prod1, hi1 = (uint)(prod1 >> 32);
+        result._0 = lo1;
 
-        ulong prod2 = (left >> 32) * right;
-        result._1 = (uint)prod2 + (uint)(prod1 >> 32);
-        result._2 = (uint)(prod2 >> 32) + (uint)Math.Max(0, ((uint)prod2).CompareTo((uint)prod2 + (uint)(prod1 >> 32)));
+        ulong prod2 = (uint)(left >> 32) * (ulong)right + hi1;
+        result._1 = (uint)prod2;
+        result._2 = (uint)(prod2 >> 32);
 
         return result;
     }

@@ -16,12 +16,14 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
 
 namespace QuadrupleLib.Tests.Math
 {
-    public class ExponentialTests
+    public abstract class ExponentialTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
         [Theory]
         [InlineData(-0.288)]
@@ -32,7 +34,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsExpCorrect(double x)
         {
             double y = double.Exp(x);
-            AssertX.NearlyEqual(y, Quad.Exp(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -44,7 +46,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsExp2Correct(double x) 
         {
             double y = double.Exp2(x);
-            AssertX.NearlyEqual(y, Quad.Exp2(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp2(x), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -56,7 +58,15 @@ namespace QuadrupleLib.Tests.Math
         public void IsExp10Correct(double x)
         {
             double y = double.Exp10(x);
-            AssertX.NearlyEqual(y, Quad.Exp10(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp10(x), Precision.NearestThousandth);
         }
     }
+
+    public class ExponentialTests_DefaultAccelerator :
+        ExponentialTests<DefaultAccelerator>
+    { }
+
+    public class ExponentialTests_SoftwareAccelerator :
+        ExponentialTests<SoftwareAccelerator>
+    { }
 }

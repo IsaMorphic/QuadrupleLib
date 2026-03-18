@@ -16,12 +16,14 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
 using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
 
 namespace QuadrupleLib.Tests.Math
 {
-    public class LogarithmTests
+    public abstract class LogarithmTests<TAccelerator>
+        where TAccelerator : IAccelerator
     {
         [Theory]
         [InlineData(-0.288)]
@@ -32,7 +34,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLogCorrect(double x)
         {
             double y = double.Exp(x);
-            AssertX.NearlyEqual(x, Quad.Log(y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log(y), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -40,8 +42,8 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(-1.0)]
         public void IsLogNaN(double x) 
         {
-            Quad y = Quad.Log(x);
-            Assert.True(Quad.IsNaN(y));
+            Float128<TAccelerator> y = Float128<TAccelerator>.Log(x);
+            Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
 
         [Theory]
@@ -53,7 +55,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLog2Correct(double x)
         {
             double y = double.Exp2(x);
-            AssertX.NearlyEqual(x, Quad.Log2(y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log2(y), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -61,8 +63,8 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(-1.0)]
         public void IsLog2NaN(double x)
         {
-            Quad y = Quad.Log2(x);
-            Assert.True(Quad.IsNaN(y));
+            Float128<TAccelerator> y = Float128<TAccelerator>.Log2(x);
+            Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
 
         [Theory]
@@ -74,7 +76,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLog10Correct(double x)
         {
             double y = double.Exp10(x);
-            AssertX.NearlyEqual(x, Quad.Log10(y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log10(y), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -82,8 +84,8 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(-1.0)]
         public void IsLog10NaN(double x)
         {
-            Quad y = Quad.Log10(x);
-            Assert.True(Quad.IsNaN(y));
+            Float128<TAccelerator> y = Float128<TAccelerator>.Log10(x);
+            Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
 
         [Theory]
@@ -100,7 +102,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsLogBCorrect(double x, double b)
         {
             double y = double.Pow(b, x);
-            AssertX.NearlyEqual(x, Quad.Log(y, b), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Log(y, b), Precision.NearestThousandth);
         }
 
         [Theory]
@@ -116,8 +118,16 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(3.0, -1.0)]
         public void IsLogBNaN(double x, double b)
         {
-            Quad y = Quad.Log(x, b);
-            Assert.True(Quad.IsNaN(y));
+            Float128<TAccelerator> y = Float128<TAccelerator>.Log(x, b);
+            Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
     }
+
+    public class LogarithmTests_DefaultAccelerator :
+        LogarithmTests<DefaultAccelerator>
+    { }
+
+    public class LogarithmTests_SoftwareAccelerator :
+        LogarithmTests<SoftwareAccelerator>
+    { }
 }
