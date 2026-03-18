@@ -109,7 +109,7 @@ namespace QuadrupleLib
         public static UInt256 operator +(UInt256 a, UInt256 b) 
         {
             UInt128 lo = a._lo + b._lo;
-            UInt128 carry = (UInt128)Int128.Max(0, lo.CompareTo(a._lo));
+            UInt128 carry = lo < a._lo ? UInt128.One : UInt128.Zero;
             UInt128 hi = a._hi + b._hi + carry;
             return new(lo, hi);
         }
@@ -138,6 +138,8 @@ namespace QuadrupleLib
             {
                 case 0:
                     return n;
+                case >= 256:
+                    return Zero;
                 case >= 128:
                     return new(n._hi >> (amt - 128), UInt128.Zero);
                 default:
@@ -151,6 +153,8 @@ namespace QuadrupleLib
             {
                 case 0:
                     return n;
+                case >= 256:
+                    return Zero;
                 case >= 128:
                     return new(UInt128.Zero, n._lo << (amt - 128));
                 default:
