@@ -24,4 +24,5 @@ internal enum Precision
     NearestTenth = 1,
     NearestHundreth = 2,
     NearestThousandth = 3,
+    NearestTenThousandth = 4,
 }

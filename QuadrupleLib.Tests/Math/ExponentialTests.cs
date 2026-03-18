@@ -35,7 +35,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsExpCorrect(double x)
         {
             double y = double.Exp(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -48,7 +48,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsExp2Correct(double x) 
         {
             double y = double.Exp2(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp2(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp2(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -61,7 +61,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsExp10Correct(double x)
         {
             double y = double.Exp10(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp10(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp10(x), Precision.NearestTenThousandth);
         }
     }
 

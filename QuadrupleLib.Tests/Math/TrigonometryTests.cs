@@ -299,7 +299,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg * Float128<TAccelerator>.Pi / 180;
             Float128<TAccelerator> cos = Float128<TAccelerator>.Cos(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.Acos(cos);
-            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -318,7 +318,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg * Float128<TAccelerator>.Pi / 180;
             Float128<TAccelerator> sin = Float128<TAccelerator>.Sin(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.Asin(sin);
-            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -334,7 +334,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg * Float128<TAccelerator>.Pi / 180;
             Float128<TAccelerator> tan = Float128<TAccelerator>.Tan(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.Atan(tan);
-            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -582,7 +582,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg * Float128<TAccelerator>.Pi / 180;
             Float128<TAccelerator> cos = Float128<TAccelerator>.Cos(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.AcosPi(cos);
-            AssertX.NearlyEqual(thetaA, thetaB * Float128<TAccelerator>.Pi, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB * Float128<TAccelerator>.Pi, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -601,7 +601,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg * Float128<TAccelerator>.Pi / 180;
             Float128<TAccelerator> sin = Float128<TAccelerator>.Sin(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.AsinPi(sin);
-            AssertX.NearlyEqual(thetaA, thetaB * Float128<TAccelerator>.Pi, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB * Float128<TAccelerator>.Pi, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -617,7 +617,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg / 180;
             Float128<TAccelerator> tan = Float128<TAccelerator>.TanPi(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.AtanPi(tan);
-            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -691,7 +691,7 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaA = thetaDeg * Float128<TAccelerator>.Pi / 180;
             (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = Float128<TAccelerator>.SinCos(thetaA);
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.Atan2(sin, cos);
-            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestThousandth);
+            AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestTenThousandth);
         }
     }
 

@@ -32,7 +32,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsSqrtCorrect(double x) 
         {
             double y = double.Sqrt(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Sqrt(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Sqrt(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -42,7 +42,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsCbrtCorrect(double x)
         {
             double y = double.Cbrt(x);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.Cbrt(x), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.Cbrt(x), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -58,7 +58,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsRootNCorrect(double x, int n)
         {
             double y = double.RootN(x, n);
-            AssertX.NearlyEqual(y, Float128<TAccelerator>.RootN(x, n), Precision.NearestThousandth);
+            AssertX.NearlyEqual(y, Float128<TAccelerator>.RootN(x, n), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -75,7 +75,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y0 = Float128<TAccelerator>.RootN(x, n);
             Float128<TAccelerator> y1 = Float128<TAccelerator>.Pow(x, Float128<TAccelerator>.One / n);
-            AssertX.NearlyEqual(y0, y1, Precision.NearestThousandth);
+            AssertX.NearlyEqual(y0, y1, Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -94,7 +94,7 @@ namespace QuadrupleLib.Tests.Math
         public void IsPowCorrect(double x, double y)
         {
             double z = double.Pow(x, y);
-            AssertX.NearlyEqual(z, Float128<TAccelerator>.Pow(x, y), Precision.NearestThousandth);
+            AssertX.NearlyEqual(z, Float128<TAccelerator>.Pow(x, y), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -103,7 +103,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(3.676)]
         public void IsPowZeroEqualToOne(double x)
         {
-            AssertX.NearlyEqual(Float128<TAccelerator>.One, Float128<TAccelerator>.Pow(x, 0), Precision.NearestThousandth);
+            AssertX.NearlyEqual(Float128<TAccelerator>.One, Float128<TAccelerator>.Pow(x, 0), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -122,7 +122,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(3.676)]
         public void IsPowOneIdentity(double x)
         {
-            AssertX.NearlyEqual(x, Float128<TAccelerator>.Pow(x, Float128<TAccelerator>.One), Precision.NearestThousandth);
+            AssertX.NearlyEqual(x, Float128<TAccelerator>.Pow(x, Float128<TAccelerator>.One), Precision.NearestTenThousandth);
         }
 
         [Theory]
@@ -131,7 +131,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(3.676)]
         public void IsPowNegativeOneReciprocal(double x)
         {
-            AssertX.NearlyEqual(Float128<TAccelerator>.One / x, Float128<TAccelerator>.Pow(x, Float128<TAccelerator>.NegativeOne), Precision.NearestThousandth);
+            AssertX.NearlyEqual(Float128<TAccelerator>.One / x, Float128<TAccelerator>.Pow(x, Float128<TAccelerator>.NegativeOne), Precision.NearestTenThousandth);
         }
     }
 
