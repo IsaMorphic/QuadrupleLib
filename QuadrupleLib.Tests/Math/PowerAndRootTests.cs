@@ -39,6 +39,9 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0)]
         [InlineData(2.1)]
         [InlineData(3.676)]
+        [InlineData(-1.0)]
+        [InlineData(-2.1)]
+        [InlineData(-3.676)]
         public void IsCbrtCorrect(double x)
         {
             double y = double.Cbrt(x);
@@ -52,6 +55,9 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0, 3)]
         [InlineData(2.1, 3)]
         [InlineData(3.676, 3)]
+        [InlineData(-1.0, 3)]
+        [InlineData(-2.1, 3)]
+        [InlineData(-3.676, 3)]
         [InlineData(1.0, 4)]
         [InlineData(2.1, 4)]
         [InlineData(3.676, 4)]
@@ -68,13 +74,19 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0, 3)]
         [InlineData(2.1, 3)]
         [InlineData(3.676, 3)]
+        [InlineData(-1.0, 3)]
+        [InlineData(-2.1, 3)]
+        [InlineData(-3.676, 3)]
         [InlineData(1.0, 4)]
         [InlineData(2.1, 4)]
         [InlineData(3.676, 4)]
         public void IsRootNEqualToPow(double x, int n)
         {
             Float128<TAccelerator> y0 = Float128<TAccelerator>.RootN(x, n);
-            Float128<TAccelerator> y1 = Float128<TAccelerator>.Pow(x, Float128<TAccelerator>.One / n);
+            Float128<TAccelerator> y1 = Float128<TAccelerator>.Pow(
+                Float128<TAccelerator>.Abs(x), Float128<TAccelerator>.One / n
+                );
+            if (x < 0.0) y1 = -y1;
             AssertX.NearlyEqual(y0, y1, Precision.NearestTenThousandth);
         }
 
