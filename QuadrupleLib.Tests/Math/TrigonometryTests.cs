@@ -693,6 +693,17 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> thetaB = Float128<TAccelerator>.Atan2(sin, cos);
             AssertX.NearlyEqual(thetaA, thetaB, Precision.NearestTenThousandth);
         }
+
+        [Theory]
+        [InlineData(3.0, 4.0)]
+        [InlineData(1.5, 2.0)]
+        [InlineData(1.0, 1.0)]
+        [InlineData(5.6, 7.125)]
+        public void IsHypotCorrect(double a, double b) 
+        {
+            double c = double.Hypot(a, b);
+            AssertX.NearlyEqual(c, Float128<TAccelerator>.Hypot(a, b), Precision.NearestTenThousandth);
+        }
     }
 
     public class TrigonometryTests_DefaultAccelerator :

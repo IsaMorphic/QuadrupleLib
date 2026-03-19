@@ -31,6 +31,20 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(2.0)]
         [InlineData(-2.0)]
         [InlineData(-4.65)]
+        public void IsILogBCorrect(double x)
+        {
+            double y = double.Exp2(x);
+
+            int n = (int)System.Math.Floor(x);
+            Assert.Equal(n, Float128<TAccelerator>.ILogB(y));
+        }
+
+        [Theory]
+        [InlineData(-0.288)]
+        [InlineData(0.5)]
+        [InlineData(2.0)]
+        [InlineData(-2.0)]
+        [InlineData(-4.65)]
         public void IsLogCorrect(double x)
         {
             double y = double.Exp(x);
