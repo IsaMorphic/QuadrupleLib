@@ -560,7 +560,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Pow(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        if (IsZero(x) && IsZero(y)) 
+        if (IsZero(x) && IsZero(y))
         {
             return _sNaN;
         }
@@ -574,7 +574,7 @@ public partial struct Float128<TAccelerator>
 
             return result;
         }
-        else
+        else 
         {
             return Exp(y * Log(x));
         }
@@ -629,7 +629,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (x < Zero)
         {
-            return (n & 1) == 0 ? _sNaN : -Pow(-x, n);
+            return (n & 1) == 0 ? _sNaN : -Pow(-x, One / n);
         }
         else
         {
