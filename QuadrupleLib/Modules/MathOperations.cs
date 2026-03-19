@@ -303,7 +303,7 @@ public partial struct Float128<TAccelerator>
         {
             return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
         }
-        else if (x == One) 
+        else if (x == One)
         {
             return Zero;
         }
@@ -356,7 +356,11 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log2(Float128<TAccelerator> x)
     {
-        if (x <= Zero)
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (x <= Zero)
         {
             return _sNaN;
         }
@@ -375,7 +379,11 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y)
     {
-        if (y <= Zero)
+        if (IsNaN(y))
+        {
+            return _qNaN;
+        }
+        else if (y <= Zero)
         {
             return _sNaN;
         }
@@ -396,7 +404,11 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y, Float128<TAccelerator> newBase)
     {
-        if (y <= Zero || newBase <= Zero)
+        if (IsNaN(y) || IsNaN(newBase))
+        {
+            return _qNaN;
+        }
+        else if (y <= Zero || newBase <= Zero)
         {
             return _sNaN;
         }
@@ -429,7 +441,11 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Log10(Float128<TAccelerator> y)
     {
-        if (y <= Zero)
+        if (IsNaN(y))
+        {
+            return _qNaN;
+        }
+        else if (y <= Zero)
         {
             return _sNaN;
         }
@@ -454,6 +470,11 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Exp(Float128<TAccelerator> y)
     {
+        if (IsNaN(y))
+        {
+            return _qNaN;
+        }
+
         Float128<TAccelerator> x_n = One;
         if (y > Zero)
         {
@@ -474,15 +495,20 @@ public partial struct Float128<TAccelerator>
         {
             for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n, y - Log(Abs(x_n)), x_n);
+                x_n = Abs(FusedMultiplyAdd(x_n, y - Log(x_n), x_n));
             }
         }
 
-        return Abs(x_n);
+        return x_n;
     }
 
     public static Float128<TAccelerator> Exp10(Float128<TAccelerator> y)
     {
+        if (IsNaN(y))
+        {
+            return _qNaN;
+        }
+
         Float128<TAccelerator> x_n = One;
         if (y > Zero)
         {
@@ -504,15 +530,20 @@ public partial struct Float128<TAccelerator>
             Float128<TAccelerator> log10 = Log(10);
             for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n * log10, y - Log10(Abs(x_n)), x_n);
+                x_n = Abs(FusedMultiplyAdd(x_n * log10, y - Log10(x_n), x_n));
             }
         }
 
-        return Abs(x_n);
+        return x_n;
     }
 
     public static Float128<TAccelerator> Exp2(Float128<TAccelerator> y)
     {
+        if (IsNaN(y))
+        {
+            return _qNaN;
+        }
+
         Float128<TAccelerator> x_n = ScaleB(One, (int)y);
 
         if (y % One != Zero)
@@ -520,16 +551,33 @@ public partial struct Float128<TAccelerator>
             Float128<TAccelerator> log2 = One / Log2(E);
             for (int n = 0; n < 5; n++)
             {
-                x_n = FusedMultiplyAdd(x_n * log2, y - Log2(Abs(x_n)), x_n);
+                x_n = Abs(FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n));
             }
         }
 
-        return Abs(x_n);
+        return x_n;
     }
 
     public static Float128<TAccelerator> Pow(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        return Exp(y * Log(x));
+        if (IsZero(x) && IsZero(y)) 
+        {
+            return _sNaN;
+        }
+        else if (IsInteger(x) && IsInteger(y))
+        {
+            Float128<TAccelerator> result = x;
+            for (int i = 1; i < y; i++)
+            {
+                result *= x;
+            }
+
+            return result;
+        }
+        else
+        {
+            return Exp(y * Log(x));
+        }
     }
 
     #endregion
@@ -538,16 +586,32 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Sqrt(Float128<TAccelerator> x)
     {
-        Float128<TAccelerator> y_n = x * 0.5;
-        for (int n = 0; n < 25; n++)
+        if (IsNaN(x))
         {
-            y_n = 0.5 * (y_n + x / y_n);
+            return _qNaN;
         }
-        return y_n;
+        else if (x < Zero)
+        {
+            return _sNaN;
+        }
+        else
+        {
+            Float128<TAccelerator> y_n = x * 0.5;
+            for (int n = 0; n < 25; n++)
+            {
+                y_n = 0.5 * (y_n + x / y_n);
+            }
+            return y_n;
+        }
     }
 
     public static Float128<TAccelerator> Cbrt(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+
         Float128<TAccelerator> y_n = x * 0.5;
         for (int n = 0; n < 25; n++)
         {
@@ -559,7 +623,18 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> RootN(Float128<TAccelerator> x, int n)
     {
-        return Pow(x, One / n);
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (x < Zero)
+        {
+            return (n & 1) == 0 ? _sNaN : -Pow(-x, n);
+        }
+        else
+        {
+            return Pow(x, One / n);
+        }
     }
 
     #endregion
