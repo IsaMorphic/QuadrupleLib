@@ -373,7 +373,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return n + _Log2(y, 25);
+            return n + _Log2(y, 30);
         }
     }
 
@@ -394,7 +394,7 @@ public partial struct Float128<TAccelerator>
 
         Float128<TAccelerator> k = Log2(E);
         Float128<TAccelerator> x_n = Log2(y) / k;
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < 15; i++)
         {
             x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
         }
@@ -456,7 +456,7 @@ public partial struct Float128<TAccelerator>
 
         Float128<TAccelerator> k = Log2(10);
         Float128<TAccelerator> x_n = Log2(y) / k;
-        for (int i = 0; i < 25; i++)
+        for (int i = 0; i < 15; i++)
         {
             x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
         }
@@ -493,7 +493,7 @@ public partial struct Float128<TAccelerator>
 
         if (y % One != Zero)
         {
-            for (int n = 0; n < 5; n++)
+            for (int n = 0; n < 15; n++)
             {
                 x_n = Abs(FusedMultiplyAdd(x_n, y - Log(x_n), x_n));
             }
@@ -528,7 +528,7 @@ public partial struct Float128<TAccelerator>
         if (y % One != Zero)
         {
             Float128<TAccelerator> log10 = Log(10);
-            for (int n = 0; n < 5; n++)
+            for (int n = 0; n < 15; n++)
             {
                 x_n = Abs(FusedMultiplyAdd(x_n * log10, y - Log10(x_n), x_n));
             }
