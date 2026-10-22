@@ -42,6 +42,11 @@ public partial struct Float128<TAccelerator> :
         _invK_n = ComputeInverseK(SINCOS_ITER_COUNT);
     }
 
+    public static implicit operator Float128(Float128<TAccelerator> x)
+    {
+        return new Float128(x._rawBits);
+    }
+
     public static Float128<UAccelerator> WithAccelerator<UAccelerator>(Float128<TAccelerator> x)
         where UAccelerator : IAccelerator
     {

@@ -57,7 +57,7 @@ public partial struct Float128<TAccelerator>
 
     #region Raw storage constructors
 
-    private Float128(UInt128 rawBits)
+    internal Float128(UInt128 rawBits)
     {
         _rawBits = rawBits;
     }
