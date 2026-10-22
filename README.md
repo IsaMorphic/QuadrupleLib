@@ -28,7 +28,7 @@ QuadrupleLib is available as a regularly updated [NuGet package](https://www.nug
 To use QuadrupleLib in your project, simply add the `PackageReference` to your `.csproj` file and add the following `using` statement to the top of any single file in your project:
 
 ```csharp
-global using Float128 = QuadrupleLib.Float128<QuadrupleLib.Accelerators.DefaultAccelerator>;
+global using binary128 = QuadrupleLib.Float128<QuadrupleLib.Accelerators.DefaultAccelerator>;
 ```
 
 The `Float128` type as defined above includes a full implementation of the .NET 8 `IBinaryFloatingPointIeee754<T>` generic arithmetic interface. You may use it as thus either generically or concretely. Generally, anywhere you're using `double` or `float` arithmetic, you can use `Float128` as a drop-in replacement and everything will work as expected.
