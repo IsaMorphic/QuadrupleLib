@@ -48,6 +48,8 @@ public static Float128 Pi => _pi;
 
 `Float128<TAccelerator>` is a generic type offered by the library which can accept one of two "accelerators" that are built-in: `DefaultAccelerator` and `SoftwareAccelerator`. The former uses typical hardware accelerated intrinsics for 128-bit multiplication and division operations, while the latter provides a custom, software defined version of the same thing. In almost all cases, you'll want to use `DefaultAccelerator`, unless you are running your code on a platform that does not include intrinsics for 128-bit arithmetic. In those cases, `SoftwareAccelerator` provides a faster alternative that is widely compatible. The most notable example of such a platform is when using QuadrupleLib in conjunction with [ILGPU](https://ilgpu.net), a JIT compiler for running .NET code on the GPU. 
 
+**As of version 0.2.x** of the library, the `Float128` type also defines a non-generic variant that allows for basic comparison and equality checks when using the type as part of a collection or for other, more general purposes like serialization. Any generic instance of `Float128<TAccelerator>` can be implicitly cast to this thin wrapper, allowing for easy portability across a given codebase. Note well that the wrapper DOES NOT support string conversion methods, as those methods rely on the abstractions provided by the hardware accelerator of choice. In these cases, choose the accelerator best suited to  the dependent code. 
+
 # Development Guide
 
 Interested in tinkering with the source code? Feel free to fork this repo and/or clone it as a submodule in your project:
