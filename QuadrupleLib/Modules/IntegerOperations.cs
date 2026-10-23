@@ -16,6 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Annotations;
+
 namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
@@ -151,6 +153,7 @@ public partial struct Float128<TAccelerator>
 
     #region Public API (conversion operators)
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(sbyte n)
     {
         bool signBit;
@@ -173,6 +176,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
+    [MakeNonGeneric]
     public static explicit operator sbyte(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -187,6 +191,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(short n)
     {
         bool signBit;
@@ -209,6 +214,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
+    [MakeNonGeneric]
     public static explicit operator short(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -223,6 +229,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(int n)
     {
         bool signBit;
@@ -245,6 +252,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
+    [MakeNonGeneric]
     public static explicit operator int(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -259,6 +267,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(long n)
     {
         bool signBit;
@@ -281,6 +290,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, signBit);
     }
 
+    [MakeNonGeneric]
     public static explicit operator long(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -295,6 +305,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static explicit operator Float128<TAccelerator>(Int128 n)
     {
         bool signBit;
@@ -339,6 +350,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(rounded >> 3, 112 - expShift, signBit);
     }
 
+    [MakeNonGeneric]
     public static explicit operator Int128(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -353,6 +365,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(byte n)
     {
         UInt128 mantissa = (UInt128)n;
@@ -360,6 +373,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
+    [MakeNonGeneric]
     public static explicit operator byte(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -374,6 +388,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(ushort n)
     {
         UInt128 mantissa = (UInt128)n;
@@ -381,6 +396,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
+    [MakeNonGeneric]
     public static explicit operator ushort(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -395,6 +411,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(uint n)
     {
         UInt128 mantissa = (UInt128)n;
@@ -402,6 +419,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
+    [MakeNonGeneric]
     public static explicit operator uint(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -416,6 +434,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(ulong n)
     {
         UInt128 mantissa = (UInt128)n;
@@ -423,6 +442,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
 
+    [MakeNonGeneric]
     public static explicit operator ulong(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;
@@ -437,6 +457,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static explicit operator Float128<TAccelerator>(UInt128 n)
     {
         UInt128 rounded;
@@ -465,6 +486,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(rounded >> 3, 112 - expShift, false);
     }
 
+    [MakeNonGeneric]
     public static explicit operator UInt128(Float128<TAccelerator> x)
     {
         int rightShift = 112 - x.Exponent;

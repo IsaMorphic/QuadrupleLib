@@ -59,3 +59,37 @@ public partial struct Float128<TAccelerator> :
         return new Float128<UAccelerator>(_rawBits);
     }
 }
+
+public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>
+{
+    #region Private API (constants)
+
+    private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
+    private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
+    private static readonly UInt128 SIGNBIT_MASK = (UInt128.MaxValue >> 1) + 1;
+    private static readonly ushort EXPONENT_BIAS = short.MaxValue >> 1;
+
+    #endregion
+
+    #region Public API (constants)
+
+    private static readonly Float128 _qNaN = new Float128(UInt128.One, short.MaxValue, false);
+    private static readonly Float128 _pInf = new Float128(UInt128.Zero, short.MaxValue, false);
+    private static readonly Float128 _nInf = new Float128(UInt128.Zero, short.MaxValue, true);
+
+    #endregion
+
+    private UInt128 _rawBits;
+
+    public static Float128<TAccelerator> WithAccelerator<TAccelerator>(Float128 x)
+        where TAccelerator : IAccelerator
+    {
+        return new Float128<TAccelerator>(x._rawBits);
+    }
+
+    public Float128<TAccelerator> WithAccelerator<TAccelerator>()
+        where TAccelerator : IAccelerator
+    {
+        return new Float128<TAccelerator>(_rawBits);
+    }
+}

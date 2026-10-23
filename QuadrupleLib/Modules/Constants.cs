@@ -16,6 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Annotations;
+
 namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
@@ -37,22 +39,33 @@ public partial struct Float128<TAccelerator>
     private static readonly Float128<TAccelerator> _pInf = new Float128<TAccelerator>(UInt128.Zero, short.MaxValue, false);
     private static readonly Float128<TAccelerator> _nInf = new Float128<TAccelerator>(UInt128.Zero, short.MaxValue, true);
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> PositiveInfinity => _pInf;
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> NegativeInfinity => _nInf;
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> NaN => _qNaN;
 
     private static readonly Float128<TAccelerator> _epsilon = new Float128<TAccelerator>(UInt128.One, -EXPONENT_BIAS + 1, false);
     public static Float128<TAccelerator> Epsilon => _epsilon;
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> One => 1.0;
-    public static Float128<TAccelerator> Zero => new();
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> NegativeOne => -1.0;
+
+    [MakeNonGeneric]
+    public static Float128<TAccelerator> Zero => new();
+
+    [MakeNonGeneric]
+    public static Float128<TAccelerator> NegativeZero => new(UInt128.Zero, 0, true);
 
     public static int Radix => 2;
     public static Float128<TAccelerator> AdditiveIdentity => Zero;
     public static Float128<TAccelerator> MultiplicativeIdentity => One;
-
-    public static Float128<TAccelerator> NegativeZero => new(UInt128.Zero, 0, true);
 
     private static readonly Float128<TAccelerator> _e = Parse("2.7182818284590452353602874713526625");
     public static Float128<TAccelerator> E => _e;
