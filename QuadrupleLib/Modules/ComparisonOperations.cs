@@ -16,17 +16,21 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Annotations;
+
 namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
 {
     #region Public API (equality & comparison related)
 
+    [MakeNonGeneric]
     public override int GetHashCode()
     {
         return HashCode.Combine(_rawBits);
     }
 
+    [MakeNonGeneric]
     public int CompareTo(object? obj)
     {
         if (obj is Float128<TAccelerator> other)
@@ -39,6 +43,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public int CompareTo(Float128<TAccelerator> other)
     {
         if (Equals(other))
@@ -56,41 +61,49 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public override bool Equals(object? obj)
     {
         return obj is Float128<TAccelerator> && Equals((Float128<TAccelerator>)obj);
     }
 
+    [MakeNonGeneric]
     public bool Equals(Float128<TAccelerator> other)
     {
         return (_rawBits == other._rawBits || (IsZero(this) && IsZero(other))) && (!IsNaN(this) && !IsNaN(other));
     }
 
+    [MakeNonGeneric]
     public static bool operator ==(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.Equals(right);
     }
 
+    [MakeNonGeneric]
     public static bool operator !=(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return !left.Equals(right);
     }
 
+    [MakeNonGeneric]
     public static bool operator <(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return (left.CompareTo(right) < 0) && (!IsNaN(left) && !IsNaN(right));
     }
 
+    [MakeNonGeneric]
     public static bool operator >(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.CompareTo(right) > 0 && (!IsNaN(left) && !IsNaN(right));
     }
 
+    [MakeNonGeneric]
     public static bool operator <=(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.CompareTo(right) <= 0 && (!IsNaN(left) && !IsNaN(right));
     }
 
+    [MakeNonGeneric]
     public static bool operator >=(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return left.CompareTo(right) >= 0 && (!IsNaN(left) && !IsNaN(right));

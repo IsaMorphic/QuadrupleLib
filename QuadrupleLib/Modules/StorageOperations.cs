@@ -16,6 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Annotations;
+
 namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
@@ -24,6 +26,7 @@ public partial struct Float128<TAccelerator>
 
     private UInt128 _rawBits;
 
+    [MakeNonGeneric]
     private bool RawSignBit
     {
         get => _rawBits > (UInt128.MaxValue >> 1);
@@ -35,6 +38,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     private ushort RawExponent
     {
         get => (ushort)((_rawBits & ~SIGNBIT_MASK) >> 112);
@@ -44,6 +48,7 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     private UInt128 RawSignificand
     {
         get => _rawBits & SIGNIFICAND_MASK;
@@ -57,6 +62,7 @@ public partial struct Float128<TAccelerator>
 
     #region Raw storage constructors
 
+    [MakeNonGeneric]
     internal Float128(UInt128 rawBits)
     {
         _rawBits = rawBits;
@@ -66,6 +72,7 @@ public partial struct Float128<TAccelerator>
 
     #region Representational properties
 
+    [MakeNonGeneric]
     private short Exponent
     {
         get
@@ -85,12 +92,14 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     private UInt128 Significand => RawExponent == 0 ? RawSignificand : RawSignificand | (SIGNIFICAND_MASK + 1);
 
     #endregion
 
     #region Representational constructors
 
+    [MakeNonGeneric]
     private Float128(UInt128 rawSignificand, int exponent, bool rawSignBit)
     {
         RawSignificand = rawSignificand;
