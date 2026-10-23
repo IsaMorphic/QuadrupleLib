@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -25,16 +26,40 @@ namespace QuadrupleLib.SourceGeneration
 
         private void Execute(SourceProductionContext context, ImmutableArray<MemberDeclarationSyntax> members)
         {
-            StructDeclarationSyntax structDecl = StructDeclaration("Float128")
-                .AddModifiers(ParseToken("public"), ParseToken("partial"));
+            StructDeclarationSyntax @struct =
+                StructDeclaration("Float128").AddModifiers(
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.PartialKeyword)
+                    );
 
-            var rewriter = new GenericTypeSyntaxRewriter();
-            foreach (var member in members.Select(x => rewriter.Visit(x)).Cast<MemberDeclarationSyntax>()) 
+            var rewriter = new GenericNameSyntaxRewriter(new[] { "Float128" });
+            foreach (var member in members.Select(x => rewriter.Visit(x)).Cast<MemberDeclarationSyntax>())
             {
-                structDecl = structDecl.AddMembers(member.WithAttributeLists(List<AttributeListSyntax>()));
+                var attributes = member.AttributeLists.SelectMany(x => x.Attributes);
+                var newAttributes = attributes.Where(
+                    x => !(x.Name is IdentifierNameSyntax n) ||
+                    n.Identifier.Text != "MakeNonGeneric");
+
+                MemberDeclarationSyntax newMember;
+                if (newAttributes.Any())
+                {
+                    newMember = member.WithAttributeLists(
+                        SingletonList(
+                            AttributeList(
+                                SeparatedList(newAttributes)
+                                )
+                            )
+                        );
+                }
+                else
+                {
+                    newMember = member.WithAttributeLists(List<AttributeListSyntax>());
+                }
+
+                @struct = @struct.AddMembers(newMember);
             }
 
-            NullableDirectiveTriviaSyntax directive = 
+            NullableDirectiveTriviaSyntax directive =
                 NullableDirectiveTrivia(
                     Token(SyntaxKind.HashToken),
                     Token(SyntaxKind.NullableKeyword),
@@ -44,21 +69,21 @@ namespace QuadrupleLib.SourceGeneration
                     isActive: true
                     );
 
-            NamespaceDeclarationSyntax nsDecl = 
+            NamespaceDeclarationSyntax @namespace =
                 NamespaceDeclaration(ParseName("QuadrupleLib"))
-                .AddMembers(structDecl);
+                .AddMembers(@struct);
 
-            CompilationUnitSyntax compUnit = CompilationUnit()
+            CompilationUnitSyntax unit = CompilationUnit()
                 .AddUsings(
                     UsingDirective(ParseName("System.Numerics")),
                     UsingDirective(ParseName("System.Runtime.CompilerServices"))
                     )
-                .AddMembers(nsDecl)
+                .AddMembers(@namespace)
                 .WithLeadingTrivia(Trivia(directive));
 
-            context.AddSource("Float128.gen.cs", 
-                compUnit.NormalizeWhitespace()
-                .GetText(System.Text.Encoding.UTF8));
+            context.AddSource("Float128.gen.cs", unit
+                .NormalizeWhitespace()
+                .GetText(Encoding.UTF8));
         }
     }
 }

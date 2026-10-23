@@ -1,7 +1,6 @@
 ﻿namespace QuadrupleLib.Annotations
 {
     [AttributeUsage(
-        AttributeTargets.Field | 
         AttributeTargets.Property | 
         AttributeTargets.Method | 
         AttributeTargets.Constructor)]
