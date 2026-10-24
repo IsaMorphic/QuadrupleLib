@@ -16,6 +16,9 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Accelerators;
+
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace QuadrupleLib;
@@ -60,7 +63,7 @@ public partial struct Float128<TAccelerator> :
     }
 }
 
-public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>
+public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>, IFormattable, IParsable<Float128>
 {
     #region Private API (constants)
 
@@ -81,15 +84,39 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
 
     private UInt128 _rawBits;
 
-    public static Float128<TAccelerator> WithAccelerator<TAccelerator>(Float128 x)
-        where TAccelerator : IAccelerator
+    public override string ToString()
     {
-        return new Float128<TAccelerator>(x._rawBits);
+        return WithAccelerator<DefaultAccelerator>().ToString();
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return WithAccelerator<DefaultAccelerator>()
+            .ToString(format, formatProvider);
     }
 
     public Float128<TAccelerator> WithAccelerator<TAccelerator>()
         where TAccelerator : IAccelerator
     {
         return new Float128<TAccelerator>(_rawBits);
+    }
+
+    public static Float128<TAccelerator> WithAccelerator<TAccelerator>(Float128 x)
+        where TAccelerator : IAccelerator
+    {
+        return new Float128<TAccelerator>(x._rawBits);
+    }
+
+    public static Float128 Parse(string s, IFormatProvider? provider)
+    {
+        return Float128<DefaultAccelerator>.Parse(s, provider);
+    }
+
+    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
+    {
+        bool didParse = Float128<DefaultAccelerator>
+            .TryParse(s, provider, out Float128<DefaultAccelerator> _result);
+        result = _result;
+        return didParse;
     }
 }
