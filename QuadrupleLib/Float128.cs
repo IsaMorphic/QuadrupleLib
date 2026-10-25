@@ -65,6 +65,8 @@ public partial struct Float128<TAccelerator> :
 
 public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>, IFormattable, IParsable<Float128>
 {
+    private const int MAX_STRING_DIGITS = 33;
+
     #region Private API (constants)
 
     private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
@@ -77,23 +79,13 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
     #region Public API (constants)
 
     private static readonly Float128 _qNaN = new Float128(UInt128.One, short.MaxValue, false);
+    private static readonly Float128 _sNaN = new Float128(UInt128.One, short.MaxValue, true);
     private static readonly Float128 _pInf = new Float128(UInt128.Zero, short.MaxValue, false);
     private static readonly Float128 _nInf = new Float128(UInt128.Zero, short.MaxValue, true);
 
     #endregion
 
     private UInt128 _rawBits;
-
-    public override string ToString()
-    {
-        return WithAccelerator<DefaultAccelerator>().ToString();
-    }
-
-    public string ToString(string? format, IFormatProvider? formatProvider)
-    {
-        return WithAccelerator<DefaultAccelerator>()
-            .ToString(format, formatProvider);
-    }
 
     public Float128<TAccelerator> WithAccelerator<TAccelerator>()
         where TAccelerator : IAccelerator
@@ -105,18 +97,5 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
         where TAccelerator : IAccelerator
     {
         return new Float128<TAccelerator>(x._rawBits);
-    }
-
-    public static Float128 Parse(string s, IFormatProvider? provider)
-    {
-        return Float128<DefaultAccelerator>.Parse(s, provider);
-    }
-
-    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128 result)
-    {
-        bool didParse = Float128<DefaultAccelerator>
-            .TryParse(s, provider, out Float128<DefaultAccelerator> _result);
-        result = _result;
-        return didParse;
     }
 }

@@ -75,8 +75,12 @@ namespace QuadrupleLib.SourceGeneration
 
             CompilationUnitSyntax unit = CompilationUnit()
                 .AddUsings(
+                    UsingDirective(ParseName("System.Diagnostics.CodeAnalysis")),
+                    UsingDirective(ParseName("System.Globalization")),
                     UsingDirective(ParseName("System.Numerics")),
-                    UsingDirective(ParseName("System.Runtime.CompilerServices"))
+                    UsingDirective(ParseName("System.Runtime.CompilerServices")),
+                    UsingDirective(ParseName("System.Text")),
+                    UsingDirective(ParseName("System.Text.RegularExpressions"))
                     )
                 .AddMembers(@namespace)
                 .WithLeadingTrivia(Trivia(directive));
