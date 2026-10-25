@@ -44,7 +44,7 @@ public partial struct Float128<TAccelerator>
             return _nInf;
         }
 
-        var match = Regex.Match(s.Trim(), @$"((?:{Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d+)" +
+        var match = Regex.Match(s.Trim(), @$"((?:{Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
             @$"(?:{Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
             @$"((?: ?{Regex.Escape(formatter.NegativeSign)})|\))?");
         if (!match.Success)
@@ -69,7 +69,7 @@ public partial struct Float128<TAccelerator>
                     else
                     {
                         builder.Append(allDigits);
-                        builder.Insert(allDigits.Length - qExponent, formatter.NumberDecimalSeparator);
+                        builder.Insert(qExponent + 1, formatter.NumberDecimalSeparator);
                     }
                 }
                 else if (qExponent < 0)
@@ -83,7 +83,7 @@ public partial struct Float128<TAccelerator>
                 return Parse(builder.ToString(), formatter);
             }
 
-            var wholePart = BigInteger.Parse(match.Groups[2].Value);
+            var wholePart = match.Groups[2].Length > 0 ? BigInteger.Parse(match.Groups[2].Value) : 0;
             var fracPart = match.Groups[3].Success ? BigInteger.Parse(match.Groups[3].Value) : 0;
             var zExponent = match.Groups[3].Value.TakeWhile(ch => ch == '0').Count();
 
@@ -231,6 +231,8 @@ public partial struct Float128<TAccelerator>
 
     #region Public API (string formatting related)
 
+    private const int MAX_STRING_DIGITS = 34;
+
     public override string ToString()
     {
         return ToString(null, null);
@@ -256,141 +258,109 @@ public partial struct Float128<TAccelerator>
         else
         {
             Float128<TAccelerator> rounded = Round(this, formatter.NumberDecimalDigits);
-            var builder = new StringBuilder();
 
-            BigInteger fracPart;
-            int fracDiff;
+            int m = (int)UInt128.TrailingZeroCount(rounded.Significand);
+            int e2 = rounded.Exponent - Math.Abs(m - 112);
 
-            BigInteger wholePart = rounded.Significand;
-            var wholeDiff = 112 - rounded.Exponent;
-
-            if (wholeDiff > 0)
+            BigInteger significand = e2 switch
             {
-                wholePart >>= wholeDiff;
-                if (rounded.Exponent < 0)
-                {
-                    var tzc = (int)UInt128.TrailingZeroCount(rounded.Significand);
-                    int shift;
-                    if (-rounded.Exponent < 112)
-                    {
-                        shift = -rounded.Exponent;
-                        fracDiff = 0;
-                    }
-                    else
-                    {
-                        shift = tzc;
-                        fracDiff = -rounded.Exponent - shift;
-                    }
+                >= 0 => rounded.Significand >> m,
+                < 0 => (rounded.Significand >> m) * BigInteger.Pow(5, -e2)
+            };
 
-                    fracPart = (rounded.Significand >> shift) & SIGNIFICAND_MASK;
-                }
-                else
-                {
-                    fracDiff = 0;
-                    fracPart = (rounded.Significand << rounded.Exponent) & SIGNIFICAND_MASK;
-                }
+            (BigInteger n, BigInteger r) = BigInteger.DivRem(significand, 10);
+            while (n > 0 && r == 0)
+            {
+                (n, r) = BigInteger.DivRem(n, 10);
+            }
+
+            StringBuilder result = new();
+            if (n == 0)
+            {
+                result.Append(r); 
+                --e2;
+            }
+            else if (r == 0)
+            {
+                result.Append(n);
             }
             else
             {
-                wholePart <<= -wholeDiff;
-                fracPart = 0;
-                fracDiff = 0;
+                result.Append(n);
+                result.Append(r);
+                --e2;
             }
 
-            string resultStr, trimmedStr;
-            if (fracPart == 0)
+            if (result.Length > MAX_STRING_DIGITS)
             {
-                var numDigits = (int)Math.Floor(BigInteger.Log10(wholePart));
-                if (numDigits >= 20)
+                e2 += result.Length - MAX_STRING_DIGITS;
+                int lastDigit = result[MAX_STRING_DIGITS] - '0';
+                int nextDigit = result[MAX_STRING_DIGITS - 1] - '0';
+                result.Remove(MAX_STRING_DIGITS - 1, result.Length - MAX_STRING_DIGITS);
+                if (lastDigit < 5)
                 {
-                    NumberFormatInfo newFormatter = (NumberFormatInfo)formatter.Clone();
-                    newFormatter.NumberGroupSizes = [0];
-
-                    builder.Append(wholePart.ToString(newFormatter));
-
-                    trimmedStr = builder.ToString().Substring(0, Math.Min(builder.Length, 36)).TrimEnd('0');
-                    resultStr = $"{trimmedStr.Insert(1, formatter.NumberDecimalSeparator)}E{numDigits}";
+                    result.Append(nextDigit);
+                    --e2;
                 }
                 else
                 {
-                    builder.Append(wholePart.ToString(formatter));
-                    resultStr = builder.ToString();
+                    for (int i = result.Length - 1; i >= 0 && ++nextDigit > 9; i--)
+                    {
+                        result[i] = (char)(nextDigit % 10 + '0');
+                        if (i > 0) nextDigit = result[i - 1] - '0';
+                    }
+
+                    if (++nextDigit > 9)
+                    {
+                        result.Insert(0, '1');
+                    }
                 }
+            }
+
+            bool expFlag;
+            int offset = result.Length + e2;
+            if (offset < 0 && result.Length - offset <= MAX_STRING_DIGITS)
+            {
+                for (int i = offset; i < 0; i++)
+                {
+                    result.Insert(0, '0');
+                }
+                expFlag = false;
+            }
+            else if (offset >= 0 && result.Length + offset <= MAX_STRING_DIGITS)
+            {
+                for (int i = 0; i < offset; i++)
+                {
+                    result.Append('0');
+                }
+                expFlag = false;
             }
             else
             {
-                builder.Append(wholePart.ToString(formatProvider));
-
-                var numDigits = wholePart == 0 ? 0 : builder.Length;
-                var decimalExpn = numDigits;
-
-                bool nonZeroFlag = numDigits > 0;
-                BigInteger guardDigit = 0;
-                BigInteger lastDigit = 0;
-
-                while (!nonZeroFlag)
-                {
-                    fracPart *= 10;
-
-                    guardDigit = lastDigit;
-                    lastDigit = fracPart >> (112 + fracDiff);
-
-                    fracPart &= (BigInteger.One << (112 + fracDiff)) - 1;
-
-                    nonZeroFlag = nonZeroFlag || lastDigit > 0;
-                    if (nonZeroFlag) builder.Append(lastDigit);
-                    else ++decimalExpn;
-                }
-
-                int addDigits = decimalExpn < 20 ? decimalExpn : 0;
-                int maxDigits = Math.Min(38, formatter.NumberDecimalDigits);
-                while (++numDigits + addDigits < maxDigits)
-                {
-                    fracPart *= 10;
-
-                    guardDigit = lastDigit;
-                    lastDigit = fracPart >> (112 + fracDiff);
-
-                    fracPart &= (BigInteger.One << (112 + fracDiff)) - 1;
-
-                    nonZeroFlag = nonZeroFlag || lastDigit > 0;
-                    if (nonZeroFlag) builder.Append(lastDigit);
-                    else ++decimalExpn;
-                }
-
-                if ((fracPart * 10 >> (112 + fracDiff)) >= 5)
-                {
-                    if (lastDigit + 1 == 10)
-                    {
-                        builder.Remove(builder.Length - 2, 2);
-                        builder.Append(guardDigit + 1);
-                    }
-                    else
-                    {
-                        builder.Remove(builder.Length - 1, 1);
-                        builder.Append(lastDigit + 1);
-                    }
-                }
-
-                if (wholePart == 0 && decimalExpn >= 20)
-                {
-                    builder.Remove(0, 1);
-                    builder.Insert(1, formatter.NumberDecimalSeparator);
-                    resultStr = $"{builder.ToString().TrimEnd('0')}E{1 - decimalExpn}";
-                }
-                else if (wholePart == 0)
-                {
-                    builder.Insert(0, new string('0', decimalExpn));
-                    builder.Insert(1, formatter.NumberDecimalSeparator);
-                    resultStr = builder.ToString().TrimEnd('0');
-                }
-                else
-                {
-                    builder.Insert(decimalExpn, formatter.NumberDecimalSeparator);
-                    resultStr = builder.ToString().TrimEnd('0');
-                }
+                expFlag = true;
             }
 
+            int trimIdx;
+            for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
+            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
+            e2 += result.Length - trimIdx - 1;
+
+            if (expFlag)
+            {
+                if (result.Length > 1)
+                {
+                    result.Insert(1, '.');
+                }
+
+                result.Append('E');
+                result.Append(offset);
+            }
+            else if (e2 < 0 && result.Length + e2 + 1 < result.Length)
+            {
+                result.Insert(result.Length + e2 + 1, '.');
+            }
+
+            string resultStr = result.ToString();
             switch (formatter.NumberNegativePattern)
             {
                 case 0:
