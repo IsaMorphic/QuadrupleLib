@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Annotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
@@ -28,6 +29,7 @@ public partial struct Float128<TAccelerator>
 {
     #region Public API (parsing related)
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Parse(string s, IFormatProvider? provider = null)
     {
         NumberFormatInfo formatter = NumberFormatInfo.GetInstance(provider);
@@ -169,11 +171,13 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider)
     {
         return Parse(new string(s), style, provider);
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Parse(string s, NumberStyles style, IFormatProvider? provider)
     {
         if (style == NumberStyles.Float)
@@ -186,16 +190,19 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
     {
         return Parse(new string(s), provider);
     }
 
+    [MakeNonGeneric]
     public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         return TryParse(new string(s), style, provider, out result);
     }
 
+    [MakeNonGeneric]
     public static bool TryParse([NotNullWhen(true)] string? s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         if (string.IsNullOrWhiteSpace(s))
@@ -209,11 +216,13 @@ public partial struct Float128<TAccelerator>
         return !IsNaN(result);
     }
 
+    [MakeNonGeneric]
     public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         return TryParse(new string(s), provider, out result);
     }
 
+    [MakeNonGeneric]
     public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
         if (string.IsNullOrWhiteSpace(s))
@@ -231,17 +240,19 @@ public partial struct Float128<TAccelerator>
 
     #region Public API (string formatting related)
 
-    private const int MAX_STRING_DIGITS = 34;
+    private const int MAX_STRING_DIGITS = 33;
 
+    [MakeNonGeneric]
     public override string ToString()
     {
         return ToString(null, null);
     }
 
+    [MakeNonGeneric]
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
         NumberFormatInfo formatter = formatProvider is null ?
-            new NumberFormatInfo() { NumberDecimalDigits = 38 } :
+            new NumberFormatInfo() { NumberDecimalDigits = MAX_STRING_DIGITS } :
             NumberFormatInfo.GetInstance(formatProvider);
         if (IsNaN(this))
         {
@@ -257,15 +268,15 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> rounded = Round(this, formatter.NumberDecimalDigits);
+            if (IsZero(this)) return "0";
 
-            int m = (int)UInt128.TrailingZeroCount(rounded.Significand);
-            int e2 = rounded.Exponent - Math.Abs(m - 112);
+            int m = (int)UInt128.TrailingZeroCount(Significand);
+            int e2 = Exponent - Math.Abs(m - 112);
 
             BigInteger significand = e2 switch
             {
-                >= 0 => rounded.Significand >> m,
-                < 0 => (rounded.Significand >> m) * BigInteger.Pow(5, -e2)
+                >= 0 => Significand >> m,
+                < 0 => (Significand >> m) * BigInteger.Pow(5, -e2)
             };
 
             (BigInteger n, BigInteger r) = BigInteger.DivRem(significand, 10);
@@ -291,16 +302,15 @@ public partial struct Float128<TAccelerator>
                 --e2;
             }
 
-            if (result.Length > MAX_STRING_DIGITS)
+            if (result.Length > formatter.NumberDecimalDigits)
             {
-                e2 += result.Length - MAX_STRING_DIGITS;
-                int lastDigit = result[MAX_STRING_DIGITS] - '0';
-                int nextDigit = result[MAX_STRING_DIGITS - 1] - '0';
-                result.Remove(MAX_STRING_DIGITS - 1, result.Length - MAX_STRING_DIGITS);
+                e2 += result.Length - formatter.NumberDecimalDigits;
+                int lastDigit = result[formatter.NumberDecimalDigits] - '0';
+                int nextDigit = result[formatter.NumberDecimalDigits - 1] - '0';
+                result.Remove(formatter.NumberDecimalDigits - 1, result.Length - formatter.NumberDecimalDigits);
                 if (lastDigit < 5)
                 {
-                    result.Append(nextDigit);
-                    --e2;
+                    result[result.Length - 1] = (char)(nextDigit + '0');
                 }
                 else
                 {
@@ -313,13 +323,14 @@ public partial struct Float128<TAccelerator>
                     if (++nextDigit > 9)
                     {
                         result.Insert(0, '1');
+                        --e2;
                     }
                 }
             }
 
             bool expFlag;
             int offset = result.Length + e2;
-            if (offset < 0 && result.Length - offset <= MAX_STRING_DIGITS)
+            if (offset < 0 && result.Length - offset <= formatter.NumberDecimalDigits)
             {
                 for (int i = offset; i < 0; i++)
                 {
@@ -327,7 +338,7 @@ public partial struct Float128<TAccelerator>
                 }
                 expFlag = false;
             }
-            else if (offset >= 0 && result.Length + offset <= MAX_STRING_DIGITS)
+            else if (offset >= 0 && result.Length + offset - 1 <= formatter.NumberDecimalDigits)
             {
                 for (int i = 0; i < offset; i++)
                 {
@@ -342,9 +353,9 @@ public partial struct Float128<TAccelerator>
 
             int trimIdx;
             for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
-            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
             e2 += result.Length - trimIdx - 1;
 
+            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
             if (expFlag)
             {
                 if (result.Length > 1)
@@ -364,26 +375,27 @@ public partial struct Float128<TAccelerator>
             switch (formatter.NumberNegativePattern)
             {
                 case 0:
-                    return rounded.RawSignBit ?
+                    return RawSignBit ?
                         $"({resultStr})" : resultStr;
                 case 1:
-                    return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                    return (RawSignBit ? formatter.NegativeSign : string.Empty)
                         + resultStr;
                 case 2:
-                    return (rounded.RawSignBit ? formatter.NegativeSign : string.Empty)
+                    return (RawSignBit ? formatter.NegativeSign : string.Empty)
                         + $" {resultStr}";
                 case 3:
                     return resultStr +
-                        (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                        (RawSignBit ? formatter.NegativeSign : string.Empty);
                 case 4:
                     return $"{resultStr} " +
-                        (rounded.RawSignBit ? formatter.NegativeSign : string.Empty);
+                        (RawSignBit ? formatter.NegativeSign : string.Empty);
                 default:
                     throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
             }
         }
     }
 
+    [MakeNonGeneric]
     public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
     {
         string? formatStr = format.Length == 0 ? null : new string(format);
