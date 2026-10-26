@@ -49,6 +49,8 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> NaN => _qNaN;
 
     private static readonly Float128<TAccelerator> _epsilon = new Float128<TAccelerator>(UInt128.One, -EXPONENT_BIAS + 1, false);
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Epsilon => _epsilon;
 
     [MakeNonGeneric]
@@ -68,18 +70,28 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> MultiplicativeIdentity => One;
 
     private static readonly Float128<TAccelerator> _e = Parse("2.7182818284590452353602874713526625");
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> E => _e;
     
     private static readonly Float128<TAccelerator> _quarterPi = Parse("0.7853981633974483096156608458198757");
-    public static Float128<TAccelerator> QuarterPi = _quarterPi;
+
+    [MakeNonGeneric]
+    public static Float128<TAccelerator> QuarterPi => _quarterPi;
 
     private static readonly Float128<TAccelerator> _halfPi = Parse("1.5707963267948966192313216916397514");
-    public static Float128<TAccelerator> HalfPi = _halfPi;
+
+    [MakeNonGeneric]
+    public static Float128<TAccelerator> HalfPi => _halfPi;
 
     private static readonly Float128<TAccelerator> _pi = Parse("3.1415926535897932384626433832795028");
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Pi => _pi;
 
     private static readonly Float128<TAccelerator> _tau = Parse("6.2831853071795864769252867665590058");
+
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Tau => _tau;
 
     #endregion
