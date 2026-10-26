@@ -69,9 +69,6 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
 {
     #region Private API (constants)
 
-    private const int MAX_STRING_DIGITS = 34;
-    private const int MAX_PADDING_DIGITS = 23;
-
     private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
     private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
     private static readonly UInt128 SIGNBIT_MASK = (UInt128.MaxValue >> 1) + 1;
@@ -85,6 +82,19 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
     private static readonly Float128 _sNaN = new Float128(UInt128.One, short.MaxValue, true);
     private static readonly Float128 _pInf = new Float128(UInt128.Zero, short.MaxValue, false);
     private static readonly Float128 _nInf = new Float128(UInt128.Zero, short.MaxValue, true);
+    private static readonly Float128 _epsilon = new Float128(UInt128.One, -EXPONENT_BIAS + 1, false);
+    private static readonly Float128 _e = Parse("2.7182818284590452353602874713526625");
+    private static readonly Float128 _quarterPi = Parse("0.7853981633974483096156608458198757");
+    private static readonly Float128 _halfPi = Parse("1.5707963267948966192313216916397514");
+    private static readonly Float128 _pi = Parse("3.1415926535897932384626433832795028");
+    private static readonly Float128 _tau = Parse("6.2831853071795864769252867665590058");
+
+    #endregion
+
+    #region Public API (string conversion related)
+
+    private const int MAX_STRING_DIGITS = 34;
+    private const int MAX_PADDING_DIGITS = 23;
 
     #endregion
 
