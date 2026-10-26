@@ -65,9 +65,10 @@ public partial struct Float128<TAccelerator> :
 
 public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>, IFormattable, IParsable<Float128>
 {
-    private const int MAX_STRING_DIGITS = 33;
-
     #region Private API (constants)
+
+    private const int MAX_STRING_DIGITS = 36;
+    private const int MAX_EXTRA_DIGITS = 6;
 
     private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
     private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
