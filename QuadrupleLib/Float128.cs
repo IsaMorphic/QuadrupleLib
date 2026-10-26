@@ -16,9 +16,6 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using QuadrupleLib.Accelerators;
-
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace QuadrupleLib;
@@ -63,11 +60,12 @@ public partial struct Float128<TAccelerator> :
     }
 }
 
-public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>, IFormattable, IParsable<Float128>
+public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<Float128>, IFormattable, ISpanFormattable, IParsable<Float128>, ISpanParsable<Float128>
 {
-    private const int MAX_STRING_DIGITS = 33;
-
     #region Private API (constants)
+
+    private const int MAX_STRING_DIGITS = 34;
+    private const int MAX_PADDING_DIGITS = 23;
 
     private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
     private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;

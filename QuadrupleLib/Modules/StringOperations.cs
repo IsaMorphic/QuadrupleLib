@@ -240,7 +240,8 @@ public partial struct Float128<TAccelerator>
 
     #region Public API (string formatting related)
 
-    private const int MAX_STRING_DIGITS = 33;
+    private const int MAX_STRING_DIGITS = 34;
+    private const int MAX_PADDING_DIGITS = 23;
 
     [MakeNonGeneric]
     public override string ToString()
@@ -266,16 +267,18 @@ public partial struct Float128<TAccelerator>
         {
             return formatter.NegativeInfinitySymbol;
         }
+        else if (IsZero(this))
+        {
+            return "0";
+        }
         else
         {
-            if (IsZero(this)) return "0";
-
             int m = (int)UInt128.TrailingZeroCount(Significand);
             int e2 = Exponent - Math.Abs(m - 112);
 
             BigInteger significand = e2 switch
             {
-                >= 0 => Significand >> m,
+                >= 0 => (Significand >> m) / BigInteger.Pow(5, e2),
                 < 0 => (Significand >> m) * BigInteger.Pow(5, -e2)
             };
 
@@ -288,7 +291,7 @@ public partial struct Float128<TAccelerator>
             StringBuilder result = new();
             if (n == 0)
             {
-                result.Append(r); 
+                result.Append(r);
                 --e2;
             }
             else if (r == 0)
@@ -302,48 +305,26 @@ public partial struct Float128<TAccelerator>
                 --e2;
             }
 
-            if (result.Length > formatter.NumberDecimalDigits)
-            {
-                e2 += result.Length - formatter.NumberDecimalDigits;
-                int lastDigit = result[formatter.NumberDecimalDigits] - '0';
-                int nextDigit = result[formatter.NumberDecimalDigits - 1] - '0';
-                result.Remove(formatter.NumberDecimalDigits - 1, result.Length - formatter.NumberDecimalDigits);
-                if (lastDigit < 5)
-                {
-                    result[result.Length - 1] = (char)(nextDigit + '0');
-                }
-                else
-                {
-                    for (int i = result.Length - 1; i >= 0 && ++nextDigit > 9; i--)
-                    {
-                        result[i] = (char)(nextDigit % 10 + '0');
-                        if (i > 0) nextDigit = result[i - 1] - '0';
-                    }
-
-                    if (++nextDigit > 9)
-                    {
-                        result.Insert(0, '1');
-                        --e2;
-                    }
-                }
-            }
-
             bool expFlag;
             int offset = result.Length + e2;
-            if (offset < 0 && result.Length - offset <= formatter.NumberDecimalDigits)
+            int numDigits = formatter.NumberDecimalDigits;
+            if (offset < 0 && offset >= -MAX_PADDING_DIGITS)
             {
                 for (int i = offset; i < 0; i++)
                 {
                     result.Insert(0, '0');
                 }
+
                 expFlag = false;
             }
-            else if (offset >= 0 && result.Length + offset - 1 <= formatter.NumberDecimalDigits)
+            else if (offset >= 0 && offset <= MAX_PADDING_DIGITS)
             {
                 for (int i = 0; i < offset; i++)
                 {
                     result.Append('0');
                 }
+
+                e2 -= offset;
                 expFlag = false;
             }
             else
@@ -351,11 +332,40 @@ public partial struct Float128<TAccelerator>
                 expFlag = true;
             }
 
-            int trimIdx;
-            for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
-            e2 += result.Length - trimIdx - 1;
+            if (result.Length > numDigits - 1)
+            {
+                e2 += result.Length - numDigits;
 
-            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
+                int lastDigit = result[numDigits - 1] - '0';
+                int nextDigit = result[numDigits - 2] - '0';
+
+                result.Remove(numDigits - 1, result.Length - numDigits);
+                if (lastDigit >= 5)
+                {
+                    int i;
+                    for (i = result.Length - 1; i >= 0 && ++nextDigit > 9; i--)
+                    {
+                        result[i] = (char)(nextDigit % 10 + '0');
+                        if (i > 0) nextDigit = result[i - 1] - '0';
+                    }
+
+                    if (i < 0 && nextDigit > 9)
+                    {
+                        result.Remove(numDigits - 1, 1);
+                        result.Insert(0, '1');
+                    }
+                }
+            }
+
+            if (offset < 0)
+            {
+                int trimIdx;
+                for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
+
+                e2 += result.Length - trimIdx - 1;
+                result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
+            }
+
             if (expFlag)
             {
                 if (result.Length > 1)
@@ -371,27 +381,46 @@ public partial struct Float128<TAccelerator>
                 result.Insert(result.Length + e2 + 1, '.');
             }
 
-            string resultStr = result.ToString();
             switch (formatter.NumberNegativePattern)
             {
                 case 0:
-                    return RawSignBit ?
-                        $"({resultStr})" : resultStr;
+                    if (RawSignBit)
+                    {
+                        result.Insert(0, '(');
+                        result.Append(')');
+                    }
+                    break;
                 case 1:
-                    return (RawSignBit ? formatter.NegativeSign : string.Empty)
-                        + resultStr;
+                    if (RawSignBit)
+                    {
+                        result.Insert(0, formatter.NegativeSign);
+                    }
+                    break;
                 case 2:
-                    return (RawSignBit ? formatter.NegativeSign : string.Empty)
-                        + $" {resultStr}";
+                    if (RawSignBit)
+                    {
+                        result.Insert(0, ' ');
+                        result.Insert(0, formatter.NegativeSign);
+                    }
+                    break;
                 case 3:
-                    return resultStr +
-                        (RawSignBit ? formatter.NegativeSign : string.Empty);
+                    if (RawSignBit)
+                    {
+                        result.Append(formatter.NegativeSign);
+                    }
+                    break;
                 case 4:
-                    return $"{resultStr} " +
-                        (RawSignBit ? formatter.NegativeSign : string.Empty);
+                    if (RawSignBit)
+                    {
+                        result.Append(' ');
+                        result.Append(formatter.NegativeSign);
+                    }
+                    break;
                 default:
                     throw new FormatException($"Invalid {nameof(NumberFormatInfo.NumberNegativePattern)} was specified.");
             }
+
+            return result.ToString();
         }
     }
 
