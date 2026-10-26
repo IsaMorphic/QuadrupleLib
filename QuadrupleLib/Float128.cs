@@ -47,6 +47,11 @@ public partial struct Float128<TAccelerator> :
         return new Float128(x._rawBits);
     }
 
+    public static implicit operator Float128<TAccelerator>(Float128 x) 
+    {
+        return x.WithAccelerator<TAccelerator>();
+    }
+
     public static Float128<UAccelerator> WithAccelerator<UAccelerator>(Float128<TAccelerator> x)
         where UAccelerator : IAccelerator
     {
