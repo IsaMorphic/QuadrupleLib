@@ -370,7 +370,7 @@ public partial struct Float128<TAccelerator>
             {
                 if (result.Length > 1)
                 {
-                    result.Insert(1, '.');
+                    result.Insert(1, formatter.NumberDecimalSeparator);
                 }
 
                 result.Append('E');
@@ -378,7 +378,7 @@ public partial struct Float128<TAccelerator>
             }
             else if (e2 < 0 && result.Length + e2 + 1 < result.Length)
             {
-                result.Insert(result.Length + e2 + 1, '.');
+                result.Insert(result.Length + e2 + 1, formatter.NumberDecimalSeparator);
             }
 
             switch (formatter.NumberNegativePattern)
