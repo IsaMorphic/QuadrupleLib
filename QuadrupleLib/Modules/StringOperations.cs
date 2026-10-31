@@ -17,6 +17,7 @@
  */
 
 using QuadrupleLib.Annotations;
+
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
@@ -46,48 +47,65 @@ public partial struct Float128<TAccelerator>
             return _nInf;
         }
 
-        var match = Regex.Match(s.Trim(), @$"((?:{Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
+        var match = Regex.Match(s, @$"^((?:{Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
             @$"(?:{Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
-            @$"((?: ?{Regex.Escape(formatter.NegativeSign)})|\))?");
+            @$"((?: ?{Regex.Escape(formatter.NegativeSign)})|\))?$");
         if (!match.Success)
         {
             return _sNaN;
         }
         else
         {
-            if (match.Groups[4].Success)
+            ReadOnlySpan<char> leftSignSpan = match.Groups[1].ValueSpan;
+            ReadOnlySpan<char> wholePartSpan = match.Groups[2].ValueSpan;
+            ReadOnlySpan<char> fracPartSpan = match.Groups[3].ValueSpan;
+            ReadOnlySpan<char> exponentSpan = match.Groups[4].ValueSpan;
+            ReadOnlySpan<char> rightSignSpan = match.Groups[5].ValueSpan;
+            if (int.TryParse(exponentSpan, out int qExponent))
             {
-                var qExponent = int.Parse(match.Groups[4].Value);
-                var allDigits = $"{match.Groups[2].Value}{match.Groups[3].Value}";
-
-                var builder = new StringBuilder();
+                StringBuilder builder = new();
+                int numDigits = wholePartSpan.Length + fracPartSpan.Length;
                 if (qExponent > 0)
                 {
-                    if (qExponent >= allDigits.Length)
+                    if (qExponent >= numDigits)
                     {
-                        builder.Append(allDigits);
-                        builder.Append(new string('0', qExponent - allDigits.Length + 1));
+                        builder.Append(wholePartSpan);
+                        builder.Append(fracPartSpan);
+                        for (int i = 0; i < qExponent - numDigits + 1; i++)
+                        {
+                            builder.Append('0');
+                        }
                     }
                     else
                     {
-                        builder.Append(allDigits);
+                        builder.Append(wholePartSpan);
+                        builder.Append(fracPartSpan);
                         builder.Insert(qExponent + 1, formatter.NumberDecimalSeparator);
                     }
                 }
                 else if (qExponent < 0)
                 {
-                    builder.Append("0");
+                    builder.Append('0');
                     builder.Append(formatter.NumberDecimalSeparator);
-                    builder.Append(new string('0', -qExponent));
-                    builder.Append(allDigits);
+                    for (int i = 0; i < -qExponent; i++)
+                    {
+                        builder.Append('0');
+                    }
+                    builder.Append(wholePartSpan);
+                    builder.Append(fracPartSpan);
                 }
 
                 return Parse(builder.ToString(), formatter);
             }
 
-            var wholePart = match.Groups[2].Length > 0 ? BigInteger.Parse(match.Groups[2].Value) : 0;
-            var fracPart = match.Groups[3].Success ? BigInteger.Parse(match.Groups[3].Value) : 0;
-            var zExponent = match.Groups[3].Value.TakeWhile(ch => ch == '0').Count();
+            BigInteger.TryParse(wholePartSpan, out BigInteger wholePart);
+            BigInteger.TryParse(fracPartSpan, out BigInteger fracPart);
+
+            int zExponent;
+            for (zExponent = 0;
+                zExponent < fracPartSpan.Length &&
+                fracPartSpan[zExponent] == '0';
+                zExponent++) ;
 
             int resultExponent;
             if (wholePart == 0 && fracPart == 0)
@@ -109,10 +127,10 @@ public partial struct Float128<TAccelerator>
             }
 
             var resultSign =
-                (match.Groups[1].Value.StartsWith(formatter.NegativeSign) ^
-                match.Groups[5].Value.EndsWith(formatter.NegativeSign)) ||
-                (match.Groups[1].Value.StartsWith('(') &&
-                match.Groups[5].Value.EndsWith(')'));
+                (leftSignSpan.StartsWith(formatter.NegativeSign) ^
+                rightSignSpan.EndsWith(formatter.NegativeSign)) ||
+                (leftSignSpan.StartsWith('(') &&
+                rightSignSpan.EndsWith(')'));
             var resultSignificand = (UInt128)wholePart;
             if (fracPart == 0)
             {
