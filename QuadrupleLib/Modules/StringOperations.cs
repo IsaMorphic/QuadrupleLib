@@ -33,7 +33,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     private static string RegexEscape(string s)
     {
-        return Regex.Replace(s, @"([\\\*\+\?\|\{\[\(\)\^\$\.\#\-\s])", @"\$1");
+        return Regex.Replace(s, @"[\\\*\+\?\|\{\[\(\)\^\$\.\#\-\s]", "\\$0");
     }
 
     #endregion
@@ -149,7 +149,7 @@ public partial struct Float128<TAccelerator>
                         rightSignSpan.EndsWith(')');
                     break;
                 default:
-                    resultSign = 
+                    resultSign =
                         leftSignSpan.StartsWith(formatter.NegativeSign) ^
                         rightSignSpan.EndsWith(formatter.NegativeSign);
                     break;
@@ -348,25 +348,25 @@ public partial struct Float128<TAccelerator>
             }
 
             bool expFlag;
-            int offset = result.Length + e2;
+            int offset = result.Length + e2 + 1;
             int numDigits = formatter.NumberDecimalDigits;
-            if (offset < 0 && offset >= -MAX_PADDING_DIGITS)
+            if (offset <= 0 && offset >= -MAX_PADDING_DIGITS)
             {
-                for (int i = offset; i < 0; i++)
+                for (int i = offset - 1; i < 0; i++)
                 {
                     result.Insert(0, '0');
                 }
 
                 expFlag = false;
             }
-            else if (offset >= 0 && offset <= MAX_PADDING_DIGITS)
+            else if (offset > 0 && offset <= MAX_PADDING_DIGITS)
             {
-                for (int i = 0; i <= offset; i++)
+                for (int i = 0; i < offset; i++)
                 {
                     result.Append('0');
                 }
 
-                e2 -= offset + 1;
+                e2 -= offset;
                 expFlag = false;
             }
             else
@@ -399,15 +399,6 @@ public partial struct Float128<TAccelerator>
                 }
             }
 
-            if (offset < 0)
-            {
-                int trimIdx;
-                for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
-
-                e2 += result.Length - trimIdx - 1;
-                result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
-            }
-
             if (expFlag)
             {
                 if (result.Length > 1)
@@ -422,6 +413,14 @@ public partial struct Float128<TAccelerator>
             {
                 result.Insert(result.Length + e2 + 1, formatter.NumberDecimalSeparator);
             }
+
+            int trimIdx;
+            for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
+
+            e2 += result.Length - trimIdx - 1;
+            if (e2 + 1 >= 0) --trimIdx;
+
+            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
 
             switch (formatter.NumberNegativePattern)
             {
