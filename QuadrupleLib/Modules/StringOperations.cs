@@ -28,6 +28,16 @@ namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
 {
+    #region Private API (regex pattern related)
+
+    [MakeNonGeneric]
+    private static string RegexEscape(string s)
+    {
+        return Regex.Replace(s, @"[\\\*\+\?\|\{\[\(\)\^\$\.\#\-\s]", "\\$0");
+    }
+
+    #endregion
+
     #region Public API (parsing related)
 
     [MakeNonGeneric]
@@ -47,9 +57,9 @@ public partial struct Float128<TAccelerator>
             return _nInf;
         }
 
-        var match = Regex.Match(s, @$"^((?:{Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
-            @$"(?:{Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
-            @$"((?: ?{Regex.Escape(formatter.NegativeSign)})|\))?$");
+        Match match = Regex.Match(s, @$"^((?:{RegexEscape(formatter.NegativeSign)} ?)|\()?(\d*)" +
+            @$"(?:{RegexEscape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
+            @$"((?: ?{RegexEscape(formatter.NegativeSign)})|\))?$");
         if (!match.Success)
         {
             return _sNaN;
@@ -63,8 +73,11 @@ public partial struct Float128<TAccelerator>
             ReadOnlySpan<char> rightSignSpan = match.Groups[5].ValueSpan;
             if (int.TryParse(exponentSpan, out int qExponent))
             {
+                int numDigits = Math.Max(wholePartSpan.Length, 1) + fracPartSpan.Length;
+
                 StringBuilder builder = new();
-                int numDigits = wholePartSpan.Length + fracPartSpan.Length;
+                builder.Append(leftSignSpan);
+
                 if (qExponent > 0)
                 {
                     if (qExponent >= numDigits)
@@ -95,6 +108,7 @@ public partial struct Float128<TAccelerator>
                     builder.Append(fracPartSpan);
                 }
 
+                builder.Append(rightSignSpan);
                 return Parse(builder.ToString(), formatter);
             }
 
@@ -126,12 +140,22 @@ public partial struct Float128<TAccelerator>
                 }
             }
 
-            var resultSign =
-                (leftSignSpan.StartsWith(formatter.NegativeSign) ^
-                rightSignSpan.EndsWith(formatter.NegativeSign)) ||
-                (leftSignSpan.StartsWith('(') &&
-                rightSignSpan.EndsWith(')'));
-            var resultSignificand = (UInt128)wholePart;
+            bool resultSign;
+            switch (formatter.NumberNegativePattern)
+            {
+                case 0:
+                    resultSign =
+                        leftSignSpan.StartsWith('(') &&
+                        rightSignSpan.EndsWith(')');
+                    break;
+                default:
+                    resultSign =
+                        leftSignSpan.StartsWith(formatter.NegativeSign) ^
+                        rightSignSpan.EndsWith(formatter.NegativeSign);
+                    break;
+            }
+
+            UInt128 resultSignificand = (UInt128)wholePart;
             if (fracPart == 0)
             {
                 return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
@@ -139,14 +163,14 @@ public partial struct Float128<TAccelerator>
             else
             {
 
-                var log10Value = (int)Math.Floor(BigInteger.Log10(fracPart)) + 1;
+                int log10Value = (int)Math.Floor(BigInteger.Log10(fracPart)) + 1;
                 bool isSubNormal = zExponent > 4390;
                 if (wholePart == 0)
                 {
                     resultExponent = -(int)Math.Floor(BigInteger.Log(BigInteger.Pow(10, zExponent), 2)) + 1;
                 }
 
-                var pow10 = BigInteger.Pow(10, log10Value + zExponent);
+                BigInteger pow10 = BigInteger.Pow(10, log10Value + zExponent);
                 int binIndex = 114 - resultExponent;
                 while (binIndex > 0 && fracPart != 0)
                 {
@@ -171,12 +195,12 @@ public partial struct Float128<TAccelerator>
 
                 if (isSubNormal)
                 {
-                    var expnDiff = -EXPONENT_BIAS + 1 - resultExponent + 3;
+                    int expnDiff = -EXPONENT_BIAS + 1 - resultExponent + 3;
                     return new Float128<TAccelerator>(resultSignificand >> expnDiff, -EXPONENT_BIAS + 1, resultSign);
                 }
                 else
                 {
-                    var normDist = (short)(UInt128.LeadingZeroCount(resultSignificand >> 3) - 15);
+                    int normDist = (int)UInt128.LeadingZeroCount(resultSignificand >> 3) - 15;
                     if (normDist > 0)
                         resultSignificand <<= normDist;
                     else if (normDist < 0)
@@ -324,18 +348,18 @@ public partial struct Float128<TAccelerator>
             }
 
             bool expFlag;
-            int offset = result.Length + e2;
+            int offset = result.Length + e2 + 1;
             int numDigits = formatter.NumberDecimalDigits;
-            if (offset < 0 && offset >= -MAX_PADDING_DIGITS)
+            if (offset <= 0 && offset >= -MAX_PADDING_DIGITS)
             {
-                for (int i = offset; i < 0; i++)
+                for (int i = offset - 1; i < 0; i++)
                 {
                     result.Insert(0, '0');
                 }
 
                 expFlag = false;
             }
-            else if (offset >= 0 && offset <= MAX_PADDING_DIGITS)
+            else if (offset > 0 && offset <= MAX_PADDING_DIGITS)
             {
                 for (int i = 0; i < offset; i++)
                 {
@@ -375,15 +399,6 @@ public partial struct Float128<TAccelerator>
                 }
             }
 
-            if (offset < 0)
-            {
-                int trimIdx;
-                for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
-
-                e2 += result.Length - trimIdx - 1;
-                result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
-            }
-
             if (expFlag)
             {
                 if (result.Length > 1)
@@ -398,6 +413,14 @@ public partial struct Float128<TAccelerator>
             {
                 result.Insert(result.Length + e2 + 1, formatter.NumberDecimalSeparator);
             }
+
+            int trimIdx;
+            for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
+
+            e2 += result.Length - trimIdx - 1;
+            if (e2 + 1 >= 0) --trimIdx;
+
+            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
 
             switch (formatter.NumberNegativePattern)
             {
