@@ -1,14 +1,13 @@
 # QuadrupleLib
 
-[![.NET](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml)
-[![NuGet](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml)
+[![.NET](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml)[![NuGet](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml)![NuGet Version](https://img.shields.io/nuget/v/QuadrupleLib?label=NuGet%20version)
 
-QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating point number type for .NET 8 and above based on the `UInt128` built-in. The goal of this project is to create a fully fleshed out 128-bit floating point arithmetic library that includes all of the bells and whistles one could possibly want. 
+QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating point number type for .NET 10 and above based on the `UInt128` built-in. The goal of this project is to create a fully fleshed out 128-bit floating point arithmetic library that includes all of the bells and whistles one could possibly want. 
 
 # Main Features
 
 - [x] Adheres to recommended requirements of IEEE 754 specification
-- [x] Implements .NET 8 `IBinaryFloatingPointIeee754` generic arithmetic interface
+- [x] Implements .NET 10 `IBinaryFloatingPointIeee754` generic arithmetic interface
 - [x] Implements all basic arithmetic operations (`+`, `-`, `*`, `/`, `%`, `++`, `--`)
 - [x] Implements all standard rounding functions (`Round`, `Floor`, `Ceiling`)
 - [x] Supports all recommended rounding modes for arithmetic
@@ -31,7 +30,7 @@ To use QuadrupleLib in your project, simply add the `PackageReference` to your `
 global using binary128 = QuadrupleLib.Float128<QuadrupleLib.Accelerators.DefaultAccelerator>;
 ```
 
-The `Float128` type as defined above includes a full implementation of the .NET 8 `IBinaryFloatingPointIeee754<T>` generic arithmetic interface. You may use it as thus either generically or concretely. Generally, anywhere you're using `double` or `float` arithmetic, you can use `Float128` as a drop-in replacement and everything will work as expected.
+The `Float128` type as defined above includes a full implementation of the .NET 10 `IBinaryFloatingPointIeee754<T>` generic arithmetic interface. You may use it as thus either generically or concretely. Generally, anywhere you're using `double` or `float` arithmetic, you can use `Float128` as a drop-in replacement and everything will work as expected.
 
 ## Defining `Float128` Constants
 
