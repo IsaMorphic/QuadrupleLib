@@ -28,16 +28,6 @@ namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
 {
-    #region Private API (regex pattern related)
-
-    [MakeNonGeneric]
-    private static string RegexEscape(string s)
-    {
-        return Regex.Replace(s, @"[\\\*\+\?\|\{\[\(\)\^\$\.\#\-\s]", "\\$0");
-    }
-
-    #endregion
-
     #region Public API (parsing related)
 
     [MakeNonGeneric]
@@ -57,9 +47,9 @@ public partial struct Float128<TAccelerator>
             return _nInf;
         }
 
-        Match match = Regex.Match(s, @$"^((?:{RegexEscape(formatter.NegativeSign)} ?)|\()?(\d*)" +
-            @$"(?:{RegexEscape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
-            @$"((?: ?{RegexEscape(formatter.NegativeSign)})|\))?$");
+        Match match = Regex.Match(s, @$"^((?:{Utilities.Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
+            @$"(?:{Utilities.Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
+            @$"((?: ?{Utilities.Regex.Escape(formatter.NegativeSign)})|\))?$");
         if (!match.Success)
         {
             return _sNaN;
