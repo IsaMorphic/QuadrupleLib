@@ -37,6 +37,28 @@ namespace QuadrupleLib.Tests.Conversion
             string s = $"{(Float128<TAccelerator>)x}";
             AssertX.NearlyEqual(x, Float128<TAccelerator>.Parse(s), Precision.NearestTenThousandth);
         }
+
+        [Theory]
+        [InlineData(".5", 0.5)]
+        [InlineData("-.5", -0.5)]
+        [InlineData("0.5", 0.5)]
+        [InlineData("-0.5", -0.5)]
+        [InlineData("100", 100.0)]
+        [InlineData("100.0", 100.0)]
+        [InlineData("-100", -100.0)]
+        [InlineData("-100.0", -100.0)]
+        [InlineData("1E2", 100.0)]
+        [InlineData("1.0E2", 100.0)]
+        [InlineData("-1E2", -100.0)]
+        [InlineData("-1.0E2", -100.0)]
+        [InlineData(".1E3", 100.0)]
+        [InlineData("0.1E3", 100.0)]
+        [InlineData("-.1E3", -100.0)]
+        [InlineData("-0.1E3", -100.0)]
+        public void ParseStringIsCorrect(string s, double x) 
+        {
+            Assert.Equal((Float128<TAccelerator>)x, Float128<TAccelerator>.Parse(s));
+        }
     }
 
     public class StringConversionTests_DefaultAccelerator :
