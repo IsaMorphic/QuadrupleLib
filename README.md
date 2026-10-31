@@ -1,6 +1,6 @@
 # QuadrupleLib
 
-[![.NET](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml)[![NuGet](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml)[![NuGet Version](https://img.shields.io/nuget/v/QuadrupleLib?label=NuGet%20version)](https://www.nuget.org/packages/QuadrupleLib)
+[![.NET](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/dotnet.yml) [![NuGet](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml/badge.svg)](https://github.com/IsaMorphic/QuadrupleLib/actions/workflows/nuget.yml) [![NuGet Version](https://img.shields.io/nuget/v/QuadrupleLib?label=NuGet%20version)](https://www.nuget.org/packages/QuadrupleLib)
 
 QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating point number type for .NET 10 and above based on the `UInt128` built-in. The goal of this project is to create a fully fleshed out 128-bit floating point arithmetic library that includes all of the bells and whistles one could possibly want. 
 
