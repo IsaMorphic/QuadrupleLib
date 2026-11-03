@@ -1,15 +1,24 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
 
 namespace QuadrupleLib.Utilities
 {
-    public static partial class Regex
+    public static class Regex
     {
-        [GeneratedRegex(@"[\\\*\+\?\|\{\[\(\)\^\$\.\#\-\s]")]
-        private static partial System.Text.RegularExpressions.Regex EscapeRegex();
+        private static readonly HashSet<char> _escapeChars = [..@"\*+?|{[()^$.#-"];
 
         public static string Escape(string s)
         {
-            return EscapeRegex().Replace(s, "\\$0");
+            StringBuilder b = new(s.Length * 2); // Allocate enough space to avoid resizing
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (char.IsWhiteSpace(s[i]) || 
+                    _escapeChars.Contains(s[i]))
+                {
+                    b.Append('\\');
+                }
+                b.Append(s[i]);
+            }
+            return b.ToString();
         }
     }
 }

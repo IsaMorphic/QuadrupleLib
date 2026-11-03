@@ -119,7 +119,7 @@ public partial struct Float128<TAccelerator>
             else
             {
                 resultExponent = (int)BigInteger.Log2(wholePart);
-                var wholeDiff = (int)wholePart.GetBitLength() - 116;
+                int wholeDiff = (int)wholePart.GetBitLength() - 116;
                 if (wholeDiff > 0)
                 {
                     wholePart >>= wholeDiff;
