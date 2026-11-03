@@ -48,7 +48,8 @@ public partial struct Float128<TAccelerator>
         }
 
         Match match = Regex.Match(s, @$"^((?:{Utilities.Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
-            @$"(?:{Utilities.Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?(?:E(\-?\d+))?" +
+            @$"(?:{Utilities.Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?" +
+            @$"(?:E((?:{Utilities.Regex.Escape(formatter.NegativeSign)})?\d+))?" +
             @$"((?: ?{Utilities.Regex.Escape(formatter.NegativeSign)})|\))?$");
         if (!match.Success)
         {
@@ -99,7 +100,7 @@ public partial struct Float128<TAccelerator>
                 }
 
                 builder.Append(rightSignSpan);
-                return Parse(builder.ToString(), formatter);
+                return Parse(builder.ToString(), provider);
             }
 
             BigInteger.TryParse(wholePartSpan, out BigInteger wholePart);
@@ -237,7 +238,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static bool TryParse([NotNullWhen(true)] string? s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
-        if (string.IsNullOrWhiteSpace(s))
+        if (string.IsNullOrEmpty(s))
         {
             result = _sNaN;
         }
@@ -257,7 +258,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Float128<TAccelerator> result)
     {
-        if (string.IsNullOrWhiteSpace(s))
+        if (string.IsNullOrEmpty(s))
         {
             result = _sNaN;
         }
@@ -282,11 +283,17 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
-    public string ToString(string? format, IFormatProvider? formatProvider)
+    public string ToString(IFormatProvider? provider)
     {
-        NumberFormatInfo formatter = formatProvider is null ?
+        return ToString(null, provider);
+    }
+
+    [MakeNonGeneric]
+    public string ToString(string? format, IFormatProvider? provider)
+    {
+        NumberFormatInfo formatter = provider is null ?
             new NumberFormatInfo() { NumberDecimalDigits = MAX_STRING_DIGITS } :
-            NumberFormatInfo.GetInstance(formatProvider);
+            NumberFormatInfo.GetInstance(provider);
         if (IsNaN(this))
         {
             return formatter.NaNSymbol;
@@ -314,31 +321,11 @@ public partial struct Float128<TAccelerator>
                 < 0 => (Significand >> m) * BigInteger.Pow(5, -e2)
             };
 
-            (BigInteger n, BigInteger r) = BigInteger.DivRem(significand, 10);
-            while (n > 0 && r == 0)
-            {
-                (n, r) = BigInteger.DivRem(n, 10);
-            }
-
             StringBuilder result = new();
-            if (n == 0)
-            {
-                result.Append(r);
-                --e2;
-            }
-            else if (r == 0)
-            {
-                result.Append(n);
-            }
-            else
-            {
-                result.Append(n);
-                result.Append(r);
-                --e2;
-            }
+            result.Append(significand);
 
             bool expFlag;
-            int offset = result.Length + e2 + 1;
+            int offset = result.Length + e2--;
             int numDigits = formatter.NumberDecimalDigits;
             if (offset <= 0 && offset >= -MAX_PADDING_DIGITS)
             {
@@ -397,7 +384,7 @@ public partial struct Float128<TAccelerator>
                 }
 
                 result.Append('E');
-                result.Append(offset);
+                result.Append(offset.ToString(provider));
             }
             else if (e2 < 0 && result.Length + e2 + 1 < result.Length)
             {
