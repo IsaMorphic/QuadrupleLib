@@ -35,7 +35,7 @@ namespace QuadrupleLib.Tests.Conversion
         public void ConvertToStringRoundtripIsEqual(double x)
         {
             string s = $"{(Float128<TAccelerator>)x}";
-            AssertX.NearlyEqual(x, Float128<TAccelerator>.Parse(s), Precision.NearestTenThousandth);
+            Assert.Equal(x, Float128<TAccelerator>.Parse(s));
         }
 
         [Theory]
