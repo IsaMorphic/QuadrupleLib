@@ -93,7 +93,7 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
 
     #region Public API (string conversion related)
 
-    private const int MAX_STRING_DIGITS = 34;
+    private const int MAX_STRING_DIGITS = 38;
     private const int MAX_PADDING_DIGITS = 23;
 
     #endregion
