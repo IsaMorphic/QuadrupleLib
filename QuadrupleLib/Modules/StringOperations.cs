@@ -62,6 +62,10 @@ public partial struct Float128<TAccelerator>
             ReadOnlySpan<char> fracPartSpan = match.Groups[3].ValueSpan;
             ReadOnlySpan<char> exponentSpan = match.Groups[4].ValueSpan;
             ReadOnlySpan<char> rightSignSpan = match.Groups[5].ValueSpan;
+
+            BigInteger.TryParse(wholePartSpan, out BigInteger wholePart);
+            BigInteger.TryParse(fracPartSpan, out BigInteger fracPart);
+
             if (int.TryParse(exponentSpan, out int qExponent))
             {
                 int numDigits = Math.Max(wholePartSpan.Length, 1) + fracPartSpan.Length;
@@ -91,20 +95,24 @@ public partial struct Float128<TAccelerator>
                 {
                     builder.Append('0');
                     builder.Append(formatter.NumberDecimalSeparator);
-                    for (int i = 0; i < -qExponent - 1; i++)
+
+                    int zeroCnt = wholePart == 0 ? -qExponent : -qExponent - 1;
+                    for (int i = 0; i < zeroCnt; i++)
                     {
                         builder.Append('0');
                     }
-                    builder.Append(wholePartSpan);
+
+                    if (wholePart != 0)
+                    {
+                        builder.Append(wholePartSpan);
+                    }
+
                     builder.Append(fracPartSpan);
                 }
 
                 builder.Append(rightSignSpan);
                 return Parse(builder.ToString(), provider);
             }
-
-            BigInteger.TryParse(wholePartSpan, out BigInteger wholePart);
-            BigInteger.TryParse(fracPartSpan, out BigInteger fracPart);
 
             int zExponent;
             for (zExponent = 0;
