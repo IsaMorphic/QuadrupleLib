@@ -95,6 +95,7 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
 
     private const int MAX_STRING_DIGITS = 38;
     private const int MAX_PADDING_DIGITS = 23;
+    private static readonly Dictionary<int, BigInteger> _pow5Table = new();
 
     #endregion
 

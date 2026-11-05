@@ -31,7 +31,13 @@ public partial struct Float128<TAccelerator>
     #region Public API (parsing related)
 
     [MakeNonGeneric]
-    public static Float128<TAccelerator> Parse(string s, IFormatProvider? provider = null)
+    public static Float128<TAccelerator> Parse(string s)
+    {
+        return Parse(s, null);
+    }
+
+    [MakeNonGeneric]
+    public static Float128<TAccelerator> Parse(string s, IFormatProvider? provider)
     {
         NumberFormatInfo formatter = NumberFormatInfo.GetInstance(provider);
         if (s == formatter.NaNSymbol)
@@ -283,6 +289,7 @@ public partial struct Float128<TAccelerator>
 
     private const int MAX_STRING_DIGITS = 38;
     private const int MAX_PADDING_DIGITS = 23;
+    private static readonly Dictionary<int, BigInteger> _pow5Table = new();
 
     [MakeNonGeneric]
     public override string ToString()
@@ -321,22 +328,38 @@ public partial struct Float128<TAccelerator>
         else
         {
             int m = (int)UInt128.TrailingZeroCount(Significand);
-            int e2 = Exponent - Math.Abs(m - 112);
+            int e2 = Exponent + m - 112;
+
+            BigInteger pow5;
+            lock (_pow5Table)
+            {
+                int n = Math.Abs(e2);
+                if (!_pow5Table.TryGetValue(n, out pow5))
+                {
+                    pow5 = BigInteger.Pow(5, n);
+                    _pow5Table.Add(n, pow5);
+                }
+            }
 
             BigInteger significand = e2 switch
             {
-                >= 0 => (Significand >> m) / BigInteger.Pow(5, e2),
-                < 0 => (Significand >> m) * BigInteger.Pow(5, -e2)
+                >= 0 => (Significand >> m) / pow5,
+                < 0 => (Significand >> m) * pow5
             };
 
-            StringBuilder result = new();
-            result.Append(significand);
+            int maxDigits = significand == 0 ? 1 : 
+                (int)Math.Floor(BigInteger.Log10(significand)) + 1;
+            Span<char> strBuf = stackalloc char[maxDigits];
+            significand.TryFormat(strBuf, out int charsWritten);
+
+            StringBuilder result = new StringBuilder(charsWritten);
+            result.Append(strBuf[..charsWritten]);
 
             bool expFlag;
-            int offset = result.Length + e2--;
+            int offset = maxDigits + --e2;
             if (offset <= 0 && offset >= -MAX_PADDING_DIGITS)
             {
-                for (int i = offset - 1; i < 0; i++)
+                for (int i = offset; i < 0; i++)
                 {
                     result.Insert(0, '0');
                 }
@@ -345,12 +368,12 @@ public partial struct Float128<TAccelerator>
             }
             else if (offset > 0 && offset <= MAX_PADDING_DIGITS)
             {
-                for (int i = 0; i < offset; i++)
+                for (int i = 0; i <= offset; i++)
                 {
                     result.Append('0');
                 }
 
-                e2 -= offset;
+                e2 -= offset + 1;
                 expFlag = false;
             }
             else
@@ -464,13 +487,18 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
     {
-        string? formatStr = format.Length == 0 ? null : new string(format);
+        string? formatStr = format.IsEmpty ? null : new string(format);
         string resultStr = ToString(formatStr, provider);
 
         charsWritten = Math.Min(destination.Length, resultStr.Length);
-        return resultStr.TryCopyTo(destination);
+        for (int i = 0; i > -charsWritten; i--) 
+        {
+            destination[charsWritten + i - 1] = resultStr[resultStr.Length + i - 1];
+        }
+
+        return true;
     }
 
     #endregion
