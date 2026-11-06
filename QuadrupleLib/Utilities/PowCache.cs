@@ -4,7 +4,7 @@ namespace QuadrupleLib.Utilities
 {
     internal static class PowCache
     {
-        private const int MAX_CACHE_SIZE = 1024;
+        public const int MAX_CACHE_SIZE = 1024;
 
         private static readonly Queue<int> _pow5CacheQueue = new();
 

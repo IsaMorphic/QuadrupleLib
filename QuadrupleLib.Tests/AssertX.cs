@@ -34,5 +34,18 @@ namespace QuadrupleLib.Tests
                 throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(NearlyEqual)} failure: Values differ\nExpected (within {precision}): {expected}\nActual: {actual}.");
             }
         }
+
+        public static void DoesNotThrow<TException>(Action action) 
+            where TException : Exception
+        {
+            try
+            {
+                action();
+            }
+            catch (TException ex)
+            {
+                throw new DoesNotThrowException($"{nameof(AssertX)}.{nameof(DoesNotThrow)} failure: Expected no exception of type {typeof(TException).Name} to be thrown, but it was thrown with message: {ex.Message}", ex);
+            }
+        }
     }
 }
