@@ -73,7 +73,7 @@ public partial struct Float128<TAccelerator>
 
     [MakeNonGeneric]
     public static Float128<TAccelerator> E => _e;
-    
+
     private static readonly Float128<TAccelerator> _quarterPi = Parse("0.7853981633974483096156608458198757");
 
     [MakeNonGeneric]
