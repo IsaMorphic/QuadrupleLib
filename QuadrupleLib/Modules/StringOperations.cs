@@ -172,20 +172,18 @@ public partial struct Float128<TAccelerator>
                 bool isSubNormal = zExponent > 4390;
                 if (wholePart == 0)
                 {
-                    resultExponent = -(int)Math.Floor(BigInteger.Log(BigInteger.Pow(10, zExponent), 2)) + 1;
+                    resultExponent = -(int)Math.Floor(BigInteger.Log(Utilities.PowCache.GetPow10(zExponent), 2)) + 1;
                 }
 
-                BigInteger pow10 = BigInteger.Pow(10, log10Value + zExponent);
-                int binIndex = 114 - resultExponent;
-                while (binIndex > 0 && fracPart != 0)
+                BigInteger pow10 = Utilities.PowCache.GetPow10(log10Value + zExponent);
+                for (int binIndex = 114 - resultExponent;
+                    binIndex > 0 && fracPart != 0;
+                    binIndex--, fracPart %= pow10)
                 {
-                    fracPart <<= 1;
-                    if (fracPart / pow10 == 1)
+                    if ((fracPart <<= 1) / pow10 == 1)
                     {
                         resultSignificand |= UInt128.One << binIndex;
                     }
-                    fracPart %= pow10;
-                    --binIndex;
                 }
 
                 // set sticky bit
@@ -289,7 +287,6 @@ public partial struct Float128<TAccelerator>
 
     private const int MAX_STRING_DIGITS = 38;
     private const int MAX_PADDING_DIGITS = 23;
-    private static readonly Dictionary<int, BigInteger> _pow5Table = new();
 
     [MakeNonGeneric]
     public override string ToString()
@@ -330,24 +327,14 @@ public partial struct Float128<TAccelerator>
             int m = (int)UInt128.TrailingZeroCount(Significand);
             int e2 = Exponent + m - 112;
 
-            BigInteger pow5;
-            lock (_pow5Table)
-            {
-                int n = Math.Abs(e2);
-                if (!_pow5Table.TryGetValue(n, out pow5))
-                {
-                    pow5 = BigInteger.Pow(5, n);
-                    _pow5Table.Add(n, pow5);
-                }
-            }
-
+            BigInteger pow5 = Utilities.PowCache.GetPow5(Math.Abs(e2));
             BigInteger significand = e2 switch
             {
                 >= 0 => (Significand >> m) / pow5,
                 < 0 => (Significand >> m) * pow5
             };
 
-            int maxDigits = significand == 0 ? 1 : 
+            int maxDigits = significand == 0 ? 1 :
                 (int)Math.Floor(BigInteger.Log10(significand)) + 1;
             Span<char> strBuf = stackalloc char[maxDigits];
             significand.TryFormat(strBuf, out int charsWritten);
@@ -493,12 +480,9 @@ public partial struct Float128<TAccelerator>
         string resultStr = ToString(formatStr, provider);
 
         charsWritten = Math.Min(destination.Length, resultStr.Length);
-        for (int i = 0; i > -charsWritten; i--) 
-        {
-            destination[charsWritten + i - 1] = resultStr[resultStr.Length + i - 1];
-        }
 
-        return true;
+        ReadOnlySpan<char> resultSpan = resultStr.AsSpan(^charsWritten..);
+        return resultSpan.TryCopyTo(destination);
     }
 
     #endregion
