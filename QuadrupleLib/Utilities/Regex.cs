@@ -20,7 +20,7 @@ using System.Text;
 
 namespace QuadrupleLib.Utilities
 {
-    public static class Regex
+    internal static class Regex
     {
         private static readonly HashSet<char> _escapeChars = [..@"\*+?|{[()^$.#-"];
 
