@@ -16,8 +16,6 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Runtime.InteropServices;
-
 namespace QuadrupleLib.Utilities;
 
 internal struct BigMul256

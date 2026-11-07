@@ -16,11 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Runtime.InteropServices;
-
 namespace QuadrupleLib.Utilities;
 
-[StructLayout(LayoutKind.Sequential)]
 internal struct BigMul128
 {
     public uint _0;
