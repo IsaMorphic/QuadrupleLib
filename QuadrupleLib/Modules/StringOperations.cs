@@ -410,7 +410,7 @@ public partial struct Float128<TAccelerator>
             for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
 
             e2 += result.Length - trimIdx - 1;
-            if (e2 + 1 >= 0) --trimIdx;
+            if (trimIdx > 0 && e2 + 1 >= 0) --trimIdx;
 
             result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
 
