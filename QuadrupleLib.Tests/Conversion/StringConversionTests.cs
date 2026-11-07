@@ -32,6 +32,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(123.4567)]
         [InlineData(1E-36)]
         [InlineData(1000000.0)]
+        [InlineData(1.0)]
         public void ConvertToStringRoundtripIsEqual(double x)
         {
             string s = $"{(Float128<TAccelerator>)x}";
