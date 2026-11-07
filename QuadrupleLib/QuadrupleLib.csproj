@@ -14,7 +14,7 @@
 		<Company>Chosen Few Software</Company>
 		<PackageTags>ieee754,floating-point,software implementation,modern</PackageTags>
 		<Description>
-			QuadrupleLib is a modern implementation of the IEEE 754 binary128 floating point number type for .NET 8+ based on the UInt128 built-in.
+			QuadrupleLib is a modern implementation of the IEEE 754 binary128 floating point number type for .NET 10+ based on the UInt128 built-in.
 		</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/IsaMorphic/QuadrupleLib</RepositoryUrl>
