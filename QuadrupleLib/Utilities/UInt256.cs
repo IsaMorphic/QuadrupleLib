@@ -17,11 +17,9 @@
  */
 
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace QuadrupleLib.Utilities
 {
-    [StructLayout(LayoutKind.Sequential)]
     internal struct UInt256 : IEquatable<UInt256>, IComparable<UInt256>, IComparable
     {
         private static readonly UInt256 _zero = new();
@@ -36,14 +34,9 @@ namespace QuadrupleLib.Utilities
         private static readonly UInt256 _maxValue = ~_zero;
         public static UInt256 MaxValue => _maxValue;
 
+        public readonly UInt128 _lo;
+        public readonly UInt128 _hi;
 
-#if BIGENDIAN
-        public readonly UInt128 _hi;
-        public readonly UInt128 _lo;
-#else
-        public readonly UInt128 _lo;
-        public readonly UInt128 _hi;
-#endif
         private UInt256(UInt128 lo, UInt128 hi) 
         {
             _lo = lo;

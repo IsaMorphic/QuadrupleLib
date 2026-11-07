@@ -23,17 +23,10 @@ namespace QuadrupleLib.Utilities;
 [StructLayout(LayoutKind.Sequential)]
 internal struct BigMul128
 {
-#if BIGENDIAN
-    public uint _3;
-    public uint _2;
-    public uint _1;
-    public uint _0;
-#else
     public uint _0;
     public uint _1;
     public uint _2;
     public uint _3;
-#endif
 
     private static BigMul128 Add(BigMul128 left, BigMul128 right)
     {

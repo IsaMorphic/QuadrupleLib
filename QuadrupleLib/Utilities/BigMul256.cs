@@ -20,20 +20,12 @@ using System.Runtime.InteropServices;
 
 namespace QuadrupleLib.Utilities;
 
-[StructLayout(LayoutKind.Sequential)]
 internal struct BigMul256
 {
-#if BIGENDIAN
-    public ulong _3;
-    public ulong _2;
-    public ulong _1;
-    public ulong _0;
-#else
     public ulong _0;
     public ulong _1;
     public ulong _2;
     public ulong _3;
-#endif
 
     private static BigMul256 Add(BigMul256 left, BigMul256 right)
     {
