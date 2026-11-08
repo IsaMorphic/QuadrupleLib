@@ -566,10 +566,20 @@ public partial struct Float128<TAccelerator>
         }
         else if (IsInteger(x) && IsInteger(y))
         {
-            Float128<TAccelerator> result = x;
-            for (int i = 1; i < y; i++)
+            Float128<TAccelerator> result = One;
+            if (y >= 0)
             {
-                result *= x;
+                for (int i = 0; i < y; i++)
+                {
+                    result *= x;
+                }
+            }
+            else 
+            { 
+                for (int i = 0; i > y; i--)
+                {
+                    result /= x;
+                }
             }
 
             return result;
