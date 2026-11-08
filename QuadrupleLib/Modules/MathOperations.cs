@@ -593,6 +593,10 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
+        else if (x == Zero)
+        {
+            return Zero;
+        }
         else
         {
             Float128<TAccelerator> y_n = x * 0.5;
@@ -610,14 +614,20 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-
-        Float128<TAccelerator> y_n = x * 0.5;
-        for (int n = 0; n < 25; n++)
+        else if (x == Zero)
         {
-            Float128<TAccelerator> sq = y_n * y_n;
-            y_n = (x / sq + 2.0 * y_n) / 3.0;
+            return Zero;
         }
-        return y_n;
+        else
+        {
+            Float128<TAccelerator> y_n = x * 0.5;
+            for (int n = 0; n < 25; n++)
+            {
+                Float128<TAccelerator> sq = y_n * y_n;
+                y_n = (x / sq + 2.0 * y_n) / 3.0;
+            }
+            return y_n;
+        }
     }
 
     public static Float128<TAccelerator> RootN(Float128<TAccelerator> x, int n)
@@ -629,6 +639,10 @@ public partial struct Float128<TAccelerator>
         else if (x < Zero)
         {
             return (n & 1) == 0 ? _sNaN : -Pow(-x, One / n);
+        }
+        else if (x == Zero)
+        { 
+            return Zero;
         }
         else
         {
