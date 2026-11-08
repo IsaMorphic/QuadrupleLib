@@ -55,7 +55,8 @@ public partial struct Float128<TAccelerator>
 
         Match match = Regex.Match(s, @$"^((?:{Utilities.Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
             @$"(?:{Utilities.Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?" +
-            @$"(?:E((?:{Utilities.Regex.Escape(formatter.NegativeSign)})?\d+))?" +
+            @$"(?:E((?:(?:{Utilities.Regex.Escape(formatter.PositiveSign)})|" +
+            @$"(?:{Utilities.Regex.Escape(formatter.NegativeSign)}))?\d+))?" +
             @$"((?: ?{Utilities.Regex.Escape(formatter.NegativeSign)})|\))?$");
         if (!match.Success)
         {
@@ -430,7 +431,8 @@ public partial struct Float128<TAccelerator>
                 }
 
                 result.Append('E');
-                result.Append(offset.ToString(provider));
+                result.Append(offset < 0 ? formatter.NegativeSign : formatter.PositiveSign);
+                result.Append(Math.Abs(offset));
             }
 
             switch (formatter.NumberNegativePattern)
