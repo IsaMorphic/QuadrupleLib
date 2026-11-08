@@ -17,6 +17,7 @@
  */
 
 using QuadrupleLib.Annotations;
+using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib;
 
@@ -26,17 +27,35 @@ public partial struct Float128<TAccelerator>
 
     public static bool IsInteger(Float128<TAccelerator> value)
     {
-        return value == Round(value);
+        int m = (int)UInt128.TrailingZeroCount(value.Significand);
+        int exp = value.Exponent + m - 112;
+        return exp >= 0;
     }
 
     public static bool IsEvenInteger(Float128<TAccelerator> value)
     {
-        return IsInteger(value) && value.Exponent >= 1;
+        int m = (int)UInt128.TrailingZeroCount(value.Significand);
+        int exp = value.Exponent + m - 112, adj = exp - m;
+        switch (adj)
+        {
+            case > 0:
+                return exp >= 0 && (((UInt256)value.Significand << adj) & 1) == 0;
+            case <= 0:
+                return exp >= 0 && ((value.Significand >> -adj) & 1) == 0;
+        }
     }
 
     public static bool IsOddInteger(Float128<TAccelerator> value)
     {
-        return IsInteger(value) && value.Exponent < 1;
+        int m = (int)UInt128.TrailingZeroCount(value.Significand);
+        int exp = value.Exponent + m - 112, adj = exp - m;
+        switch (adj)
+        {
+            case > 0:
+                return exp >= 0 && (((UInt256)value.Significand << adj) & 1) != 0;
+            case <= 0:
+                return exp >= 0 && ((value.Significand >> -adj) & 1) != 0;
+        }
     }
 
     #endregion
@@ -71,19 +90,26 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Round(Float128<TAccelerator> value)
     {
         Float128<TAccelerator> result;
-        int unbiasedExponent = value.Exponent;
 
-        if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
-        else if (unbiasedExponent < -1) result = 0;
-        else if (unbiasedExponent == -1) result = value.RawSignBit ? -1 : 1;
-        else if (unbiasedExponent >= 112) result = value;
-        else
+        int unbiasedExponent = value.Exponent;
+        switch (unbiasedExponent)
         {
-            result = value;
-            bool roundUp = ((result.RawSignificand >> (111 - unbiasedExponent)) & 1) != 0;
-            int bitsToErase = 112 - unbiasedExponent;
-            result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
-            if (roundUp && unbiasedExponent < 1) result += value.RawSignBit ? -1 : 1;
+            case short.MaxValue:
+                result = value; //NaN, +inf, -inf
+                break;
+            case < 0:
+                result = 0;
+                break;
+            case >= 112:
+                result = value;
+                break;
+            default:
+                result = value;
+                bool roundUp = ((result.RawSignificand >> (111 - unbiasedExponent)) & 1) != 0;
+                int bitsToErase = 112 - unbiasedExponent;
+                result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
+                if (roundUp && IsOddInteger(result)) result += value.RawSignBit ? -1 : 1;
+                break;
         }
 
         return result;
@@ -92,26 +118,22 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Floor(Float128<TAccelerator> value)
     {
         Float128<TAccelerator> result;
-        int unbiasedExponent = value.Exponent;
 
-        if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
-        else if (unbiasedExponent < 0)
+        int unbiasedExponent = value.Exponent;
+        switch (unbiasedExponent)
         {
-            if (value.RawSignBit)
-            {
-                result = -1;
-            }
-            else
-            {
-                result = 0;
-            }
-        }
-        else
-        {
-            result = value;
-            int bitsToErase = 112 - unbiasedExponent;
-            result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
-            if (value.RawSignBit && result != value) result -= 1;
+            case short.MaxValue:
+                result = value; //NaN, +inf, -inf
+                break;
+            case < 0:
+                result = value.RawSignBit ? -1 : 0;
+                break;
+            default:
+                result = value;
+                int bitsToErase = 112 - unbiasedExponent;
+                result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
+                if (value.RawSignBit && result != value) result -= 1;
+                break;
         }
 
         return result;
@@ -122,28 +144,24 @@ public partial struct Float128<TAccelerator>
         Float128<TAccelerator> result;
         int unbiasedExponent = value.Exponent;
 
-        if (unbiasedExponent == short.MaxValue) result = value; //NaN, +inf, -inf
-        else if (unbiasedExponent < 0)
+        switch (unbiasedExponent)
         {
-            if (value.RawSignBit)
-            {
-                result = 0;
-            }
-            else
-            {
-                result = 1;
-            }
-        }
-        else
-        {
-            result = value;
-            int bitsToErase = 112 - unbiasedExponent;
-            result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
+            case short.MaxValue:
+                result = value; //NaN, +inf, -inf
+                break;
+            case < 0:
+                result = value.RawSignBit ? 0 : 1;
+                break;
+            default:
+                result = value;
+                int bitsToErase = 112 - unbiasedExponent;
+                result.RawSignificand &= ~((UInt128.One << bitsToErase) - 1);
 
-            // From @GreatCoder1000 (https://github.com/GreatCoder1000):
-            // if positive and we lost a fractional part, bump up by 1,
-            // for negative values, truncation toward zero already yields the ceiling
-            if (!value.RawSignBit && result != value) result += 1;
+                // From @GreatCoder1000 (https://github.com/GreatCoder1000):
+                // if positive and we lost a fractional part, bump up by 1,
+                // for negative values, truncation toward zero already yields the ceiling
+                if (!value.RawSignBit && result != value) result += 1;
+                break;
         }
 
         return result;
@@ -261,7 +279,7 @@ public partial struct Float128<TAccelerator>
             Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
             return x.RawSignBit ? (int)-n : (int)n;
         }
-        else 
+        else
         {
             return 0;
         }
@@ -382,7 +400,7 @@ public partial struct Float128<TAccelerator>
             Int128 n = (Int128)x.Significand >> rightShift;
             return (byte)(x.RawSignBit ? -n : n);
         }
-        else 
+        else
         {
             return 0;
         }

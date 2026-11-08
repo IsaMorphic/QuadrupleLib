@@ -34,6 +34,8 @@ namespace QuadrupleLib.Tests.Integers
         [InlineData(-1.1)]
         [InlineData(-1.8)]
         [InlineData(-2.5)]
+        [InlineData(3.5)]
+        [InlineData(0.5)]
         public void IsFloorCorrect(double x) 
         {
             double y0 = double.Floor(x);
@@ -50,6 +52,8 @@ namespace QuadrupleLib.Tests.Integers
         [InlineData(-1.1)]
         [InlineData(-1.8)]
         [InlineData(-2.5)]
+        [InlineData(3.5)]
+        [InlineData(0.5)]
         public void IsCeilingCorrect(double x)
         {
             double y0 = double.Ceiling(x);
@@ -66,6 +70,8 @@ namespace QuadrupleLib.Tests.Integers
         [InlineData(-1.1)]
         [InlineData(-1.8)]
         [InlineData(-2.5)]
+        [InlineData(3.5)]
+        [InlineData(0.5)]
         public void IsRoundCorrect(double x)
         {
             double y0 = double.Round(x);
