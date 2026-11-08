@@ -482,10 +482,16 @@ public partial struct Float128<TAccelerator>
         string? formatStr = format.IsEmpty ? null : new string(format);
         string resultStr = ToString(formatStr, provider);
 
-        charsWritten = Math.Min(destination.Length, resultStr.Length);
-
-        ReadOnlySpan<char> resultSpan = resultStr.AsSpan(^charsWritten..);
-        return resultSpan.TryCopyTo(destination);
+        if (destination.Length >= resultStr.Length)
+        {
+            charsWritten = resultStr.Length;
+            return resultStr.TryCopyTo(destination);
+        }
+        else 
+        {
+            charsWritten = 0;
+            return false;
+        }
     }
 
     #endregion
