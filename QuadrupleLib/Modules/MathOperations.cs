@@ -564,17 +564,16 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
-        else if (IsInteger(x) && IsInteger(y))
+        else if (IsInteger(x) && IsInteger(y) && IsPositive(y))
         {
-            Float128<TAccelerator> result = x;
-            for (int i = 1; i < y; i++)
+            Float128<TAccelerator> result = One;
+            for (int i = 0; i < y; i++)
             {
                 result *= x;
             }
-
             return result;
         }
-        else 
+        else
         {
             return Exp(y * Log(x));
         }

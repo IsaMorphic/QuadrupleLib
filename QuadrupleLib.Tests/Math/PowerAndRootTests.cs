@@ -103,6 +103,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0, -1.0)]
         [InlineData(2.1, -1.0)]
         [InlineData(3.676, -1.0)]
+        [InlineData(2.0, -1.0)]
         public void IsPowCorrect(double x, double y)
         {
             double z = double.Pow(x, y);
@@ -113,6 +114,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0)]
         [InlineData(2.1)]
         [InlineData(3.676)]
+        [InlineData(2.0)]
         public void IsPowZeroEqualToOne(double x)
         {
             AssertX.NearlyEqual(Float128<TAccelerator>.One, Float128<TAccelerator>.Pow(x, 0), Precision.NearestTenThousandth);
