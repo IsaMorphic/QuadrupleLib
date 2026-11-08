@@ -39,9 +39,9 @@ namespace QuadrupleLib.Tests.Arithmetic
         [InlineData(1.0)]
         [InlineData(-1.0)]
         [InlineData(0.33)]
-        public void MultiplyByNegativeInfinityIsNaN(double x)
+        public void MultiplyByNegativeInfinityIsInfinity(double x)
         {
-            Assert.True(Float128<TAccelerator>.IsNaN(x * Float128<TAccelerator>.NegativeInfinity));
+            Assert.True(Float128<TAccelerator>.IsInfinity(x * Float128<TAccelerator>.NegativeInfinity));
         }
 
         [Theory]
@@ -59,9 +59,9 @@ namespace QuadrupleLib.Tests.Arithmetic
         [InlineData(1.0)]
         [InlineData(-1.0)]
         [InlineData(0.33)]
-        public void MultiplyByPositiveInfinityIsNaN(double x)
+        public void MultiplyByPositiveInfinityIsInfinity(double x)
         {
-            Assert.True(Float128<TAccelerator>.IsNaN(x * Float128<TAccelerator>.PositiveInfinity));
+            Assert.True(Float128<TAccelerator>.IsInfinity(x * Float128<TAccelerator>.PositiveInfinity));
         }
 
         [Theory]
