@@ -36,7 +36,7 @@ public partial struct Float128<TAccelerator>
 
     public int GetSignificandBitLength()
     {
-        return 113 - (int)UInt128.LeadingZeroCount(Significand);
+        return 113;
     }
 
     public int GetSignificandByteCount()
