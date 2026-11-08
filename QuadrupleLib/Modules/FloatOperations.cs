@@ -154,7 +154,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> MaxMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        if (x > y)
+        if (Abs(x) > Abs(y))
             return x;
         else
             return y;
@@ -166,7 +166,7 @@ public partial struct Float128<TAccelerator>
             return y;
         else if (IsNaN(y))
             return x;
-        else if (x > y)
+        else if (Abs(x) > Abs(y))
             return x;
         else
             return y;
@@ -174,7 +174,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> MinMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        if (x < y)
+        if (Abs(x) < Abs(y))
             return x;
         else
             return y;
@@ -186,7 +186,7 @@ public partial struct Float128<TAccelerator>
             return y;
         else if (IsNaN(y))
             return x;
-        else if (x < y)
+        else if (Abs(x) < Abs(y))
             return x;
         else
             return y;
@@ -263,14 +263,14 @@ public partial struct Float128<TAccelerator>
             if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 10)
             {
                 result =
-                    (ushort)(((ushort)((x.Exponent + 0x10) & 0x3f) << 10) |
+                    (ushort)(((ushort)((x.Exponent + 0xf) & 0x1f) << 10) |
                     (x.RawSignBit ? 1 << 15 : 0));
             }
             else
             {
                 result =
-                    (ushort)((ushort)((smallMantissa >> 3) & 0x3ffU) |
-                    ((ushort)((x.Exponent + 0xf) & 0x3f) << 10) |
+                    (ushort)((ushort)((smallMantissa >> 3) & 0x3ff) |
+                    ((ushort)((x.Exponent + 0xf) & 0x1f) << 10) |
                     (x.RawSignBit ? 1 << 15 : 0));
             }
 
