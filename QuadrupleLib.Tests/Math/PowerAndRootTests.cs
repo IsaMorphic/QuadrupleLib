@@ -26,6 +26,7 @@ namespace QuadrupleLib.Tests.Math
         where TAccelerator : IAccelerator
     {
         [Theory]
+        [InlineData(0.0)]
         [InlineData(1.0)]
         [InlineData(2.1)]
         [InlineData(3.676)]
@@ -36,6 +37,7 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
+        [InlineData(0.0)]
         [InlineData(1.0)]
         [InlineData(2.1)]
         [InlineData(3.676)]
@@ -49,15 +51,18 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
+        [InlineData(0.0, 2)]
         [InlineData(1.0, 2)]
         [InlineData(2.1, 2)]
         [InlineData(3.676, 2)]
+        [InlineData(0.0, 3)]
         [InlineData(1.0, 3)]
         [InlineData(2.1, 3)]
         [InlineData(3.676, 3)]
         [InlineData(-1.0, 3)]
         [InlineData(-2.1, 3)]
         [InlineData(-3.676, 3)]
+        [InlineData(0.0, 4)]
         [InlineData(1.0, 4)]
         [InlineData(2.1, 4)]
         [InlineData(3.676, 4)]
