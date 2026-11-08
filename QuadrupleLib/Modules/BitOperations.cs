@@ -17,6 +17,7 @@
  */
 
 using System.Runtime.InteropServices;
+using QuadrupleLib.Annotations;
 
 namespace QuadrupleLib;
 
@@ -162,21 +163,25 @@ public partial struct Float128<TAccelerator>
         }
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> operator &(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return new Float128<TAccelerator>(left._rawBits & right._rawBits);
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> operator |(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return new Float128<TAccelerator>(left._rawBits | right._rawBits);
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> operator ^(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
         return new Float128<TAccelerator>(left._rawBits ^ right._rawBits);
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> operator ~(Float128<TAccelerator> value)
     {
         return new Float128<TAccelerator>(~value._rawBits);

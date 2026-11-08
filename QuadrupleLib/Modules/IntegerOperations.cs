@@ -17,7 +17,6 @@
  */
 
 using QuadrupleLib.Annotations;
-using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib;
 
@@ -25,6 +24,7 @@ public partial struct Float128<TAccelerator>
 {
     #region Public API (integer related)
 
+    [MakeNonGeneric]
     public static bool IsInteger(Float128<TAccelerator> value)
     {
         int m = (int)UInt128.TrailingZeroCount(value.Significand);
@@ -32,6 +32,7 @@ public partial struct Float128<TAccelerator>
         return exp >= 0;
     }
 
+    [MakeNonGeneric]
     public static bool IsEvenInteger(Float128<TAccelerator> value)
     {
         int m = (int)UInt128.TrailingZeroCount(value.Significand);
@@ -39,12 +40,13 @@ public partial struct Float128<TAccelerator>
         switch (adj)
         {
             case > 0:
-                return exp >= 0 && (((UInt256)value.Significand << adj) & 1) == 0;
+                return exp >= 0 && (((Utilities.UInt256)value.Significand << adj) & 1) == 0;
             case <= 0:
                 return exp >= 0 && ((value.Significand >> -adj) & 1) == 0;
         }
     }
 
+    [MakeNonGeneric]
     public static bool IsOddInteger(Float128<TAccelerator> value)
     {
         int m = (int)UInt128.TrailingZeroCount(value.Significand);
@@ -52,7 +54,7 @@ public partial struct Float128<TAccelerator>
         switch (adj)
         {
             case > 0:
-                return exp >= 0 && (((UInt256)value.Significand << adj) & 1) != 0;
+                return exp >= 0 && (((Utilities.UInt256)value.Significand << adj) & 1) != 0;
             case <= 0:
                 return exp >= 0 && ((value.Significand >> -adj) & 1) != 0;
         }
