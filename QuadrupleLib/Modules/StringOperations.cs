@@ -81,7 +81,7 @@ public partial struct Float128<TAccelerator>
 
                 if (qExponent > 0)
                 {
-                    if (qExponent >= numDigits)
+                    if (qExponent >= numDigits - 1)
                     {
                         builder.Append(wholePartSpan);
                         builder.Append(fracPartSpan);
@@ -327,23 +327,33 @@ public partial struct Float128<TAccelerator>
             int m = (int)UInt128.TrailingZeroCount(Significand);
             int e2 = Exponent + m - 112;
 
-            BigInteger pow5 = Utilities.PowCache.GetPow5(Math.Abs(e2));
-            BigInteger significand = e2 switch
+            BigInteger significand;
+            switch (e2)
             {
-                >= 0 => (Significand >> m) / pow5,
-                < 0 => (Significand >> m) * pow5
-            };
+                case >= 0:
+                    int adj = e2 - m;
+                    significand = adj switch
+                    {
+                        >= 0 => (BigInteger)Significand << adj,
+                        < 0 => Significand >> -adj,
+                    };
+                    break;
+                case < 0:
+                    BigInteger pow5 = Utilities.PowCache.GetPow5(-e2);
+                    significand = (Significand >> m) * pow5;
+                    break;
+            }
 
             int maxDigits = significand == 0 ? 1 :
                 (int)Math.Floor(BigInteger.Log10(significand)) + 1;
-            Span<char> strBuf = stackalloc char[maxDigits];
+            Span<char> strBuf = stackalloc char[maxDigits + 1];
             significand.TryFormat(strBuf, out int charsWritten);
 
             StringBuilder result = new StringBuilder(charsWritten);
             result.Append(strBuf[..charsWritten]);
 
             bool expFlag;
-            int offset = maxDigits + --e2;
+            int offset = e2 < 0 ? maxDigits + --e2 : maxDigits - 1;
             if (offset <= 0 && offset >= -MAX_PADDING_DIGITS)
             {
                 for (int i = offset; i < 0; i++)
@@ -353,19 +363,9 @@ public partial struct Float128<TAccelerator>
 
                 expFlag = false;
             }
-            else if (offset > 0 && offset <= MAX_PADDING_DIGITS)
-            {
-                for (int i = 0; i <= offset; i++)
-                {
-                    result.Append('0');
-                }
-
-                e2 -= offset + 1;
-                expFlag = false;
-            }
             else
             {
-                expFlag = true;
+                expFlag = maxDigits >= MAX_PADDING_DIGITS;
             }
 
             int numDigits = offset <= 0 ? formatter.NumberDecimalDigits :
@@ -406,13 +406,16 @@ public partial struct Float128<TAccelerator>
                 result.Insert(result.Length + e2 + 1, formatter.NumberDecimalSeparator);
             }
 
-            int trimIdx;
-            for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
+            if (e2 < 0)
+            {
+                int trimIdx;
+                for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
 
-            e2 += result.Length - trimIdx - 1;
-            if (trimIdx > 0 && e2 + 1 >= 0) --trimIdx;
+                e2 += result.Length - trimIdx - 1;
+                if (trimIdx > 0 && e2 + 1 >= 0) --trimIdx;
 
-            result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
+                result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
+            }
 
             if (result.Length == 0)
             {
