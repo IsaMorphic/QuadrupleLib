@@ -140,7 +140,7 @@ public partial struct Float128<TAccelerator>
         return new Float128<TAccelerator>(value._rawBits & ~SIGNBIT_MASK);
     }
 
-    private static Float128<TAccelerator> Sign(Float128<TAccelerator> value)
+    public static Float128<TAccelerator> Sign(Float128<TAccelerator> value)
     {
         if (IsZero(value))
             return Zero;
@@ -190,6 +190,21 @@ public partial struct Float128<TAccelerator>
             return x;
         else
             return y;
+    }
+
+    public static Float128<TAccelerator> Max(Float128<TAccelerator> x, Float128<TAccelerator> y)
+    {
+        return x > y ? x : y;
+    }
+
+    public static Float128<TAccelerator> Min(Float128<TAccelerator> x, Float128<TAccelerator> y)
+    {
+        return x < y ? x : y;
+    }
+
+    public static Float128<TAccelerator> CopySign(Float128<TAccelerator> x, Float128<TAccelerator> y)
+    {
+        return new Float128<TAccelerator>((x._rawBits & ~SIGNBIT_MASK) | (y._rawBits & SIGNBIT_MASK));
     }
 
     #endregion
