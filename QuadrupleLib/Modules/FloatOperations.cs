@@ -108,22 +108,26 @@ public partial struct Float128<TAccelerator>
 
     #region Public API (sign-magnitude related)
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> operator +(Float128<TAccelerator> value)
     {
         return value;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> operator -(Float128<TAccelerator> value)
     {
         value.RawSignBit = !value.RawSignBit;
         return value;
     }
 
+    [MakeNonGeneric]
     public static bool IsNegative(Float128<TAccelerator> value)
     {
         return value.RawSignBit && (value.RawExponent != short.MaxValue || value.RawSignificand == UInt128.Zero);
     }
 
+    [MakeNonGeneric]
     public static bool IsPositive(Float128<TAccelerator> value)
     {
         return !value.RawSignBit && (value.RawExponent != short.MaxValue || value.RawSignificand == UInt128.Zero);
@@ -135,11 +139,13 @@ public partial struct Float128<TAccelerator>
         return value.RawExponent == 0 && value.RawSignificand == UInt128.Zero;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Abs(Float128<TAccelerator> value)
     {
         return new Float128<TAccelerator>(value._rawBits & ~SIGNBIT_MASK);
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Sign(Float128<TAccelerator> value)
     {
         if (IsZero(value))
@@ -152,6 +158,7 @@ public partial struct Float128<TAccelerator>
             return value;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> MaxMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (Abs(x) > Abs(y))
@@ -160,6 +167,7 @@ public partial struct Float128<TAccelerator>
             return y;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> MaxMagnitudeNumber(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (IsNaN(x))
@@ -172,6 +180,7 @@ public partial struct Float128<TAccelerator>
             return y;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> MinMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (Abs(x) < Abs(y))
@@ -180,6 +189,7 @@ public partial struct Float128<TAccelerator>
             return y;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> MinMagnitudeNumber(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         if (IsNaN(x))
@@ -192,16 +202,19 @@ public partial struct Float128<TAccelerator>
             return y;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Max(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         return x > y ? x : y;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> Min(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         return x < y ? x : y;
     }
 
+    [MakeNonGeneric]
     public static Float128<TAccelerator> CopySign(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
         return new Float128<TAccelerator>((x._rawBits & ~SIGNBIT_MASK) | (y._rawBits & SIGNBIT_MASK));
