@@ -25,6 +25,7 @@ namespace QuadrupleLib.Tests.Conversion
         where TAccelerator : IAccelerator
     {
         [Theory]
+        [InlineData(1.5)]
         [InlineData(0.5)]
         [InlineData(1.300)]
         [InlineData(-263.0)]
@@ -35,6 +36,7 @@ namespace QuadrupleLib.Tests.Conversion
         }
 
         [Theory]
+        [InlineData(1.5f)]
         [InlineData(0.5f)]
         [InlineData(1.300f)]
         [InlineData(-263.0f)]
@@ -45,6 +47,7 @@ namespace QuadrupleLib.Tests.Conversion
         }
 
         [Theory]
+        [InlineData(1.5f)]
         [InlineData(0.5f)]
         [InlineData(1.300f)]
         [InlineData(-263.0f)]
