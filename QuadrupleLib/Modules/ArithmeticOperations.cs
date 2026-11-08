@@ -289,13 +289,13 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> operator *(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        if (IsInfinity(left) ^ IsInfinity(right)) 
-        {
-            return left.RawSignBit ^ right.RawSignBit ? _nInf : _pInf;
-        }
-        else if (IsNaN(left) || IsNaN(right))
+        if (IsNaN(left) || IsNaN(right))
         {
             return _qNaN;
+        }
+        else if (IsInfinity(left) || IsInfinity(right)) 
+        {
+            return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
         }
         else
         {

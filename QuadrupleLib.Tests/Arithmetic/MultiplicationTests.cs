@@ -37,11 +37,37 @@ namespace QuadrupleLib.Tests.Arithmetic
         [Theory]
         [InlineData(0.5)]
         [InlineData(1.0)]
-        [InlineData(-1.0)]
         [InlineData(0.33)]
-        public void MultiplyByNegativeInfinityIsInfinity(double x)
+        public void MultiplyPositiveByNegativeInfinityIsNegativeInfinity(double x)
         {
-            Assert.True(Float128<TAccelerator>.IsInfinity(x * Float128<TAccelerator>.NegativeInfinity));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(x * Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Theory]
+        [InlineData(-0.5)]
+        [InlineData(-1.0)]
+        [InlineData(-0.33)]
+        public void MultiplyNegativeByNegativeInfinityIsPositiveInfinity(double x)
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(x * Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        [InlineData(0.33)]
+        public void MultiplyPositiveByPositiveInfinityIsPositiveInfinity(double x)
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(x * Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Theory]
+        [InlineData(-0.5)]
+        [InlineData(-1.0)]
+        [InlineData(-0.33)]
+        public void MultiplyNegativeByPositiveInfinityIsNegativeInfinity(double x)
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(x * Float128<TAccelerator>.PositiveInfinity));
         }
 
         [Theory]
@@ -139,6 +165,24 @@ namespace QuadrupleLib.Tests.Arithmetic
         public void NegateIsMultiplyByNegativeOne(double x)
         {
             Assert.Equal(x * Float128<TAccelerator>.NegativeOne, -x);
+        }
+
+        [Fact]
+        public void MultiplyPositiveInfinityByPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.PositiveInfinity * Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Fact]
+        public void MultiplyNegativeInfinityByNegativeInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.NegativeInfinity * Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Fact]
+        public void MultiplyNegativeInfinityByPositiveInfinityIsNegativeInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.NegativeInfinity * Float128<TAccelerator>.PositiveInfinity));
         }
     }
 
