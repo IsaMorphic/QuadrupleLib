@@ -25,5 +25,9 @@ namespace QuadrupleLib.Tests.Assertions.Exceptions
         public NearlyEqualException(string? userMessage) : base(userMessage)
         {
         }
+
+        public NearlyEqualException(string? userMessage, Exception? innerException) : base(userMessage, innerException)
+        {
+        }
     }
 }
