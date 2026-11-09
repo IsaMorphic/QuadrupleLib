@@ -16,15 +16,13 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Xunit.Sdk;
+
 namespace QuadrupleLib.Tests.Assertions.Exceptions
 {
     [Serializable]
-    internal class DoesNotThrowException : Exception
+    internal class DoesNotThrowException : XunitException
     {
-        public DoesNotThrowException()
-        {
-        }
-
         public DoesNotThrowException(string? message) : base(message)
         {
         }
