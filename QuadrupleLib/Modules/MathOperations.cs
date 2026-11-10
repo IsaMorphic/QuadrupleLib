@@ -474,6 +474,10 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
+        else if (IsInfinity(y))
+        {
+            return y > Zero ? _pInf : Zero;
+        }
 
         Float128<TAccelerator> x_n = One;
         if (y > Zero)
@@ -507,6 +511,10 @@ public partial struct Float128<TAccelerator>
         if (IsNaN(y))
         {
             return _qNaN;
+        }
+        else if (IsInfinity(y))
+        {
+            return y > Zero ? _pInf : Zero;
         }
 
         Float128<TAccelerator> x_n = One;
@@ -542,6 +550,10 @@ public partial struct Float128<TAccelerator>
         if (IsNaN(y))
         {
             return _qNaN;
+        }
+        else if (IsInfinity(y))
+        {
+            return y > Zero ? _pInf : Zero;
         }
 
         Float128<TAccelerator> x_n = ScaleB(One, (int)y);
@@ -636,17 +648,32 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (x < Zero)
-        {
-            return (n & 1) == 0 ? _sNaN : -Pow(-x, One / n);
-        }
-        else if (x == Zero)
-        { 
-            return Zero;
-        }
         else
         {
-            return Pow(x, One / n);
+            switch(n)
+            {
+                case 0:
+                    return _sNaN;
+                case 1:
+                    return x;
+                case 2:
+                    return Sqrt(x);
+                case 3:
+                    return Cbrt(x);
+                default:
+                    if (x < Zero)
+                    {
+                        return (n & 1) == 0 ? _sNaN : -Pow(-x, One / n);
+                    }
+                    else if (x == Zero)
+                    {
+                        return Zero;
+                    }
+                    else
+                    {
+                        return Pow(x, One / n);
+                    }
+            }
         }
     }
 
