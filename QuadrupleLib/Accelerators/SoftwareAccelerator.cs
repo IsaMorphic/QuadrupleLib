@@ -108,11 +108,11 @@ public sealed class SoftwareAccelerator : IAccelerator
             UInt128 d = _d._0 | ((UInt128)_d._1 << 64);
 
             n = 8 - (int)UInt256.LeadingZeroCount(r) / 32;
-            for (int k = n - m; k > 0; k--)
+            for (int k = Math.Max(n - m, 1); k > 0; k--)
             {
                 int km = k + m;
-                UInt128 r3 = (UInt128)(r >> (32 * (km - 3))) & (UInt128.MaxValue >> 32);
-                ulong d2 = (ulong)(d >> (32 * (m - 2)));
+                UInt128 r3 = (UInt128)(r >> (32 * (km - 2))) & (UInt128.MaxValue >> 32);
+                ulong d2 = (ulong)(d >> (32 * (m - 1)));
 
                 UInt128 qt = UInt128.Min(Divide(r3, d2, out ulong _), uint.MaxValue);
                 BigMul256 _dq = BigMul256.Multiply<SoftwareAccelerator>(d, qt);
