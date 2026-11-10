@@ -117,10 +117,10 @@ namespace QuadrupleLib.Tests.Arithmetic
         [InlineData(10.0)]
         [InlineData(30.655)]
         [InlineData(3.33)]
-        public void DivideByBigNumberIsSubnormal(double x)
+        public void DivideByBigNumberIsZero(double x)
         {
             Float128<TAccelerator> y = x / Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, short.MaxValue / 2 + 1);
-            Assert.True(Float128<TAccelerator>.IsSubnormal(y));
+            Assert.True(Float128<TAccelerator>.IsZero(y));
         }
 
         [Theory]
