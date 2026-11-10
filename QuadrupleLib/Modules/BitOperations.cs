@@ -102,24 +102,22 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> BitDecrement(Float128<TAccelerator> x)
     {
         UInt128 newSignificand = x.Significand - 1;
-        int normDist = (int)UInt128.LeadingZeroCount(newSignificand) - 15;
-        if (normDist > 0)
+        if (newSignificand > SIGNIFICAND_MASK)
         {
-            return new Float128<TAccelerator>(newSignificand << normDist, x.Exponent - normDist, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand, x.Exponent, x.RawSignBit);
         }
         else
         {
-            return new Float128<TAccelerator>(newSignificand, x.Exponent, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand, x.Exponent - 1, x.RawSignBit);
         }
     }
 
     public static Float128<TAccelerator> BitIncrement(Float128<TAccelerator> x)
     {
         UInt128 newSignificand = x.Significand + 1;
-        int normDist = 15 - (int)UInt128.LeadingZeroCount(newSignificand);
-        if (normDist > 0)
+        if ((newSignificand >> 1) > SIGNIFICAND_MASK)
         {
-            return new Float128<TAccelerator>(newSignificand >> normDist, x.Exponent + normDist, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand >> 1, x.Exponent + 1, x.RawSignBit);
         }
         else
         {
