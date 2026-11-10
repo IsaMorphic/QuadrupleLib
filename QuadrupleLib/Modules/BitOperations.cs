@@ -138,10 +138,10 @@ public partial struct Float128<TAccelerator>
         {
             return x.RawSignBit ? _nInf : _pInf;
         }
-        else if (newExponent < -EXPONENT_BIAS + 1)
+        else if (newExponent <= -EXPONENT_BIAS + 1)
         {
-            normDist = newExponent - (-EXPONENT_BIAS + 1);
-            UInt128 newSignificand = (x.RawSignificand << 3) >> normDist;
+            normDist = newExponent + EXPONENT_BIAS;
+            UInt128 newSignificand = (x.Significand << 3) >> normDist;
 
             // set sticky bit
             newSignificand &= UInt128.MaxValue << 1;
