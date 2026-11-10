@@ -277,7 +277,19 @@ public partial struct Float128<TAccelerator>
                 sumSignificand++; // increment pth bit from the left
             }
 
-            return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, rawSignBit);
+            if (sumExponent <= -EXPONENT_BIAS + 1) // underflowing sum
+            {
+                var finalAdjust = (int)UInt128.TrailingZeroCount(sumSignificand) - sumExponent - EXPONENT_BIAS - 111;
+                return new Float128<TAccelerator>(sumSignificand >> finalAdjust, -EXPONENT_BIAS + 1, rawSignBit);
+            }
+            else if (sumExponent > EXPONENT_BIAS) // overflowing sum
+            {
+                return rawSignBit ? _nInf : _pInf;
+            }
+            else
+            {
+                return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, rawSignBit);
+            }
         }
     }
 
@@ -293,7 +305,7 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (IsInfinity(left) || IsInfinity(right)) 
+        else if (IsInfinity(left) || IsInfinity(right))
         {
             return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
         }

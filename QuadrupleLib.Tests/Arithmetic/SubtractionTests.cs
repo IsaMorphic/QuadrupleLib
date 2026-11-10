@@ -147,6 +147,21 @@ namespace QuadrupleLib.Tests.Arithmetic
         {
             Assert.Equal(x, x - Float128<TAccelerator>.Zero);
         }
+
+        [Fact]
+        public void OverflowingDiffIsInfinity()
+        {
+            Float128<TAccelerator> max = Float128<TAccelerator>.ScaleB((Float128<TAccelerator>)(UInt128.MaxValue >> 15), short.MaxValue >> 1);
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, -max - max);
+        }
+
+        [Fact]
+        public void UnderflowingDiffIsSubnormal()
+        {
+            Float128<TAccelerator> min = Float128<TAccelerator>.ScaleB(2.0, -(short.MaxValue >> 1) + 1);
+            Float128<TAccelerator> half = Float128<TAccelerator>.ScaleB(1.0, -(short.MaxValue >> 1) + 1);
+            Assert.True(Float128<TAccelerator>.IsSubnormal(min - half));
+        }
     }
 
     public class SubtractionTests_DefaultAccelerator :
