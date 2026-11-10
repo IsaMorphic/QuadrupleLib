@@ -43,142 +43,158 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> FusedMultiplyAdd(Float128<TAccelerator> left, Float128<TAccelerator> right, Float128<TAccelerator> addend)
     {
-        if (IsInfinity(left) || IsInfinity(right) || IsNaN(left) || IsNaN(right) || IsNaN(addend))
+        if (IsNaN(left) || IsNaN(right))
         {
             return _qNaN;
         }
-
-        var prodSign = left.RawSignBit != right.RawSignBit;
-        var prodExponent = left.Exponent + right.Exponent;
-
-        BigMul256 bigSignificand;
-        if (prodExponent > EXPONENT_BIAS)
+        else if ((IsInfinity(left) || IsInfinity(right)) && (IsZero(left) || IsZero(right)))
         {
-            return (prodSign ? _nInf : _pInf) + addend;
+            return _sNaN;
+        }
+        else if (IsInfinity(left) || IsInfinity(right))
+        {
+            return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
         }
         else if (IsInfinity(addend))
         {
             return addend;
         }
-        else
+        else if (IsNaN(addend))
         {
-            bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
-        }
-
-        var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
-        var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
-
-        var lowBits = bigLo & (UInt128.MaxValue >> 16);
-        var highBits = (bigHi << 19) | (bigLo >> 109);
-
-        // normalize output
-        int normDist;
-        if ((highBits >> 3) != 0 && IsNormal(left) && IsNormal(right))
-        {
-            normDist = (short)(UInt128.LeadingZeroCount(highBits >> 3) - 15);
-            if (normDist > 0)
-                highBits <<= normDist;
-            else if (normDist < 0)
-                highBits >>= -normDist;
-            prodExponent -= normDist;
-        }
-        else if ((highBits >> 3) == 0)
-        {
-            prodExponent = (short)(-EXPONENT_BIAS + 1);
-            normDist = 0;
+            return _qNaN;
         }
         else
         {
-            normDist = prodExponent - (-EXPONENT_BIAS + 1);
-            if (normDist > 0)
-                highBits <<= normDist;
-            else if (normDist < 0)
-                highBits >>= -normDist;
-            prodExponent -= normDist;
+            var prodSign = left.RawSignBit != right.RawSignBit;
+            var prodExponent = left.Exponent + right.Exponent;
+
+            BigMul256 bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
+            var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
+            var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
+
+            var lowBits = bigLo & (UInt128.MaxValue >> 16);
+            var highBits = (bigHi << 19) | (bigLo >> 109);
+
+            // normalize output
+            int normDist;
+            if ((highBits >> 3) != 0)
+            {
+                normDist = (int)UInt128.LeadingZeroCount(highBits >> 3) - 15;
+                if (prodExponent - normDist > EXPONENT_BIAS) // overflowing product
+                {
+                    return prodSign ? _nInf : _pInf;
+                }
+                else if (prodExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing product
+                {
+                    normDist = prodExponent + EXPONENT_BIAS - 1;
+                }
+
+                if (normDist > 0)
+                    highBits <<= normDist;
+                else if (normDist < 0)
+                    highBits >>= -normDist;
+
+                prodExponent -= normDist;
+            }
+            else
+            {
+                prodExponent = -EXPONENT_BIAS + 1;
+                normDist = 0;
+            }
+
+            // set sticky bit
+            highBits &= UInt128.MaxValue << 1;
+            highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << -normDist) - 1) : 0), 1);
+
+            bool leftSign = prodSign;
+            int leftExponent = prodExponent;
+            UInt128 leftSignificand = highBits;
+
+            bool rightSign = addend.RawSignBit;
+            int rightExponent = addend.Exponent;
+            UInt128 rightSignificand = addend.Significand << 3;
+
+            if (leftExponent < rightExponent)
+            {
+                var (tempSign, tempExponent, tempSignificand) = (leftSign, leftExponent, leftSignificand);
+                (leftSign, leftExponent, leftSignificand) = (rightSign, rightExponent, rightSignificand);
+                (rightSign, rightExponent, rightSignificand) = (tempSign, tempExponent, tempSignificand);
+            }
+
+            // From @GreatCoder1000 (https://github.com/GreatCoder1000):
+            // when exponent difference is beyond rounding precision, 
+            // do not do any adding (leave left addend untouched). 
+            if (leftExponent - rightExponent > 115)
+            {
+                return new Float128<TAccelerator>(leftSignificand, leftExponent, leftSign);
+            }
+
+            // set tentative exponent
+            int sumExponent = leftExponent;
+
+            // align significands
+            var exponentDiff = leftExponent - rightExponent;
+            var sumSignificand = rightSignificand >> exponentDiff;
+
+            // set sticky bit
+            sumSignificand |= UInt128.Min(rightSignificand & ((UInt128.One << exponentDiff) - 1), 1);
+
+            // call p + 3 bit adder
+            bool sumSign;
+            if (leftSign == rightSign)
+            {
+                sumSign = leftSign;
+                sumSignificand += leftSignificand;
+            }
+            else
+            {
+                sumSign =
+                    (rightSign && leftSignificand < sumSignificand) ||
+                    (leftSign && sumSignificand < leftSignificand);
+                sumSignificand = leftSignificand < sumSignificand ?
+                    sumSignificand - leftSignificand :
+                    leftSignificand - sumSignificand;
+            }
+
+            // normalize output
+            if ((sumSignificand >> 3) != 0 && leftExponent > -EXPONENT_BIAS + 1)
+            {
+                normDist = (int)UInt128.LeadingZeroCount(sumSignificand >> 3) - 15;
+                if (sumExponent - normDist > EXPONENT_BIAS) // overflowing sum
+                {
+                    return sumSign ? _nInf : _pInf;
+                }
+                else if (sumExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing sum
+                {
+                    normDist = sumExponent + EXPONENT_BIAS;
+                }
+
+                if (normDist > 0)
+                    sumSignificand <<= normDist;
+                else if (normDist < 0)
+                    sumSignificand >>= -normDist;
+
+                sumExponent -= normDist;
+            }
+            else
+            {
+                sumExponent = -EXPONENT_BIAS + 1;
+                normDist = 0;
+            }
+
+            // set sticky bit
+            sumSignificand &= UInt128.MaxValue << 1;
+            sumSignificand |= normDist < 0 ? UInt128.Min(rightSignificand & ((UInt128.One << -normDist) - 1), 1) : 0;
+
+            if ((((sumSignificand & 1) |
+                 ((sumSignificand >> 2) & 1)) &
+                 ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
+            {
+                sumSignificand++; // increment pth bit from the left
+            }
+
+            return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, sumSign);
         }
-
-        // set sticky bit
-        highBits &= UInt128.MaxValue << 1;
-        highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << -normDist) - 1) : 0), 1);
-
-        bool leftSign = prodSign;
-        int leftExponent = prodExponent;
-        UInt128 leftSignificand = highBits;
-
-        bool rightSign = addend.RawSignBit;
-        int rightExponent = addend.Exponent;
-        UInt128 rightSignificand = addend.Significand << 3;
-
-        if (leftExponent < rightExponent)
-        {
-            var (tempSign, tempExponent, tempSignificand) = (leftSign, leftExponent, leftSignificand);
-            (leftSign, leftExponent, leftSignificand) = (rightSign, rightExponent, rightSignificand);
-            (rightSign, rightExponent, rightSignificand) = (tempSign, tempExponent, tempSignificand);
-        }
-
-        // From @GreatCoder1000 (https://github.com/GreatCoder1000):
-        // when exponent difference is beyond rounding precision, 
-        // do not do any adding (leave left addend untouched). 
-        if (leftExponent - rightExponent > 115)
-        {
-            return new Float128<TAccelerator>(leftSignificand, leftExponent, leftSign);
-        }
-
-        // set tentative exponent
-        int sumExponent = leftExponent;
-
-        // align significands
-        var exponentDiff = leftExponent - rightExponent;
-        var sumSignificand = rightSignificand >> exponentDiff;
-
-        // set sticky bit
-        sumSignificand |= UInt128.Min(rightSignificand & ((UInt128.One << exponentDiff) - 1), 1);
-
-        // call p + 3 bit adder
-        bool sumSign;
-        if (leftSign == rightSign)
-        {
-            sumSign = leftSign;
-            sumSignificand += leftSignificand;
-        }
-        else
-        {
-            sumSign =
-                (rightSign && leftSignificand < sumSignificand) ||
-                (leftSign && sumSignificand < leftSignificand);
-            sumSignificand = leftSignificand < sumSignificand ?
-                sumSignificand - leftSignificand :
-                leftSignificand - sumSignificand;
-        }
-
-        // normalize output
-        if ((sumSignificand >> 3) != 0 && leftExponent > -EXPONENT_BIAS + 1)
-        {
-            normDist = (short)(UInt128.LeadingZeroCount(sumSignificand >> 3) - 15);
-            if (normDist > 0)
-                sumSignificand <<= normDist;
-            else if (normDist < 0)
-                sumSignificand >>= -normDist;
-            sumExponent -= normDist;
-        }
-        else
-        {
-            sumExponent = (short)(-EXPONENT_BIAS + 1);
-            normDist = 0;
-        }
-
-        // set sticky bit
-        sumSignificand &= UInt128.MaxValue << 1;
-        sumSignificand |= normDist < 0 ? UInt128.Min(rightSignificand & ((UInt128.One << -normDist) - 1), 1) : 0;
-
-        if ((((sumSignificand & 1) |
-             ((sumSignificand >> 2) & 1)) &
-             ((sumSignificand >> 1) & 1)) == 1) // check rounding condition
-        {
-            sumSignificand++; // increment pth bit from the left
-        }
-
-        return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, sumSign);
     }
 
     public static Float128<TAccelerator> Ieee754Remainder(Float128<TAccelerator> left, Float128<TAccelerator> right)
@@ -232,16 +248,16 @@ public partial struct Float128<TAccelerator>
             sumSignificand |= UInt128.Min(right.Significand & ((UInt128.One << exponentDiff) - 1), 1);
 
             // call p + 3 bit adder
-            bool rawSignBit;
+            bool sumSign;
             var leftSignificand = left.Significand << 3;
             if (left.RawSignBit == right.RawSignBit)
             {
-                rawSignBit = left.RawSignBit;
+                sumSign = left.RawSignBit;
                 sumSignificand += leftSignificand;
             }
             else
             {
-                rawSignBit =
+                sumSign =
                     (right.RawSignBit && leftSignificand < sumSignificand) ||
                     (left.RawSignBit && sumSignificand < leftSignificand);
                 sumSignificand = leftSignificand < sumSignificand ?
@@ -251,18 +267,28 @@ public partial struct Float128<TAccelerator>
 
             // normalize output
             int normDist;
-            if ((sumSignificand >> 3) != 0 && IsNormal(left))
+            if ((sumSignificand >> 3) != 0)
             {
-                normDist = (short)(UInt128.LeadingZeroCount(sumSignificand >> 3) - 15);
+                normDist = (int)UInt128.LeadingZeroCount(sumSignificand >> 3) - 15;
+                if (sumExponent - normDist > EXPONENT_BIAS) // overflowing sum
+                {
+                    return sumSign ? _nInf : _pInf;
+                }
+                else if (sumExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing sum
+                {
+                    normDist = sumExponent + EXPONENT_BIAS;
+                }
+
                 if (normDist > 0)
                     sumSignificand <<= normDist;
                 else if (normDist < 0)
                     sumSignificand >>= -normDist;
+
                 sumExponent -= normDist;
             }
             else
             {
-                sumExponent = (short)(-EXPONENT_BIAS + 1);
+                sumExponent = -EXPONENT_BIAS + 1;
                 normDist = 0;
             }
 
@@ -277,19 +303,7 @@ public partial struct Float128<TAccelerator>
                 sumSignificand++; // increment pth bit from the left
             }
 
-            if (sumExponent <= -EXPONENT_BIAS + 1) // underflowing sum
-            {
-                var finalAdjust = (int)UInt128.TrailingZeroCount(sumSignificand) - sumExponent - EXPONENT_BIAS - 111;
-                return new Float128<TAccelerator>(sumSignificand >> finalAdjust, -EXPONENT_BIAS + 1, rawSignBit);
-            }
-            else if (sumExponent > EXPONENT_BIAS) // overflowing sum
-            {
-                return rawSignBit ? _nInf : _pInf;
-            }
-            else
-            {
-                return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, rawSignBit);
-            }
+            return new Float128<TAccelerator>(sumSignificand >> 3, sumExponent, sumSign);
         }
     }
 
@@ -305,6 +319,10 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
+        else if ((IsInfinity(left) || IsInfinity(right)) && (IsZero(left) || IsZero(right)))
+        {
+            return _sNaN;
+        }
         else if (IsInfinity(left) || IsInfinity(right))
         {
             return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
@@ -314,16 +332,7 @@ public partial struct Float128<TAccelerator>
             var prodSign = left.RawSignBit != right.RawSignBit;
             var prodExponent = left.Exponent + right.Exponent;
 
-            BigMul256 bigSignificand;
-            if (prodExponent > EXPONENT_BIAS)
-            {
-                return prodSign ? _nInf : _pInf;
-            }
-            else
-            {
-                bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
-            }
-
+            BigMul256 bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
             var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
             var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
 
@@ -332,28 +341,29 @@ public partial struct Float128<TAccelerator>
 
             // normalize output
             int normDist;
-            if ((highBits >> 3) != 0 && IsNormal(left) && IsNormal(right))
+            if ((highBits >> 3) != 0)
             {
-                normDist = (short)(UInt128.LeadingZeroCount(highBits >> 3) - 15);
+                normDist = (int)UInt128.LeadingZeroCount(highBits >> 3) - 15;
+                if (prodExponent - normDist > EXPONENT_BIAS) // overflowing product
+                {
+                    return prodSign ? _nInf : _pInf;
+                }
+                else if (prodExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing product
+                {
+                    normDist = prodExponent + EXPONENT_BIAS - 1;
+                }
+
                 if (normDist > 0)
                     highBits <<= normDist;
                 else if (normDist < 0)
                     highBits >>= -normDist;
+
                 prodExponent -= normDist;
-            }
-            else if ((highBits >> 3) == 0)
-            {
-                prodExponent = (short)(-EXPONENT_BIAS + 1);
-                normDist = 0;
             }
             else
             {
-                normDist = prodExponent - (-EXPONENT_BIAS + 1);
-                if (normDist > 0)
-                    highBits <<= normDist;
-                else if (normDist < 0)
-                    highBits >>= -normDist;
-                prodExponent -= normDist;
+                prodExponent = -EXPONENT_BIAS + 1;
+                normDist = 0;
             }
 
             // set sticky bit
@@ -418,12 +428,21 @@ public partial struct Float128<TAccelerator>
             if ((fullSignificand >> 3) != 0)
             {
                 normDist = 143 - (int)UInt256.LeadingZeroCount(fullSignificand >> 3);
+                if (quotExponent + normDist > EXPONENT_BIAS) // overflowing quotient
+                {
+                    return quotSign ? _nInf : _pInf;
+                }
+                else if (quotExponent + normDist <= -EXPONENT_BIAS + 1) // underflowing quotient
+                {
+                    normDist = -quotExponent - EXPONENT_BIAS + 1;
+                }
+
                 quotSignificand = (UInt128)(fullSignificand >> normDist);
                 quotExponent += normDist;
             }
             else
             {
-                quotExponent = (short)(-EXPONENT_BIAS + 1);
+                quotExponent = -EXPONENT_BIAS + 1;
                 quotSignificand = UInt128.Zero;
                 normDist = 0;
             }
@@ -439,15 +458,7 @@ public partial struct Float128<TAccelerator>
                 quotSignificand++; // increment pth bit from the left
             }
 
-            if (quotExponent < -EXPONENT_BIAS + 1)
-            {
-                var finalAdjust = (int)UInt128.TrailingZeroCount(quotSignificand) - quotExponent - EXPONENT_BIAS - 111;
-                return new Float128<TAccelerator>(quotSignificand >> finalAdjust, -EXPONENT_BIAS + 1, quotSign);
-            }
-            else
-            {
-                return new Float128<TAccelerator>(quotSignificand >> 3, quotExponent, quotSign);
-            }
+            return new Float128<TAccelerator>(quotSignificand >> 3, quotExponent, quotSign);
         }
     }
 
