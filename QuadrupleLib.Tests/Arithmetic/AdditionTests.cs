@@ -164,8 +164,8 @@ namespace QuadrupleLib.Tests.Arithmetic
         [Fact]
         public void UnderflowingSumIsSubnormal()
         {
-            Float128<TAccelerator> min = Float128<TAccelerator>.ScaleB(2.0, -(short.MaxValue >> 1) + 1);
-            Float128<TAccelerator> half = Float128<TAccelerator>.ScaleB(-1.0, -(short.MaxValue >> 1) + 1);
+            Float128<TAccelerator> min = Float128<TAccelerator>.ScaleB(1.0, -(short.MaxValue >> 1) + 1);
+            Float128<TAccelerator> half = Float128<TAccelerator>.ScaleB(-0.5, -(short.MaxValue >> 1) + 1);
             Assert.True(Float128<TAccelerator>.IsSubnormal(min + half));
         }
     }
