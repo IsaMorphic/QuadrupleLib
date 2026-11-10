@@ -77,25 +77,25 @@ public partial struct Float128<TAccelerator>
     public static bool IsPow2(Float128<TAccelerator> value)
     {
         return (value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) ||
-            value.RawSignificand == UInt128.Zero;
+            (value.RawSignificand == UInt128.Zero && value.RawExponent != short.MaxValue);
     }
 
     [MakeNonGeneric]
     public static bool IsCanonical(Float128<TAccelerator> value)
     {
-        return UInt128.LeadingZeroCount(value.RawSignificand) - 15 == 0;
+        return UInt128.LeadingZeroCount(value.RawSignificand) - 15 == 0 || IsSubnormal(value);
     }
 
     [MakeNonGeneric]
     public static bool IsNormal(Float128<TAccelerator> value)
     {
-        return value.RawExponent != 0;
+        return value.RawExponent != 0 && value.RawExponent != short.MaxValue;
     }
 
     [MakeNonGeneric]
     public static bool IsSubnormal(Float128<TAccelerator> value)
     {
-        return value.RawExponent == 0;
+        return value.RawExponent == 0 && value.RawSignificand != UInt128.Zero;
     }
 
     [MakeNonGeneric]

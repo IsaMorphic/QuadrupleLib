@@ -131,10 +131,10 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Theory]
-        [InlineData(0.5)]
+        [InlineData(1.5)]
         [InlineData(1.0)]
         [InlineData(-1.0)]
-        [InlineData(0.33)]
+        [InlineData(1.33)]
         public void MultiplyNormalBySubnormalIsSubnormal(double x)
         {
             Assert.True(Float128<TAccelerator>.IsSubnormal(x * Float128<TAccelerator>.Epsilon));

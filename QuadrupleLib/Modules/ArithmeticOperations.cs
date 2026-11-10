@@ -395,7 +395,7 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if ((IsInfinity(left) && IsFinite(right)) || (IsNormal(left) && IsSubnormal(right)))
+        else if ((IsInfinity(left) && IsFinite(right)) || (IsNormal(left) && (IsSubnormal(right) || IsZero(right))))
         {
             return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
         }

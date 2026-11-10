@@ -140,7 +140,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (newExponent <= -EXPONENT_BIAS + 1)
         {
-            normDist = newExponent + EXPONENT_BIAS;
+            normDist = newExponent + EXPONENT_BIAS + 1;
             UInt128 newSignificand = (x.Significand << 3) >> normDist;
 
             // set sticky bit
