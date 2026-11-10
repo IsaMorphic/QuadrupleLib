@@ -141,6 +141,33 @@ namespace QuadrupleLib.Tests.Arithmetic
         {
             Assert.Equal(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.PositiveInfinity + Float128<TAccelerator>.PositiveInfinity);
         }
+
+        [Fact]
+        public void ZeroPlusZeroIsZero()
+        {
+            Assert.Equal(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Zero + Float128<TAccelerator>.Zero);
+        }
+
+        [Fact]
+        public void NegativeZeroPlusZeroIsNegativeZero()
+        {
+            Assert.Equal(Float128<TAccelerator>.NegativeZero, Float128<TAccelerator>.NegativeZero + Float128<TAccelerator>.Zero);
+        }
+
+        [Fact]
+        public void OverflowingSumIsInfinity()
+        {
+            Float128<TAccelerator> max = Float128<TAccelerator>.ScaleB((Float128<TAccelerator>)(UInt128.MaxValue >> 15), short.MaxValue >> 1);
+            Assert.Equal(Float128<TAccelerator>.PositiveInfinity, max + max);
+        }
+
+        [Fact]
+        public void UnderflowingSumIsSubnormal()
+        {
+            Float128<TAccelerator> min = Float128<TAccelerator>.ScaleB(2.0, -(short.MaxValue >> 1) + 1);
+            Float128<TAccelerator> half = Float128<TAccelerator>.ScaleB(-1.0, -(short.MaxValue >> 1) + 1);
+            Assert.True(Float128<TAccelerator>.IsSubnormal(min + half));
+        }
     }
 
     public class AdditionTests_DefaultAccelerator :
