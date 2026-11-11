@@ -346,8 +346,8 @@ public partial struct Float128<TAccelerator>
             }
 
             int maxDigits = significand == 0 ? 1 :
-                (int)Math.Floor(BigInteger.Log10(significand)) + 1;
-            Span<char> strBuf = stackalloc char[maxDigits + 1];
+                (int)Math.Round(BigInteger.Log10(significand)) + 1;
+            Span<char> strBuf = stackalloc char[maxDigits];
             significand.TryFormat(strBuf, out int charsWritten);
 
             StringBuilder result = new StringBuilder(charsWritten);
