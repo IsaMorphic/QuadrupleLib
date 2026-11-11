@@ -102,7 +102,6 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
-        [InlineData(1.0)]
         [InlineData(1.345)]
         [InlineData(-1.0)]
         [InlineData(-1.5678)]
@@ -110,6 +109,13 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Atanh(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+        }
+
+        [Fact]
+        public void IsInverseTanhInfinity()
+        {
+            Float128<TAccelerator> y = Float128<TAccelerator>.Atanh(1.0);
+            Assert.True(Float128<TAccelerator>.IsInfinity(y));
         }
     }
 
