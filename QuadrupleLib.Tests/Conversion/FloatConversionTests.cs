@@ -30,6 +30,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(1.300)]
         [InlineData(-263.0)]
         [InlineData(123.4567)]
+        [InlineData(double.Epsilon)]
         public void ConvertToDoubleIsEqual(double x)
         {
             Assert.Equal(x, (double)(Float128<TAccelerator>)x);
@@ -41,6 +42,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(1.300f)]
         [InlineData(-263.0f)]
         [InlineData(123.4567f)]
+        [InlineData(float.Epsilon)]
         public void ConvertToSingleIsEqual(float x)
         {
             Assert.Equal(x, (float)(Float128<TAccelerator>)x);
@@ -52,9 +54,11 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(1.300f)]
         [InlineData(-263.0f)]
         [InlineData(123.4567f)]
+        [InlineData(5.9604645E-08f)]
         public void ConvertToHalfIsEqual(float x)
         {
-            Assert.Equal((Half)x, (Half)(Float128<TAccelerator>)x);
+            Half _x = (Half)x;
+            Assert.Equal(_x, (Half)(Float128<TAccelerator>)_x);
         }
     }
 
