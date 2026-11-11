@@ -55,7 +55,7 @@ public partial struct Float128<TAccelerator>
 
         Match match = Regex.Match(s, @$"^((?:{Utilities.Regex.Escape(formatter.NegativeSign)} ?)|\()?(\d*)" +
             @$"(?:{Utilities.Regex.Escape(formatter.NumberDecimalSeparator)}(\d+))?" +
-            @$"(?:E((?:(?:{Utilities.Regex.Escape(formatter.PositiveSign)})|" +
+            @$"(?:[eE]((?:(?:{Utilities.Regex.Escape(formatter.PositiveSign)})|" +
             @$"(?:{Utilities.Regex.Escape(formatter.NegativeSign)}))?\d+))?" +
             @$"((?: ?{Utilities.Regex.Escape(formatter.NegativeSign)})|\))?$");
         if (!match.Success)
