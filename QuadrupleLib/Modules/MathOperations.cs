@@ -269,7 +269,7 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
-        else if(x == Zero && y == Zero)
+        else if (x == Zero && y == Zero)
         {
             return Zero;
         }
@@ -325,7 +325,15 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Acosh(Float128<TAccelerator> x)
     {
-        if (x > One)
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (IsPositiveInfinity(x))
+        {
+            return _pInf;
+        }
+        else if (x > One)
         {
             return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
         }
@@ -341,12 +349,27 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Asinh(Float128<TAccelerator> x)
     {
-        return Log(x + Sqrt(FusedMultiplyAdd(x, x, One)));
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (IsPositiveInfinity(x))
+        {
+            return _pInf;
+        }
+        else if (IsNegativeInfinity(x))
+        {
+            return _nInf;
+        }
+        else
+        {
+            return Log(x + Sqrt(FusedMultiplyAdd(x, x, One)));
+        }
     }
 
     public static Float128<TAccelerator> Atanh(Float128<TAccelerator> x)
     {
-        if (Abs(x) < One)
+        if (Abs(x) <= One)
         {
             return Log((One + x) / (One - x)) * 0.5;
         }
