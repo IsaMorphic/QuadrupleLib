@@ -135,6 +135,11 @@ public partial struct Float128<TAccelerator>
     {
         Float128<TAccelerator> result;
 
+        if (IsZero(value))
+        {
+            return value;
+        }
+
         int unbiasedExponent = value.Exponent;
         switch (unbiasedExponent)
         {
@@ -158,8 +163,13 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Ceiling(Float128<TAccelerator> value)
     {
         Float128<TAccelerator> result;
-        int unbiasedExponent = value.Exponent;
 
+        if (IsZero(value))
+        {
+            return value;
+        }
+
+        int unbiasedExponent = value.Exponent;
         switch (unbiasedExponent)
         {
             case short.MaxValue:
