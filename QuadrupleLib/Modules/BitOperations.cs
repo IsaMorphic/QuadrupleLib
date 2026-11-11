@@ -117,7 +117,7 @@ public partial struct Float128<TAccelerator>
         UInt128 newSignificand = x.Significand + 1;
         if ((newSignificand >> 1) > SIGNIFICAND_MASK)
         {
-            return new Float128<TAccelerator>(newSignificand >> 1, x.Exponent + 1, x.RawSignBit);
+            return new Float128<TAccelerator>(newSignificand, x.Exponent + 1, x.RawSignBit);
         }
         else
         {
