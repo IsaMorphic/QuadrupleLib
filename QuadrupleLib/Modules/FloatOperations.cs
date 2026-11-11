@@ -160,7 +160,9 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static Float128<TAccelerator> MaxMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        if (Abs(x) > Abs(y))
+        if (IsNaN(x) || IsNaN(y))
+            return _qNaN;
+        else if (Abs(x) > Abs(y))
             return x;
         else
             return y;
@@ -182,7 +184,9 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static Float128<TAccelerator> MinMagnitude(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        if (Abs(x) < Abs(y))
+        if (IsNaN(x) || IsNaN(y))
+            return _qNaN;
+        else if (Abs(x) < Abs(y))
             return x;
         else
             return y;
