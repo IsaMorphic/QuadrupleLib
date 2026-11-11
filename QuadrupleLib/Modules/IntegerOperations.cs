@@ -27,14 +27,27 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static bool IsInteger(Float128<TAccelerator> value)
     {
+        if (IsZero(value))
+        {
+            return true;
+        }
+        else
+        {
         int m = (int)UInt128.TrailingZeroCount(value.Significand);
         int exp = value.Exponent + m - 112;
         return exp >= 0;
+    }
     }
 
     [MakeNonGeneric]
     public static bool IsEvenInteger(Float128<TAccelerator> value)
     {
+        if (IsZero(value))
+        {
+            return true;
+        }
+        else
+        {
         int m = (int)UInt128.TrailingZeroCount(value.Significand);
         int exp = value.Exponent + m - 112, adj = exp - m;
         switch (adj)
@@ -44,6 +57,7 @@ public partial struct Float128<TAccelerator>
             case <= 0:
                 return exp >= 0 && ((value.Significand >> -adj) & 1) == 0;
         }
+    }
     }
 
     [MakeNonGeneric]
