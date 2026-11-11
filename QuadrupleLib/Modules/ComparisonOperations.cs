@@ -27,7 +27,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public override int GetHashCode()
     {
-        return HashCode.Combine(_rawBits);
+        return HashCode.Combine(IsZero(this) ? UInt128.Zero : _rawBits);
     }
 
     [MakeNonGeneric]
