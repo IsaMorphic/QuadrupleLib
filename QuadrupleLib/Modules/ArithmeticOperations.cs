@@ -389,7 +389,7 @@ public partial struct Float128<TAccelerator>
     {
         if (IsFinite(left) && IsInfinity(right))
         {
-            return Zero;
+            return left.RawSignBit != right.RawSignBit ? NegativeZero : Zero;
         }
         else if ((IsInfinity(left) || IsZero(left)) && (IsInfinity(right) || IsZero(right)))
         {
