@@ -80,10 +80,9 @@ public partial struct Float128<TAccelerator>
             (value.RawSignificand == UInt128.Zero && value.RawExponent != short.MaxValue);
     }
 
-    [MakeNonGeneric]
     public static bool IsCanonical(Float128<TAccelerator> value)
     {
-        return UInt128.LeadingZeroCount(value.RawSignificand) - 15 == 0 || IsSubnormal(value);
+        return true;
     }
 
     [MakeNonGeneric]
