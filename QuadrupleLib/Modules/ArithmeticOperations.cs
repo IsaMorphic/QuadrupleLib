@@ -99,6 +99,7 @@ public partial struct Float128<TAccelerator>
             else
             {
                 prodExponent = -EXPONENT_BIAS + 1;
+                highBits = UInt128.Zero;
                 normDist = 0;
             }
 
@@ -179,6 +180,7 @@ public partial struct Float128<TAccelerator>
             else
             {
                 sumExponent = -EXPONENT_BIAS + 1;
+                sumSignificand = UInt128.Zero;
                 normDist = 0;
             }
 
@@ -289,6 +291,7 @@ public partial struct Float128<TAccelerator>
             else
             {
                 sumExponent = -EXPONENT_BIAS + 1;
+                sumSignificand = UInt128.Zero;
                 normDist = 0;
             }
 
@@ -363,6 +366,7 @@ public partial struct Float128<TAccelerator>
             else
             {
                 prodExponent = -EXPONENT_BIAS + 1;
+                highBits = UInt128.Zero;
                 normDist = 0;
             }
 
