@@ -108,6 +108,15 @@ public partial struct Float128<TAccelerator>
 
     public static (Float128<TAccelerator> Sin, Float128<TAccelerator> Cos) SinCos(Float128<TAccelerator> alpha)
     {
+        if (IsNaN(alpha))
+        {
+            return (_qNaN, _qNaN);
+        }
+        else if (IsInfinity(alpha))
+        {
+            return (_sNaN, _sNaN);
+        }
+
         Float128<TAccelerator> x = One, y = Zero;
         Float128<TAccelerator> phi = Ieee754Remainder(alpha, Tau);
         if (phi > HalfPi)
@@ -218,6 +227,19 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Atan(Float128<TAccelerator> z)
     {
+        if (IsNaN(z))
+        {
+            return _qNaN;
+        }
+        else if (IsPositiveInfinity(z))
+        {
+            return HalfPi;
+        }
+        else if (IsNegativeInfinity(z))
+        {
+            return -HalfPi;
+        }
+
         Float128<TAccelerator> x = One, y = z, theta = Zero, sigma, sigma_neg;
         for (int i = 0; i < SINCOS_ITER_COUNT; i++)
         {
@@ -364,6 +386,10 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
+        else if (IsPositiveInfinity(x))
+        {
+            return _pInf;
+        }
 
         int n = ILogB(x);
         Float128<TAccelerator> y = ScaleB(x, -n);
@@ -386,6 +412,10 @@ public partial struct Float128<TAccelerator>
         else if (y <= Zero)
         {
             return _sNaN;
+        }
+        else if (IsPositiveInfinity(y))
+        {
+            return _pInf;
         }
         else if (y == One)
         {
@@ -411,6 +441,10 @@ public partial struct Float128<TAccelerator>
         else if (y <= Zero || newBase <= Zero)
         {
             return _sNaN;
+        }
+        else if (IsPositiveInfinity(y))
+        {
+            return _pInf;
         }
         else if (y == One)
         {
@@ -448,6 +482,10 @@ public partial struct Float128<TAccelerator>
         else if (y <= Zero)
         {
             return _sNaN;
+        }
+        else if (IsPositiveInfinity(y))
+        {
+            return _pInf;
         }
         else if (y == One)
         {
@@ -576,6 +614,10 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
+        else if (IsZero(x) && y < Zero)
+        {
+            return _pInf * Sign(x);
+        }
         else if (IsInteger(x) && IsInteger(y) && IsPositive(y))
         {
             Float128<TAccelerator> result = One;
@@ -650,7 +692,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            switch(n)
+            switch (n)
             {
                 case 0:
                     return _sNaN;
