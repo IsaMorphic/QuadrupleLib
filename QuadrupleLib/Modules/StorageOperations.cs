@@ -100,11 +100,12 @@ public partial struct Float128<TAccelerator>
     #region Representational constructors
 
     [MakeNonGeneric]
-    private Float128(UInt128 rawSignificand, int exponent, bool rawSignBit)
+    private Float128(UInt128 significand, int exponent, bool rawSignBit)
     {
-        RawSignificand = rawSignificand;
+        RawSignificand = significand;
 
-        if (exponent == -EXPONENT_BIAS + 1)
+        if (exponent == -EXPONENT_BIAS + 1 && 
+            significand < SIGNIFICAND_MASK + 1)
         {
             RawExponent = 0;
         }
