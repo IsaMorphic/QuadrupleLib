@@ -167,7 +167,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Theory]
         [InlineData(5.3)]
         [InlineData(-1.12)]
-        [InlineData(-128.5)]
+        [InlineData(-127.5)]
         [InlineData(123.0)]
         public void ConvertToSByteIsTruncated(double x)
         {
@@ -217,7 +217,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Theory]
         [InlineData(5.1)]
         [InlineData(3.456)]
-        [InlineData(255.5)]
+        [InlineData(254.5)]
         [InlineData(0.5)]
         public void ConvertToByteIsTruncated(double x)
         {

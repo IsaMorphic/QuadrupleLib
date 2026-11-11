@@ -223,6 +223,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator sbyte(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > sbyte.MaxValue || x < sbyte.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -261,6 +270,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator short(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > short.MaxValue || x < short.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -299,6 +317,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator int(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > int.MaxValue || x < int.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -337,6 +364,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator long(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > long.MaxValue || x < long.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -397,6 +433,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator Int128(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > (Float128<TAccelerator>)Int128.MaxValue || x < (Float128<TAccelerator>)Int128.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -420,6 +465,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator byte(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > byte.MaxValue || x < byte.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -443,6 +497,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator ushort(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > ushort.MaxValue || x < ushort.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -466,6 +529,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator uint(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > uint.MaxValue || x < uint.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -489,6 +561,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator ulong(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > ulong.MaxValue || x < ulong.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
@@ -533,6 +614,15 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator UInt128(Float128<TAccelerator> x)
     {
+        if (IsNaN(x))
+        {
+            throw new ArgumentException("Cannot convert NaN value to integer.", nameof(x));
+        }
+        else if (x > (Float128<TAccelerator>)UInt128.MaxValue || x < (Float128<TAccelerator>)UInt128.MinValue)
+        {
+            throw new OverflowException();
+        }
+
         int rightShift = 112 - x.Exponent;
         if (rightShift <= 128)
         {
