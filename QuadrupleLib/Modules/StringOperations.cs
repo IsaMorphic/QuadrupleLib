@@ -348,10 +348,10 @@ public partial struct Float128<TAccelerator>
             int maxDigits = significand == 0 ? 1 :
                 (int)Math.Round(BigInteger.Log10(significand)) + 1;
             Span<char> strBuf = stackalloc char[maxDigits];
-            significand.TryFormat(strBuf, out int charsWritten);
+            significand.TryFormat(strBuf, out maxDigits);
 
-            StringBuilder result = new StringBuilder(charsWritten);
-            result.Append(strBuf[..charsWritten]);
+            StringBuilder result = new StringBuilder(maxDigits);
+            result.Append(strBuf[..maxDigits]);
 
             bool expFlag;
             int offset = e2 < 0 ? maxDigits + --e2 : maxDigits - 1;
@@ -366,7 +366,7 @@ public partial struct Float128<TAccelerator>
             }
             else
             {
-                expFlag = maxDigits >= MAX_PADDING_DIGITS;
+                expFlag = Math.Abs(offset) >= MAX_PADDING_DIGITS;
             }
 
             int numDigits = offset <= 0 ? formatter.NumberDecimalDigits :
@@ -412,8 +412,9 @@ public partial struct Float128<TAccelerator>
                 int trimIdx;
                 for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
 
-                e2 += result.Length - trimIdx - 1;
-                if (trimIdx > 0 && e2 + 1 >= 0) --trimIdx;
+                int expInc = result.Length - trimIdx;
+                e2 += expInc; offset += expInc;
+                if (trimIdx > 0 && e2 >= 0) --trimIdx;
 
                 result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
             }
