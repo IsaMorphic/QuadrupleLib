@@ -63,7 +63,7 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> Zero => new();
 
     [MakeNonGeneric]
-    public static Float128<TAccelerator> NegativeZero => new(UInt128.Zero, 0, true);
+    public static Float128<TAccelerator> NegativeZero => new(UInt128.Zero, -EXPONENT_BIAS + 1, true);
 
     public static int Radix => 2;
     public static Float128<TAccelerator> AdditiveIdentity => Zero;
