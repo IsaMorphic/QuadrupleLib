@@ -269,6 +269,10 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
+        else if(x == Zero && y == Zero)
+        {
+            return Zero;
+        }
         else if (y >= Zero && x < Zero)
         {
             return Atan(y / x) + Pi;
