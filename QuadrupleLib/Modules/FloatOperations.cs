@@ -250,12 +250,13 @@ public partial struct Float128<TAccelerator>
         }
         else if (x == Half.Zero)
         {
-            return Zero;
+            ushort bits = Unsafe.As<Half, ushort>(ref x);
+            bool negative = (bits & (1U << 15)) != 0;
+            return negative ? NegativeZero : Zero;
         }
         else
         {
             ushort bits = Unsafe.As<Half, ushort>(ref x);
-            // Note that the shift is sign-extended, hence the test against -1 not 1
             bool negative = (bits & (1U << 15)) != 0;
             int exponent = (int)((bits >> 10) & 0x1fU) - 0xf;
             UInt128 mantissa = bits & 0x3ffU;
@@ -289,7 +290,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (x.Exponent < -0x19)
         {
-            return Half.Zero;
+            return x.RawSignBit ? Half.NegativeZero : Half.Zero;
         }
         else
         {
@@ -342,12 +343,13 @@ public partial struct Float128<TAccelerator>
         }
         else if (x == 0.0f)
         {
-            return Zero;
+            uint bits = Unsafe.As<float, uint>(ref x);
+            bool negative = (bits & (1U << 31)) != 0;
+            return negative ? NegativeZero : Zero;
         }
         else
         {
             uint bits = Unsafe.As<float, uint>(ref x);
-            // Note that the shift is sign-extended, hence the test against -1 not 1
             bool negative = (bits & (1U << 31)) != 0;
             int exponent = (int)((bits >> 23) & 0xffU) - 0x7f;
             UInt128 mantissa = bits & 0x7fffffU;
@@ -381,7 +383,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (x.Exponent < -0x96)
         {
-            return 0.0f;
+            return x.RawSignBit ? -0.0f : 0.0f;
         }
         else
         {
@@ -434,12 +436,13 @@ public partial struct Float128<TAccelerator>
         }
         else if (x == 0.0)
         {
-            return Zero;
+            ulong bits = Unsafe.As<double, ulong>(ref x);
+            bool negative = (bits & (1U << 63)) != 0;
+            return negative ? NegativeZero : Zero;
         }
         else
         {
             ulong bits = Unsafe.As<double, ulong>(ref x);
-            // Note that the shift is sign-extended, hence the test against -1 not 1
             bool negative = (bits & (1UL << 63)) != 0;
             int exponent = (int)((bits >> 52) & 0x7ffUL) - 0x3ff;
             UInt128 mantissa = bits & 0xfffffffffffffUL;
@@ -473,7 +476,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (x.Exponent < -0x433)
         {
-            return 0.0;
+            return x.RawSignBit ? -0.0 : 0.0;
         }
         else
         {
