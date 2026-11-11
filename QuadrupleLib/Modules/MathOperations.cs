@@ -117,7 +117,7 @@ public partial struct Float128<TAccelerator>
             return (_sNaN, _sNaN);
         }
 
-        Float128<TAccelerator> x = One, y = Zero;
+        Float128<TAccelerator> x = One, y = CopySign(Zero, alpha);
         Float128<TAccelerator> phi = Ieee754Remainder(alpha, Tau);
         if (phi > HalfPi)
         {
