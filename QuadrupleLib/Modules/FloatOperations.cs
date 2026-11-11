@@ -208,13 +208,19 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static Float128<TAccelerator> Max(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        return x > y ? x : y;
+        if (IsNaN(x) || IsNaN(y))
+            return _qNaN;
+        else
+            return x > y ? x : y;
     }
 
     [MakeNonGeneric]
     public static Float128<TAccelerator> Min(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        return x < y ? x : y;
+        if (IsNaN(x) || IsNaN(y))
+            return _qNaN;
+        else
+            return x < y ? x : y;
     }
 
     [MakeNonGeneric]
