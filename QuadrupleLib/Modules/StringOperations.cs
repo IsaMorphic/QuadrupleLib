@@ -395,6 +395,10 @@ public partial struct Float128<TAccelerator>
                         result.Remove(numDigits - 1, 1);
                         result.Insert(0, '1');
                     }
+                    else
+                    {
+                        ++e2; result.Remove(numDigits - 1, 1);
+                    }
                 }
                 else
                 {
