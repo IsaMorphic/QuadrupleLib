@@ -17,6 +17,8 @@
  */
 
 using QuadrupleLib.Accelerators;
+using QuadrupleLib.Utilities;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Xunit;
 
@@ -47,7 +49,7 @@ namespace QuadrupleLib.Tests.Utilities
             UInt128 b = bLo | ((UInt128)bHi << 64);
             UInt128 expected = expectedLo | ((UInt128)expectedHi << 64);
 
-            (UInt128 actual, UInt128 _) = TAccelerator.DivRem(a, b);
+            (UInt256 actual, UInt128 _) = TAccelerator.DivRem(a, b);
             Assert.Equal(expected, actual);
         }
 
@@ -62,7 +64,7 @@ namespace QuadrupleLib.Tests.Utilities
             UInt128 b = bLo | ((UInt128)bHi << 64);
             UInt128 expected = expectedLo | ((UInt128)expectedHi << 64);
 
-            (UInt128 _, UInt128 actual) = TAccelerator.DivRem(a, b);
+            (UInt256 _, UInt128 actual) = TAccelerator.DivRem(a, b);
             Assert.Equal(expected, actual);
         }
 
@@ -74,13 +76,17 @@ namespace QuadrupleLib.Tests.Utilities
         public void IsDivRemRandomCorrect(int shiftAmt)
         {
             Random rng = new(0);
-            Span<UInt128> operands = stackalloc UInt128[2];
+            Span<UInt128> operands = stackalloc UInt128[3];
             for (int i = 0; i < 100000; i++)
             {
                 rng.NextBytes(MemoryMarshal.AsBytes(operands));
-                var expected = UInt128.DivRem(operands[0], operands[1] >> shiftAmt);
-                var actual = TAccelerator.DivRem(operands[0], operands[1] >> shiftAmt);
-                Assert.Equal(expected, actual);
+                (BigInteger eQ, BigInteger eR) = BigInteger.DivRem(
+                    (((BigInteger)operands[0] << 128) | operands[1]) >> 32,
+                    operands[2] >> shiftAmt);
+                (BigInteger aQ, BigInteger aR) = TAccelerator.DivRem(
+                    (((UInt256)operands[0] << 128) | operands[1]) >> 32,
+                    operands[2] >> shiftAmt);
+                Assert.Equal((eQ, eR), (aQ, aR));
             }
         }
     }

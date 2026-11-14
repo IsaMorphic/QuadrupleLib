@@ -80,4 +80,20 @@ internal struct BigMul256
 
         return Add(leftProd, rightShift);
     }
+
+    public static BigMul256 MultiplyLarge<TAccelerator>(UInt256 left, ulong right)
+        where TAccelerator : IAccelerator
+    {
+
+        var leftProd = Multiply<TAccelerator>((UInt128)left, right);
+        var rightProd = Multiply<TAccelerator>((UInt128)(left >> 128), right);
+
+        var rightShift = new BigMul256 // 128-bit left-shift
+        {
+            _2 = rightProd._0,
+            _3 = rightProd._1,
+        };
+
+        return Add(leftProd, rightShift);
+    }
 }

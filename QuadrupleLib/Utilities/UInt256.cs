@@ -20,7 +20,7 @@ using System.Numerics;
 
 namespace QuadrupleLib.Utilities
 {
-    internal struct UInt256 : IEquatable<UInt256>, IComparable<UInt256>, IComparable
+    public struct UInt256 : IEquatable<UInt256>, IComparable<UInt256>, IComparable
     {
         private static readonly UInt256 _zero = new();
         public static UInt256 Zero => _zero;
@@ -41,6 +41,16 @@ namespace QuadrupleLib.Utilities
         {
             _lo = lo;
             _hi = hi;
+        }
+
+        public static explicit operator UInt256(BigInteger n)
+        {
+            return new UInt256((UInt128)n, (UInt128)(n >> 128));
+        }
+
+        public static implicit operator BigInteger(UInt256 n)
+        {
+            return ((BigInteger)n._hi << 128) | n._lo;
         }
 
         public static implicit operator UInt256(UInt128 n) 

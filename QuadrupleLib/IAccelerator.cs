@@ -16,11 +16,13 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Utilities;
+
 namespace QuadrupleLib;
 
 public interface IAccelerator
 {
     static abstract ulong BigMul(ulong a, ulong b, out ulong low);
 
-    static abstract (UInt128 Quotient, UInt128 Remainder) DivRem(UInt128 a, UInt128 b);
+    static abstract (UInt256 Quotient, UInt128 Remainder) DivRem(UInt256 a, UInt128 b);
 }
