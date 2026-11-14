@@ -17,7 +17,6 @@
  */
 
 using QuadrupleLib.Utilities;
-using System.Numerics;
 
 namespace QuadrupleLib.Accelerators;
 
@@ -38,49 +37,6 @@ public sealed class SoftwareAccelerator : IAccelerator
         r = (uint)r_0; return q_0 | (q_1 << 32) | (q_2 << 64);
     }
 
-    private static UInt128 Divide(UInt128 x, ulong y, out ulong rem)
-    {
-        int m = 2 - BitOperations.LeadingZeroCount(y) / 32;
-        int n = 4 - (int)UInt128.LeadingZeroCount(x) / 32;
-        if (m == 1)
-        {
-            UInt128 q = Divide(x, (uint)y, out uint r);
-            rem = r;
-            return q;
-        }
-        else if (m > n)
-        {
-            rem = (ulong)x;
-            return UInt128.Zero;
-        }
-        else
-        {
-            UInt128 q = UInt128.Zero, r = x; ulong d = y;
-            n = 8 - (int)UInt256.LeadingZeroCount(r) / 32;
-            for (int k = n - m; k > 0; k--)
-            {
-                int km = k + m;
-                ulong r2 = (ulong)(r >> (32 * (km - 2)));
-                uint d1 = (uint)(d >> (32 * (m - 1)));
-
-                ulong qt = Math.Min(r2 / d1, uint.MaxValue);
-                BigMul128 _dq = BigMul128.Multiply(d, qt);
-                UInt128 dq = _dq._0 | ((UInt128)_dq._1 << 32) | ((UInt128)_dq._2 << 64);
-                if (r < (dq << (32 * (k - 1))))
-                {
-                    _dq = BigMul128.Multiply(d, --qt);
-                    dq = _dq._0 | ((UInt128)_dq._1 << 32) | ((UInt128)_dq._2 << 64);
-                }
-
-                q = (q << 32) | qt;
-                r = r - (dq << (32 * (k - 1)));
-            }
-
-            rem = (ulong)r;
-            return q;
-        }
-    }
-
     private static UInt128 Divide(UInt128 x, UInt128 y, out UInt128 rem)
     {
         int m = 4 - (int)UInt128.LeadingZeroCount(y) / 32;
@@ -98,37 +54,37 @@ public sealed class SoftwareAccelerator : IAccelerator
         }
         else
         {
-            UInt128 q = UInt128.Zero;
-            ulong f = (1UL << 32) / ((uint)(y >> (32 * (m - 1))) + 1UL);
+            BigMul256 _df;
+            ulong factor = (1UL << 32) / ((uint)(y >> (32 * (m - 1))) + 1UL);
 
-            BigMul256 _r = BigMul256.Multiply<SoftwareAccelerator>(x, f);
-            UInt256 r = _r._0 | ((UInt256)_r._1 << 64) | ((UInt256)_r._2 << 128);
+            _df = BigMul256.Multiply<SoftwareAccelerator>(x, factor);
+            UInt256 dividend = _df._0 | ((UInt256)_df._1 << 64) | ((UInt256)_df._2 << 128);
+            n = 8 - (int)UInt256.LeadingZeroCount(dividend) / 32;
 
-            BigMul256 _d = BigMul256.Multiply<SoftwareAccelerator>(y, f);
-            UInt128 d = _d._0 | ((UInt128)_d._1 << 64);
+            _df = BigMul256.Multiply<SoftwareAccelerator>(y, factor);
+            UInt128 divisor = _df._0 | ((UInt128)_df._1 << 64);
+            uint d1 = (uint)(divisor >> (32 * (m - 1)));
 
-            n = 8 - (int)UInt256.LeadingZeroCount(r) / 32;
+            UInt128 quotient = 0;
             for (int k = Math.Max(n - m, 1); k > 0; k--)
             {
-                int km = k + m;
-                UInt128 r3 = (UInt128)(r >> (32 * (km - 2))) & (UInt128.MaxValue >> 32);
-                ulong d2 = (ulong)(d >> (32 * (m - 1)));
+                ulong r2 = (ulong)(dividend >> (32 * (k + m - 2)));
+                ulong qt = r2 / d1;
 
-                UInt128 qt = UInt128.Min(Divide(r3, d2, out ulong _), uint.MaxValue);
-                BigMul256 _dq = BigMul256.Multiply<SoftwareAccelerator>(d, qt);
+                BigMul256 _dq = BigMul256.Multiply<SoftwareAccelerator>(divisor, qt);
                 UInt256 dq = _dq._0 | ((UInt256)_dq._1 << 64) | ((UInt256)_dq._2 << 128);
-                if (r < (dq << (32 * (k - 1)))) 
+                while (dividend < (dq << 32 * (k - 1)))
                 {
-                    _dq = BigMul256.Multiply<SoftwareAccelerator>(d, --qt);
+                    _dq = BigMul256.Multiply<SoftwareAccelerator>(divisor, --qt);
                     dq = _dq._0 | ((UInt256)_dq._1 << 64) | ((UInt256)_dq._2 << 128);
                 }
 
-                q = (q << 32) | qt;
-                r = r - (dq << (32 * (k - 1)));
+                quotient = (quotient << 32) | qt;
+                dividend -= dq << 32 * (k - 1);
             }
 
-            rem = Divide((UInt128)r, f, out ulong _);
-            return q;
+            rem = Divide((UInt128)dividend, (uint)factor, out uint _);
+            return quotient;
         }
     }
 
