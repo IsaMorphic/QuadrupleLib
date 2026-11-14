@@ -22,23 +22,6 @@ namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
 {
-    #region Private API: Software-based 256-bit Division Routine
-
-    private static UInt256 Divide(UInt256 n, UInt128 d, out UInt128 r)
-    {
-        ulong n_0 = (ulong)n;
-        ulong n_1 = (ulong)(n >> 64);
-        UInt128 n_2 = (UInt128)(n >> 128);
-
-        (UInt256 q_2, UInt128 r_2) = TAccelerator.DivRem(n_2, d);
-        (UInt256 q_1, UInt128 r_1) = TAccelerator.DivRem((r_2 << 64) | n_1, d);
-        (UInt256 q_0, r) = TAccelerator.DivRem((r_1 << 64) | n_0, d);
-
-        return q_0 | (q_1 << 64) | (q_2 << 128);
-    }
-
-    #endregion
-
     #region Public API (arithmetic related)
 
     public static Float128<TAccelerator> FusedMultiplyAdd(Float128<TAccelerator> left, Float128<TAccelerator> right, Float128<TAccelerator> addend)
@@ -405,7 +388,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            var leftAdjust = (int)UInt256.LeadingZeroCount(left.Significand);
+            var leftAdjust = (int)UInt256.LeadingZeroCount(left.Significand) - 32;
             var leftSignificand = (UInt256)left.Significand << leftAdjust;
             var leftExponent = left.Exponent - leftAdjust + 115;
 
@@ -424,25 +407,28 @@ public partial struct Float128<TAccelerator>
             }
             else
             {
-                fullSignificand = Divide(leftSignificand, rightSignificand, out remSignificand);
+                (fullSignificand, remSignificand) = TAccelerator.DivRem(leftSignificand, rightSignificand);
             }
 
             // normalize output
             int normDist;
             if ((fullSignificand >> 3) != 0)
             {
-                normDist = 143 - (int)UInt256.LeadingZeroCount(fullSignificand >> 3);
-                if (quotExponent + normDist > EXPONENT_BIAS) // overflowing quotient
+                normDist = (int)UInt256.LeadingZeroCount(fullSignificand >> 3) - 143;
+                if (quotExponent - normDist > EXPONENT_BIAS) // overflowing quotient
                 {
                     return quotSign ? _nInf : _pInf;
                 }
-                else if (quotExponent + normDist <= -EXPONENT_BIAS + 1) // underflowing quotient
+                else if (quotExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing quotient
                 {
-                    normDist = -quotExponent - EXPONENT_BIAS + 1;
+                    normDist = quotExponent + EXPONENT_BIAS - 1;
                 }
 
-                quotSignificand = (UInt128)(fullSignificand >> normDist);
-                quotExponent += normDist;
+                if (normDist >= 0)
+                    quotSignificand = (UInt128)(fullSignificand << normDist);
+                else
+                    quotSignificand = (UInt128)(fullSignificand >> -normDist);
+                quotExponent -= normDist;
             }
             else
             {

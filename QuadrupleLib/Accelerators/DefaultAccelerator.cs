@@ -16,9 +16,13 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Utilities;
+
 namespace QuadrupleLib.Accelerators;
 
-public sealed class DefaultAccelerator : IAccelerator
+public sealed class DefaultAccelerator : 
+    BaseAccelerator<DefaultAccelerator>,
+    IAccelerator
 {
     private DefaultAccelerator() { }
 
@@ -27,8 +31,8 @@ public sealed class DefaultAccelerator : IAccelerator
         return Math.BigMul(a, b, out low);
     }
 
-    static (UInt128 Quotient, UInt128 Remainder) IAccelerator.DivRem(UInt128 a, UInt128 b)
+    static (UInt256 Quotient, UInt128 Remainder) IAccelerator.DivRem(UInt256 a, UInt128 b)
     {
-        return UInt128.DivRem(a, b);
+        return (Divide(a, b, out UInt128 r), r);
     }
 }
