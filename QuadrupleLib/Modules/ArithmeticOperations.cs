@@ -26,7 +26,7 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> FusedMultiplyAdd(Float128<TAccelerator> left, Float128<TAccelerator> right, Float128<TAccelerator> addend)
     {
-        if (IsNaN(left) || IsNaN(right))
+        if (IsNaN(left) || IsNaN(right) || IsNaN(addend))
         {
             return _qNaN;
         }
@@ -34,17 +34,20 @@ public partial struct Float128<TAccelerator>
         {
             return _sNaN;
         }
+        else if ((IsInfinity(left) || IsInfinity(right)) && IsInfinity(addend))
+        {
+            if (addend.RawSignBit == (left.RawSignBit ^ right.RawSignBit))
+            {
+                return addend;
+            }
+            else
+            {
+                return _sNaN;
+            }
+        }
         else if (IsInfinity(left) || IsInfinity(right))
         {
             return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
-        }
-        else if (IsInfinity(addend))
-        {
-            return addend;
-        }
-        else if (IsNaN(addend))
-        {
-            return _qNaN;
         }
         else
         {
