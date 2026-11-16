@@ -663,7 +663,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = x * 0.5;
+            Float128<TAccelerator> y_n = ScaleB(x, -x.Exponent / 2);
             for (int n = 0; n < 25; n++)
             {
                 y_n = 0.5 * (y_n + x / y_n);
@@ -684,7 +684,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = x * 0.5;
+            Float128<TAccelerator> y_n = ScaleB(x, -x.Exponent * 2 / 3);
             for (int n = 0; n < 25; n++)
             {
                 Float128<TAccelerator> sq = y_n * y_n;
