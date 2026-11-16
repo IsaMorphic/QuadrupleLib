@@ -328,7 +328,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (IsZero(this))
         {
-            return "0";
+            return RawSignBit ? "-0" : "0";
         }
         else
         {
