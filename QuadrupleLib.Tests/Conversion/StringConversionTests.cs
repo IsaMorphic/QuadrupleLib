@@ -65,6 +65,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData("-0.1E-2", -0.001)]
         [InlineData(".1E-2", 0.001)]
         [InlineData("-.1E-2", -0.001)]
+        [InlineData("0.1000000000000000005", 0.1)]
         public void ParseStringIsCorrect(string s, double x)
         {
             AssertX.NearlyEqual((Float128<TAccelerator>)x,
