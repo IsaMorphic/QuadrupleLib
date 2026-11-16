@@ -635,7 +635,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (IsOddInteger(y))
         {
-            return -Exp(y * Log(Abs(x)));
+            return CopySign(Exp(y * Log(Abs(x))), x);
         }
         else
         {
