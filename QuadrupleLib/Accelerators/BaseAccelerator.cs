@@ -20,7 +20,7 @@ using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib.Accelerators
 {
-    public class BaseAccelerator<TAccelerator>
+    public abstract class BaseAccelerator<TAccelerator>
         where TAccelerator : BaseAccelerator<TAccelerator>, 
         IAccelerator
     {
@@ -68,11 +68,11 @@ namespace QuadrupleLib.Accelerators
                 BigMul256 _df;
                 ulong factor = (1UL << 32) / ((uint)(y >> (32 * (m - 1))) + 1UL);
 
-                _df = BigMul256.Multiply<TAccelerator>(y, factor);
+                _df = BigMul256.Multiply2x2<TAccelerator>(y, factor);
                 UInt128 divisor = _df._0 | ((UInt128)_df._1 << 64);
                 uint d1 = (uint)(divisor >> (32 * (m - 1)));
 
-                _df = BigMul256.MultiplyLarge<TAccelerator>(x, factor);
+                _df = BigMul256.Multiply4x1<TAccelerator>(x, factor);
                 UInt256 dividend = _df._0 | ((UInt256)_df._1 << 64) | 
                     ((UInt256)_df._2 << 128) | ((UInt256)_df._3 << 192);
                 n = 8 - (int)UInt256.LeadingZeroCount(dividend) / 32;
@@ -83,11 +83,11 @@ namespace QuadrupleLib.Accelerators
                     ulong r2 = (ulong)(dividend >> (32 * (k + m - 2)));
                     ulong qt = r2 / d1;
 
-                    BigMul256 _dq = BigMul256.Multiply<TAccelerator>(divisor, qt);
+                    BigMul256 _dq = BigMul256.Multiply2x2<TAccelerator>(divisor, qt);
                     UInt256 dq = _dq._0 | ((UInt256)_dq._1 << 64) | ((UInt256)_dq._2 << 128);
                     while (dividend < (dq << (32 * (k - 1))))
                     {
-                        _dq = BigMul256.Multiply<TAccelerator>(divisor, --qt);
+                        _dq = BigMul256.Multiply2x2<TAccelerator>(divisor, --qt);
                         dq = _dq._0 | ((UInt256)_dq._1 << 64) | ((UInt256)_dq._2 << 128);
                     }
 
