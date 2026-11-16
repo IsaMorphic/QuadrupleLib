@@ -30,7 +30,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0)]
         [InlineData(2.1)]
         [InlineData(3.676)]
-        public void IsSqrtCorrect(double x) 
+        public void IsSqrtCorrect(double x)
         {
             double y = double.Sqrt(x);
             AssertX.NearlyEqual(y, Float128<TAccelerator>.Sqrt(x), Precision.NearestTenThousandth);

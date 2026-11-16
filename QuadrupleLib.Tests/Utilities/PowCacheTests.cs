@@ -87,7 +87,7 @@ namespace QuadrupleLib.Tests.Utilities
                 PowCache.GetPow5(i);
             }
 
-            AssertX.DoesNotThrow<Exception>(() => 
+            AssertX.DoesNotThrow<Exception>(() =>
                 PowCache.GetPow5(PowCache.MAX_CACHE_SIZE + 1)
                 );
         }

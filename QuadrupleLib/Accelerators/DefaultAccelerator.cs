@@ -20,7 +20,7 @@ using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib.Accelerators;
 
-public sealed class DefaultAccelerator : 
+public sealed class DefaultAccelerator :
     BaseAccelerator<DefaultAccelerator>,
     IAccelerator
 {

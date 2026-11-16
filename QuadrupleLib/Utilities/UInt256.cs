@@ -37,7 +37,7 @@ namespace QuadrupleLib.Utilities
         public readonly UInt128 _lo;
         public readonly UInt128 _hi;
 
-        private UInt256(UInt128 lo, UInt128 hi) 
+        private UInt256(UInt128 lo, UInt128 hi)
         {
             _lo = lo;
             _hi = hi;
@@ -53,12 +53,12 @@ namespace QuadrupleLib.Utilities
             return ((BigInteger)n._hi << 128) | n._lo;
         }
 
-        public static implicit operator UInt256(UInt128 n) 
+        public static implicit operator UInt256(UInt128 n)
         {
             return new UInt256(n, UInt128.Zero);
         }
 
-        public static explicit operator UInt128(UInt256 n) 
+        public static explicit operator UInt128(UInt256 n)
         {
             return n._lo;
         }
@@ -103,7 +103,7 @@ namespace QuadrupleLib.Utilities
             return (uint)n._lo;
         }
 
-        public static explicit operator UInt256(int n) 
+        public static explicit operator UInt256(int n)
         {
             return new UInt256((UInt128)n, UInt128.Zero);
         }
@@ -113,7 +113,7 @@ namespace QuadrupleLib.Utilities
             return (int)n._lo;
         }
 
-        public static UInt256 operator +(UInt256 a, UInt256 b) 
+        public static UInt256 operator +(UInt256 a, UInt256 b)
         {
             UInt128 lo = a._lo + b._lo;
             UInt128 carry = lo < a._lo ? UInt128.One : UInt128.Zero;
@@ -121,7 +121,7 @@ namespace QuadrupleLib.Utilities
             return new(lo, hi);
         }
 
-        public static UInt256 operator ++(UInt256 n) 
+        public static UInt256 operator ++(UInt256 n)
         {
             return n + One;
         }
@@ -139,9 +139,9 @@ namespace QuadrupleLib.Utilities
             return n - One;
         }
 
-        public static UInt256 operator >>(UInt256 n, int amt) 
+        public static UInt256 operator >>(UInt256 n, int amt)
         {
-            switch (amt) 
+            switch (amt)
             {
                 case 0:
                     return n;
@@ -169,7 +169,7 @@ namespace QuadrupleLib.Utilities
             }
         }
 
-        public static UInt256 operator &(UInt256 a, UInt256 b) 
+        public static UInt256 operator &(UInt256 a, UInt256 b)
         {
             return new(a._lo & b._lo, a._hi & b._hi);
         }
@@ -189,7 +189,7 @@ namespace QuadrupleLib.Utilities
             return new(~n._lo, ~n._hi);
         }
 
-        public static UInt256 LeadingZeroCount(UInt256 n) 
+        public static UInt256 LeadingZeroCount(UInt256 n)
         {
             return n._hi == 0 ? 128 + UInt128.LeadingZeroCount(n._lo) : UInt128.LeadingZeroCount(n._hi);
         }
@@ -199,12 +199,12 @@ namespace QuadrupleLib.Utilities
             return n._lo == 0 ? 128 + UInt128.TrailingZeroCount(n._hi) : UInt128.TrailingZeroCount(n._lo);
         }
 
-        public static UInt256 PopCount(UInt256 n) 
+        public static UInt256 PopCount(UInt256 n)
         {
             return UInt128.PopCount(n._lo) + (UInt256)UInt128.PopCount(n._hi);
         }
 
-        public static UInt256 Min(UInt256 a, UInt256 b) 
+        public static UInt256 Min(UInt256 a, UInt256 b)
         {
             return a < b ? a : b;
         }
@@ -214,7 +214,7 @@ namespace QuadrupleLib.Utilities
             return a > b ? a : b;
         }
 
-        public static bool operator >(UInt256 a, UInt256 b) 
+        public static bool operator >(UInt256 a, UInt256 b)
         {
             return a.CompareTo(b) > 0;
         }
@@ -273,7 +273,7 @@ namespace QuadrupleLib.Utilities
 
         public override string ToString()
         {
-            BigInteger n = _hi; 
+            BigInteger n = _hi;
             n = (n << 128) | _lo;
             return n.ToString();
         }

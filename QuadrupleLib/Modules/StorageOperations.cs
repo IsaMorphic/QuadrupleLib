@@ -104,7 +104,7 @@ public partial struct Float128<TAccelerator>
     {
         RawSignificand = significand;
 
-        if (exponent == -EXPONENT_BIAS + 1 && 
+        if (exponent == -EXPONENT_BIAS + 1 &&
             significand < SIGNIFICAND_MASK + 1)
         {
             RawExponent = 0;

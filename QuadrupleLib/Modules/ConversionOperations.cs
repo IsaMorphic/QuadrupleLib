@@ -173,8 +173,8 @@ public partial struct Float128<TAccelerator>
 
     static bool INumberBase<Float128<TAccelerator>>.TryConvertFromTruncating<TOther>(TOther value, out Float128<TAccelerator> result)
     {
-        if (value is Float128<TAccelerator> _x) 
-        { 
+        if (value is Float128<TAccelerator> _x)
+        {
             result = _x;
             return true;
         }

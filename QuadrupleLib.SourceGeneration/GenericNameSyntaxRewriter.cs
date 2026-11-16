@@ -41,7 +41,7 @@ namespace QuadrupleLib.SourceGeneration
             {
                 return IdentifierName(node.Identifier);
             }
-            else 
+            else
             {
                 return base.VisitGenericName(node);
             }

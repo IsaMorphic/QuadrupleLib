@@ -62,7 +62,7 @@ namespace QuadrupleLib.Utilities
             {
                 lock (_pow5CacheQueue)
                 {
-                    shouldEvict = cacheSize > MAX_CACHE_SIZE && 
+                    shouldEvict = cacheSize > MAX_CACHE_SIZE &&
                         _pow5CacheQueue.TryDequeue(out oldestExp);
                     _pow5CacheQueue.Enqueue(n);
                 }

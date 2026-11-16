@@ -45,7 +45,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(2.0)]
         [InlineData(-2.0)]
         [InlineData(-4.65)]
-        public void IsExp2Correct(double x) 
+        public void IsExp2Correct(double x)
         {
             double y = double.Exp2(x);
             AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp2(x), Precision.NearestTenThousandth);

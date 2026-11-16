@@ -36,7 +36,7 @@ namespace QuadrupleLib.Tests.Integers
         [InlineData(-2.5)]
         [InlineData(3.5)]
         [InlineData(0.5)]
-        public void IsFloorCorrect(double x) 
+        public void IsFloorCorrect(double x)
         {
             double y0 = double.Floor(x);
             Float128<TAccelerator> y1 = Float128<TAccelerator>.Floor(x);
