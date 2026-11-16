@@ -48,7 +48,7 @@ internal struct BigMul256
         return result;
     }
 
-    private static BigMul256 Multiply<TAccelerator>(UInt128 left, ulong right)
+    private static BigMul256 Multiply2x1<TAccelerator>(UInt128 left, ulong right)
         where TAccelerator : IAccelerator
     {
         BigMul256 result = new BigMul256();
@@ -65,11 +65,11 @@ internal struct BigMul256
         return result;
     }
 
-    public static BigMul256 Multiply<TAccelerator>(UInt128 left, UInt128 right)
+    public static BigMul256 Multiply2x2<TAccelerator>(UInt128 left, UInt128 right)
         where TAccelerator : IAccelerator
     {
-        var leftProd = Multiply<TAccelerator>(left, (ulong)right);
-        var rightProd = Multiply<TAccelerator>(left, (ulong)(right >> 64));
+        var leftProd = Multiply2x1<TAccelerator>(left, (ulong)right);
+        var rightProd = Multiply2x1<TAccelerator>(left, (ulong)(right >> 64));
 
         var rightShift = new BigMul256 // 64-bit left-shift
         {
@@ -81,12 +81,12 @@ internal struct BigMul256
         return Add(leftProd, rightShift);
     }
 
-    public static BigMul256 MultiplyLarge<TAccelerator>(UInt256 left, ulong right)
+    public static BigMul256 Multiply4x1<TAccelerator>(UInt256 left, ulong right)
         where TAccelerator : IAccelerator
     {
 
-        var leftProd = Multiply<TAccelerator>((UInt128)left, right);
-        var rightProd = Multiply<TAccelerator>((UInt128)(left >> 128), right);
+        var leftProd = Multiply2x1<TAccelerator>((UInt128)left, right);
+        var rightProd = Multiply2x1<TAccelerator>((UInt128)(left >> 128), right);
 
         var rightShift = new BigMul256 // 128-bit left-shift
         {

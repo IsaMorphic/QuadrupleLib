@@ -51,7 +51,7 @@ public partial struct Float128<TAccelerator>
             var prodSign = left.RawSignBit != right.RawSignBit;
             var prodExponent = left.Exponent + right.Exponent;
 
-            BigMul256 bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
+            BigMul256 bigSignificand = BigMul256.Multiply2x2<TAccelerator>(left.Significand, right.Significand);
             var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
             var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
 
@@ -318,7 +318,7 @@ public partial struct Float128<TAccelerator>
             var prodSign = left.RawSignBit != right.RawSignBit;
             var prodExponent = left.Exponent + right.Exponent;
 
-            BigMul256 bigSignificand = BigMul256.Multiply<TAccelerator>(left.Significand, right.Significand);
+            BigMul256 bigSignificand = BigMul256.Multiply2x2<TAccelerator>(left.Significand, right.Significand);
             var bigLo = bigSignificand._0 | ((UInt128)bigSignificand._1 << 64);
             var bigHi = bigSignificand._2 | ((UInt128)bigSignificand._3 << 64);
 
