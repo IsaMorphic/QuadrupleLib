@@ -263,7 +263,7 @@ public partial struct Float128<TAccelerator>
 
             if (exponent == -0xf)
             {
-                int finalAdjust = (int)UInt128.LeadingZeroCount(mantissa) - 16;
+                int finalAdjust = (int)UInt128.LeadingZeroCount(mantissa) - 15;
                 return new(mantissa << finalAdjust, exponent - finalAdjust + 101, negative);
             }
             else
@@ -288,16 +288,16 @@ public partial struct Float128<TAccelerator>
         {
             return Half.NegativeInfinity;
         }
-        else if (x.Exponent < -0x19)
+        else if (x.Exponent < -0x1A)
         {
             return x.RawSignBit ? Half.NegativeZero : Half.Zero;
         }
         else
         {
             int expAdjust = 99 - Math.Min(x.Exponent + 0x10, 0);
-            var smallMantissa = (ushort)(x.RawSignificand >> expAdjust);
+            var smallMantissa = (ushort)(x.Significand >> expAdjust);
             smallMantissa &= unchecked((ushort)(ushort.MaxValue << 1));
-            smallMantissa |= Math.Min((ushort)(x.RawSignificand & ((UInt128.One << 99) - 1)), (ushort)1);
+            smallMantissa |= Math.Min((ushort)(x.Significand & ((UInt128.One << 99) - 1)), (ushort)1);
 
             if ((((smallMantissa & 1) |
                  ((smallMantissa >> 2) & 1)) &
@@ -310,7 +310,7 @@ public partial struct Float128<TAccelerator>
             if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 10)
             {
                 result =
-                    (ushort)(((ushort)((x.Exponent + 0x10) & 0x1f) << 10) |
+                    (ushort)(((ushort)((x.Exponent + 0xf) & 0x1f) << 10) |
                     (x.RawSignBit ? 1 << 15 : 0));
             }
             else
@@ -356,7 +356,7 @@ public partial struct Float128<TAccelerator>
 
             if (exponent == -0x7f)
             {
-                int finalAdjust = (int)UInt128.LeadingZeroCount(mantissa) - 16;
+                int finalAdjust = (int)UInt128.LeadingZeroCount(mantissa) - 15;
                 return new(mantissa << finalAdjust, exponent - finalAdjust + 88, negative);
             }
             else
@@ -381,16 +381,16 @@ public partial struct Float128<TAccelerator>
         {
             return float.NegativeInfinity;
         }
-        else if (x.Exponent < -0x96)
+        else if (x.Exponent < -0x97)
         {
             return x.RawSignBit ? -0.0f : 0.0f;
         }
         else
         {
             int expAdjust = 86 - Math.Min(x.Exponent + 0x80, 0);
-            var smallMantissa = (uint)(x.RawSignificand >> expAdjust);
+            var smallMantissa = (uint)(x.Significand >> expAdjust);
             smallMantissa &= uint.MaxValue << 1;
-            smallMantissa |= Math.Min((uint)(x.RawSignificand & ((UInt128.One << 86) - 1)), 1);
+            smallMantissa |= Math.Min((uint)(x.Significand & ((UInt128.One << 86) - 1)), 1);
 
             if ((((smallMantissa & 1) |
                  ((smallMantissa >> 2) & 1)) &
@@ -403,7 +403,7 @@ public partial struct Float128<TAccelerator>
             if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 23)
             {
                 result =
-                    ((uint)((x.Exponent + 0x80) & 0xff) << 23) |
+                    ((uint)((x.Exponent + 0x7f) & 0xff) << 23) |
                     (x.RawSignBit ? 1U << 31 : 0);
             }
             else
@@ -449,7 +449,7 @@ public partial struct Float128<TAccelerator>
 
             if (exponent == -0x3ff)
             {
-                int finalAdjust = (int)UInt128.LeadingZeroCount(mantissa) - 16;
+                int finalAdjust = (int)UInt128.LeadingZeroCount(mantissa) - 15;
                 return new(mantissa << finalAdjust, exponent - finalAdjust + 59, negative);
             }
             else
@@ -474,16 +474,16 @@ public partial struct Float128<TAccelerator>
         {
             return double.NegativeInfinity;
         }
-        else if (x.Exponent < -0x433)
+        else if (x.Exponent < -0x434)
         {
             return x.RawSignBit ? -0.0 : 0.0;
         }
         else
         {
             int expAdjust = 57 - Math.Min(x.Exponent + 0x400, 0);
-            var smallMantissa = (ulong)(x.RawSignificand >> expAdjust);
+            var smallMantissa = (ulong)(x.Significand >> expAdjust);
             smallMantissa &= ulong.MaxValue << 1;
-            smallMantissa |= Math.Min((ulong)(x.RawSignificand & ((UInt128.One << 57) - 1)), 1);
+            smallMantissa |= Math.Min((ulong)(x.Significand & ((UInt128.One << 57) - 1)), 1);
 
             if ((((smallMantissa & 1) |
                  ((smallMantissa >> 2) & 1)) &
@@ -496,7 +496,7 @@ public partial struct Float128<TAccelerator>
             if (BitOperations.TrailingZeroCount(smallMantissa >> 3) == 52)
             {
                 result =
-                    ((ulong)((x.Exponent + 0x400) & 0x7ff) << 52) |
+                    ((ulong)((x.Exponent + 0x3ff) & 0x7ff) << 52) |
                     (x.RawSignBit ? 1UL << 63 : 0);
             }
             else
