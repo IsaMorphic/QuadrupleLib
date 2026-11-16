@@ -376,7 +376,7 @@ public partial struct Float128<TAccelerator>
                 expFlag = Math.Abs(offset) >= MAX_PADDING_DIGITS;
             }
 
-            int numDigits = offset <= 0 ? formatter.NumberDecimalDigits :
+            int numDigits = offset <= 0 || expFlag ? formatter.NumberDecimalDigits :
                 Math.Min(formatter.NumberDecimalDigits + offset + 1, result.Length);
             if (result.Length > numDigits)
             {
