@@ -161,16 +161,10 @@ public partial struct Float128<TAccelerator>
                     break;
             }
 
-            UInt128 resultSignificand = (UInt128)wholePart;
-            if (fracPart == 0)
+            UInt128 roundedSignificand = (UInt128)wholePart;
+            if (fracPart > 0)
             {
-                return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
-            }
-            else
-            {
-
                 int log10Value = (int)Math.Floor(BigInteger.Log10(fracPart)) + 1;
-                bool isSubNormal = zExponent > 4390;
                 if (wholePart == 0)
                 {
                     resultExponent = -(int)Math.Floor(BigInteger.Log(Utilities.PowCache.GetPow10(zExponent), 2)) + 1;
@@ -183,39 +177,52 @@ public partial struct Float128<TAccelerator>
                 {
                     if ((fracPart <<= 1) / pow10 == 1)
                     {
-                        resultSignificand |= UInt128.One << binIndex;
+                        roundedSignificand |= UInt128.One << binIndex;
                     }
                 }
 
                 // set sticky bit
-                resultSignificand |= (UInt128)BigInteger.Min(fracPart, 1);
-
-                if ((((resultSignificand & 1) |
-                     ((resultSignificand >> 2) & 1)) &
-                     ((resultSignificand >> 1) & 1)) == 1) // check rounding condition
+                roundedSignificand |= (UInt128)BigInteger.Min(fracPart, 1);
+                if ((((roundedSignificand & 1) |
+                     ((roundedSignificand >> 2) & 1)) &
+                     ((roundedSignificand >> 1) & 1)) == 1) // check rounding condition
                 {
-                    resultSignificand++; // increment pth bit from the left
+                    roundedSignificand++; // increment pth bit from the left
                 }
+            }
 
-                if (isSubNormal)
+            UInt128 resultSignificand = roundedSignificand;
+            int normDist = (int)UInt128.LeadingZeroCount(resultSignificand >> 3) - 15;
+            if (resultExponent - normDist > EXPONENT_BIAS) // overflowing result
                 {
-                    int expnDiff = -EXPONENT_BIAS + 1 - resultExponent + 3;
-                    return new Float128<TAccelerator>(resultSignificand >> expnDiff, -EXPONENT_BIAS + 1, resultSign);
+                return resultSign ? _nInf : _pInf;
                 }
-                else
+            else if (resultExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing result
                 {
-                    int normDist = (int)UInt128.LeadingZeroCount(resultSignificand >> 3) - 15;
-                    if (normDist > 0)
+                normDist = resultExponent + EXPONENT_BIAS - 1;
+            }
+
+            if (normDist >= 0)
                         resultSignificand <<= normDist;
-                    else if (normDist < 0)
+            else
                         resultSignificand >>= -normDist;
+
                     resultExponent -= normDist;
+
+            // set sticky bit
+            resultSignificand &= UInt128.MaxValue << 1;
+            resultSignificand |= normDist > 0 ? 0 : UInt128.Min(roundedSignificand & ((UInt128.One << (-normDist + 1)) - 1), 1);
+
+            if ((((resultSignificand & 1) |
+                 ((resultSignificand >> 2) & 1)) &
+                 ((resultSignificand >> 1) & 1)) == 1) // check rounding condition
+            {
+                resultSignificand++; // increment pth bit from the left
+            }
 
                     return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
                 }
             }
-        }
-    }
 
     [MakeNonGeneric]
     public static Float128<TAccelerator> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider)
