@@ -84,7 +84,7 @@ public partial struct Float128<TAccelerator>
 
             // set sticky bit
             highBits &= UInt128.MaxValue << 1;
-            highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << (-normDist + 1)) - 1) : 0), 1);
+            highBits |= UInt128.Min(lowBits + (normDist > 0 ? 0 : highBits & ((UInt128.One << (-normDist + 1)) - 1)), 1);
 
             bool leftSign = prodSign;
             int leftExponent = prodExponent;
@@ -170,7 +170,7 @@ public partial struct Float128<TAccelerator>
 
             // set sticky bit
             sumSignificand &= UInt128.MaxValue << 1;
-            sumSignificand |= normDist < 0 ? UInt128.Min(rightSignificand & ((UInt128.One << (-normDist + 1)) - 1), 1) : 0;
+            sumSignificand |= normDist > 0 ? 0 : UInt128.Min(rightSignificand & ((UInt128.One << (-normDist + 1)) - 1), 1);
 
             if ((((sumSignificand & 1) |
                  ((sumSignificand >> 2) & 1)) &
@@ -279,7 +279,7 @@ public partial struct Float128<TAccelerator>
 
             // set sticky bit
             sumSignificand &= UInt128.MaxValue << 1;
-            sumSignificand |= normDist < 0 ? UInt128.Min(right.Significand & ((UInt128.One << (-normDist + 1)) - 1), 1) : 0;
+            sumSignificand |= normDist > 0 ? 0 : UInt128.Min(right.Significand & ((UInt128.One << (-normDist + 1)) - 1), 1);
 
             if ((((sumSignificand & 1) |
                  ((sumSignificand >> 2) & 1)) &
@@ -354,7 +354,7 @@ public partial struct Float128<TAccelerator>
 
             // set sticky bit
             highBits &= UInt128.MaxValue << 1;
-            highBits |= UInt128.Min(lowBits + (normDist < 0 ? highBits & ((UInt128.One << (-normDist + 1)) - 1) : 0), 1);
+            highBits |= UInt128.Min(lowBits + (normDist > 0 ? 0 : highBits & ((UInt128.One << (-normDist + 1)) - 1)), 1);
 
             if ((((highBits & 1) |
                  ((highBits >> 2) & 1)) &
