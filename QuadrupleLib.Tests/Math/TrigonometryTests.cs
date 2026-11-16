@@ -699,7 +699,7 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.5, 2.0)]
         [InlineData(1.0, 1.0)]
         [InlineData(5.6, 7.125)]
-        public void IsHypotCorrect(double a, double b) 
+        public void IsHypotCorrect(double a, double b)
         {
             double c = double.Hypot(a, b);
             AssertX.NearlyEqual(c, Float128<TAccelerator>.Hypot(a, b), Precision.NearestTenThousandth);

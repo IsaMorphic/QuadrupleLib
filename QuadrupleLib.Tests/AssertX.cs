@@ -35,7 +35,7 @@ namespace QuadrupleLib.Tests
             }
         }
 
-        public static void DoesNotThrow<TException>(Action action) 
+        public static void DoesNotThrow<TException>(Action action)
             where TException : Exception
         {
             try

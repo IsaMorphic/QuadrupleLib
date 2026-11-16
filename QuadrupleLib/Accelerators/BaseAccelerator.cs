@@ -21,7 +21,7 @@ using QuadrupleLib.Utilities;
 namespace QuadrupleLib.Accelerators
 {
     public abstract class BaseAccelerator<TAccelerator>
-        where TAccelerator : BaseAccelerator<TAccelerator>, 
+        where TAccelerator : BaseAccelerator<TAccelerator>,
         IAccelerator
     {
         #region Private API: unsigned 128-bit division routine
@@ -73,7 +73,7 @@ namespace QuadrupleLib.Accelerators
                 uint d1 = (uint)(divisor >> (32 * (m - 1)));
 
                 _df = BigMul256.Multiply4x1<TAccelerator>(x, factor);
-                UInt256 dividend = _df._0 | ((UInt256)_df._1 << 64) | 
+                UInt256 dividend = _df._0 | ((UInt256)_df._1 << 64) |
                     ((UInt256)_df._2 << 128) | ((UInt256)_df._3 << 192);
                 n = 8 - (int)UInt256.LeadingZeroCount(dividend) / 32;
 

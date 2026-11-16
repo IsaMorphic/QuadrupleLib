@@ -54,7 +54,7 @@ namespace QuadrupleLib.Tests.Math
         [Theory]
         [InlineData(0.0)]
         [InlineData(-1.0)]
-        public void IsLogNaN(double x) 
+        public void IsLogNaN(double x)
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Log(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));

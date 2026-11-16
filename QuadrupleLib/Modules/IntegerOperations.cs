@@ -446,7 +446,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator Int128(Float128<TAccelerator> x)
     {
-        if (IsNaN(x) || 
+        if (IsNaN(x) ||
             Truncate(x) > (Float128<TAccelerator>)Int128.MaxValue ||
             Truncate(x) < (Float128<TAccelerator>)Int128.MinValue)
         {
@@ -468,7 +468,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(byte n)
     {
-        if(n == 0) return Zero;
+        if (n == 0) return Zero;
 
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
@@ -498,7 +498,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(ushort n)
     {
-        if(n == 0) return Zero;
+        if (n == 0) return Zero;
 
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
@@ -528,7 +528,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(uint n)
     {
-        if(n == 0) return Zero;
+        if (n == 0) return Zero;
 
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
@@ -558,7 +558,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(ulong n)
     {
-        if(n == 0) return Zero;
+        if (n == 0) return Zero;
 
         UInt128 mantissa = (UInt128)n;
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
@@ -588,8 +588,8 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator Float128<TAccelerator>(UInt128 n)
     {
-        if(n == 0) return Zero;
-        
+        if (n == 0) return Zero;
+
         UInt128 rounded;
         int expShift = (int)UInt128.LeadingZeroCount(n) - 15;
         switch (expShift)
@@ -619,8 +619,8 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator UInt128(Float128<TAccelerator> x)
     {
-        if (IsNaN(x) || 
-            Truncate(x) > (Float128<TAccelerator>)UInt128.MaxValue || 
+        if (IsNaN(x) ||
+            Truncate(x) > (Float128<TAccelerator>)UInt128.MaxValue ||
             Truncate(x) < (Float128<TAccelerator>)UInt128.MinValue)
         {
             throw new OverflowException();

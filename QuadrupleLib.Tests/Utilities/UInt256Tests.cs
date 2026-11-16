@@ -24,7 +24,7 @@ namespace QuadrupleLib.Tests.Utilities
     public class UInt256Tests
     {
         [Fact]
-        public void IsAddWithoutCarryCorrect() 
+        public void IsAddWithoutCarryCorrect()
         {
             UInt256 one = 1UL;
             UInt256 two = 2UL;
@@ -174,7 +174,7 @@ namespace QuadrupleLib.Tests.Utilities
         [InlineData(2UL, 0UL, 1)]
         [InlineData(2UL, 1UL, 1)]
         [InlineData(2UL, 2UL, 0)]
-        public void IsSmallCompareToCorrect(ulong n, ulong m, int s) 
+        public void IsSmallCompareToCorrect(ulong n, ulong m, int s)
         {
             UInt256 N = n, M = m;
             int S = System.Math.Sign(N.CompareTo(M));

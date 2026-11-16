@@ -194,20 +194,20 @@ public partial struct Float128<TAccelerator>
             UInt128 resultSignificand = roundedSignificand;
             int normDist = (int)UInt128.LeadingZeroCount(resultSignificand >> 3) - 15;
             if (resultExponent - normDist > EXPONENT_BIAS) // overflowing result
-                {
+            {
                 return resultSign ? _nInf : _pInf;
-                }
+            }
             else if (resultExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing result
-                {
+            {
                 normDist = resultExponent + EXPONENT_BIAS - 1;
             }
 
             if (normDist >= 0)
-                        resultSignificand <<= normDist;
+                resultSignificand <<= normDist;
             else
-                        resultSignificand >>= -normDist;
+                resultSignificand >>= -normDist;
 
-                    resultExponent -= normDist;
+            resultExponent -= normDist;
 
             // set sticky bit
             resultSignificand &= UInt128.MaxValue << 1;
@@ -220,9 +220,9 @@ public partial struct Float128<TAccelerator>
                 resultSignificand++; // increment pth bit from the left
             }
 
-                    return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
-                }
-            }
+            return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
+        }
+    }
 
     [MakeNonGeneric]
     public static Float128<TAccelerator> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider)
@@ -501,7 +501,7 @@ public partial struct Float128<TAccelerator>
             charsWritten = resultStr.Length;
             return resultStr.TryCopyTo(destination);
         }
-        else 
+        else
         {
             charsWritten = 0;
             return false;

@@ -20,8 +20,8 @@ using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib.Accelerators;
 
-public sealed class SoftwareAccelerator : 
-    BaseAccelerator<SoftwareAccelerator>, 
+public sealed class SoftwareAccelerator :
+    BaseAccelerator<SoftwareAccelerator>,
     IAccelerator
 {
     private SoftwareAccelerator() { }
