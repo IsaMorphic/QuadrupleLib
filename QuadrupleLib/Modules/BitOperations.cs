@@ -157,7 +157,7 @@ public partial struct Float128<TAccelerator>
         else
         {
             normDist = (int)UInt128.LeadingZeroCount(x.Significand) - 15;
-            return new Float128<TAccelerator>(x.RawSignificand << normDist, newExponent - normDist, x.RawSignBit);
+            return new Float128<TAccelerator>(x.Significand << normDist, newExponent - normDist, x.RawSignBit);
         }
     }
 
