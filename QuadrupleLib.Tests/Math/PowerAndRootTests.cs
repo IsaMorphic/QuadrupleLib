@@ -120,18 +120,17 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(2.1)]
         [InlineData(3.676)]
         [InlineData(2.0)]
+        [InlineData(-2.1)]
+        [InlineData(-0.1)]
         public void IsPowZeroEqualToOne(double x)
         {
             AssertX.NearlyEqual(Float128<TAccelerator>.One, Float128<TAccelerator>.Pow(x, 0), Precision.NearestTenThousandth);
         }
 
-        [Theory]
-        [InlineData(0.0)]
-        [InlineData(-2.1)]
-        [InlineData(-0.1)]
-        public void IsPowZeroEqualToNaN(double x)
+        [Fact]
+        public void IsPowZeroOfZeroEqualToNaN()
         {
-            Float128<TAccelerator> y = Float128<TAccelerator>.Pow(x, 0);
+            Float128<TAccelerator> y = Float128<TAccelerator>.Pow(0, 0);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
 

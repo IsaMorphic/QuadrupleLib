@@ -544,28 +544,10 @@ public partial struct Float128<TAccelerator>
             return y > Zero ? _pInf : Zero;
         }
 
-        Float128<TAccelerator> x_n = One;
-        if (y > Zero)
+        Float128<TAccelerator> x_n = Exp2(y / Log(2));
+        for (int n = 0; n < 15; n++)
         {
-            for (int i = 1; i <= y; i++)
-            {
-                x_n *= E;
-            }
-        }
-        else
-        {
-            for (int i = -1; i >= y; i--)
-            {
-                x_n /= E;
-            }
-        }
-
-        if (y % One != Zero)
-        {
-            for (int n = 0; n < 15; n++)
-            {
-                x_n = Abs(FusedMultiplyAdd(x_n, y - Log(x_n), x_n));
-            }
+            x_n = Abs(FusedMultiplyAdd(x_n, y - Log(x_n), x_n));
         }
 
         return x_n;
@@ -582,29 +564,10 @@ public partial struct Float128<TAccelerator>
             return y > Zero ? _pInf : Zero;
         }
 
-        Float128<TAccelerator> x_n = One;
-        if (y > Zero)
+        Float128<TAccelerator> x_n = Exp2(y / Log10(2));
+        for (int n = 0; n < 15; n++)
         {
-            for (int i = 1; i <= y; i++)
-            {
-                x_n *= 10;
-            }
-        }
-        else
-        {
-            for (int i = -1; i >= y; i--)
-            {
-                x_n /= 10;
-            }
-        }
-
-        if (y % One != Zero)
-        {
-            Float128<TAccelerator> log10 = Log(10);
-            for (int n = 0; n < 15; n++)
-            {
-                x_n = Abs(FusedMultiplyAdd(x_n * log10, y - Log10(x_n), x_n));
-            }
+            x_n = Abs(FusedMultiplyAdd(x_n, y - Log10(x_n), x_n));
         }
 
         return x_n;
@@ -645,14 +608,34 @@ public partial struct Float128<TAccelerator>
         {
             return _pInf * Sign(x);
         }
-        else if (IsInteger(x) && IsInteger(y) && IsPositive(y))
+        else if (IsInteger(y) && Abs(y) <= 4.0)
         {
             Float128<TAccelerator> result = One;
-            for (int i = 0; i < y; i++)
+
+            if (y > Zero)
             {
-                result *= x;
+                for (int i = 0; i < y; i++)
+                {
+                    result *= x;
+                }
             }
+            else if (y < Zero)
+            {
+                for (int i = 0; i > y; i--)
+                {
+                    result /= x;
+                }
+            }
+
             return result;
+        }
+        else if (IsEvenInteger(y))
+        {
+            return Exp(y * Log(Abs(x)));
+        }
+        else if (IsOddInteger(y))
+        {
+            return -Exp(y * Log(Abs(x)));
         }
         else
         {
