@@ -165,6 +165,11 @@ public partial struct Float128<TAccelerator>
             if (fracPart > 0)
             {
                 int log10Value = (int)Math.Floor(BigInteger.Log10(fracPart)) + 1;
+                while (Utilities.PowCache.GetPow10(log10Value) < fracPart)
+                {
+                    ++log10Value;
+                }
+
                 if (wholePart == 0)
                 {
                     resultExponent = -(int)Math.Floor(BigInteger.Log(Utilities.PowCache.GetPow10(zExponent), 2)) + 1;
@@ -353,8 +358,8 @@ public partial struct Float128<TAccelerator>
             }
 
             int maxDigits = significand == 0 ? 1 :
-                (int)Math.Round(BigInteger.Log10(significand)) + 1;
-            Span<char> strBuf = stackalloc char[maxDigits];
+                (int)Math.Floor(BigInteger.Log10(significand)) + 1;
+            Span<char> strBuf = stackalloc char[maxDigits + 1];
             significand.TryFormat(strBuf, out maxDigits);
 
             StringBuilder result = new StringBuilder(maxDigits);
