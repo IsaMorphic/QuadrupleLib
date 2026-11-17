@@ -109,7 +109,7 @@ public partial struct Float128<TAccelerator>
             throw new ArgumentOutOfRangeException("Parameter must be greater than or equal to 0.", nameof(digits));
         }
 
-        if (digits >= 38)
+        if (digits >= 38 || x.Exponent >= 112)
         {
             return x;
         }
@@ -166,6 +166,9 @@ public partial struct Float128<TAccelerator>
             case < 0:
                 result = value.RawSignBit ? NegativeOne : Zero;
                 break;
+            case >= 112:
+                result = value;
+                break;
             default:
                 result = value;
                 int bitsToErase = 112 - unbiasedExponent;
@@ -194,6 +197,9 @@ public partial struct Float128<TAccelerator>
                 break;
             case < 0:
                 result = value.RawSignBit ? NegativeZero : One;
+                break;
+            case >= 112:
+                result = value;
                 break;
             default:
                 result = value;
@@ -228,6 +234,9 @@ public partial struct Float128<TAccelerator>
                 break;
             case < 0:
                 result = value.RawSignBit ? NegativeZero : Zero;
+                break;
+            case >= 112:
+                result = value;
                 break;
             default:
                 result = value;
