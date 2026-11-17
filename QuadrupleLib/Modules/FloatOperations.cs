@@ -76,7 +76,7 @@ public partial struct Float128<TAccelerator>
 
     public static bool IsPow2(Float128<TAccelerator> value)
     {
-        return value != Zero && ((value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) ||
+        return value > Zero && ((value.RawExponent == 0 && UInt128.IsPow2(value.RawSignificand)) ||
             (value.RawSignificand == UInt128.Zero && value.RawExponent != short.MaxValue));
     }
 
