@@ -286,6 +286,12 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
+    public static explicit operator checked sbyte(Float128<TAccelerator> x)
+    {
+        return (sbyte)ToSignedInteger(x, sbyte.MinValue, sbyte.MaxValue, isChecked: true);
+    }
+
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(short n)
     {
         bool signBit;
@@ -312,6 +318,12 @@ public partial struct Float128<TAccelerator>
     public static explicit operator short(Float128<TAccelerator> x)
     {
         return (short)ToSignedInteger(x, short.MinValue, short.MaxValue);
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked short(Float128<TAccelerator> x)
+    {
+        return (short)ToSignedInteger(x, short.MinValue, short.MaxValue, isChecked: true);
     }
 
     [MakeNonGeneric]
@@ -344,6 +356,12 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
+    public static explicit operator checked int(Float128<TAccelerator> x)
+    {
+        return (int)ToSignedInteger(x, int.MinValue, int.MaxValue, isChecked: true);
+    }
+
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(long n)
     {
         bool signBit;
@@ -370,6 +388,12 @@ public partial struct Float128<TAccelerator>
     public static explicit operator long(Float128<TAccelerator> x)
     {
         return (long)ToSignedInteger(x, long.MinValue, long.MaxValue);
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked long(Float128<TAccelerator> x)
+    {
+        return (long)ToSignedInteger(x, long.MinValue, long.MaxValue, isChecked: true);
     }
 
     [MakeNonGeneric]
@@ -424,6 +448,12 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
+    public static explicit operator checked Int128(Float128<TAccelerator> x)
+    {
+        return ToSignedInteger(x, Int128.MinValue, Int128.MaxValue, isChecked: true);
+    }
+
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(byte n)
     {
         if (n == 0) return Zero;
@@ -437,6 +467,12 @@ public partial struct Float128<TAccelerator>
     public static explicit operator byte(Float128<TAccelerator> x)
     {
         return (byte)ToUnsignedInteger(x, byte.MaxValue);
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked byte(Float128<TAccelerator> x)
+    {
+        return (byte)ToUnsignedInteger(x, byte.MaxValue, isChecked: true);
     }
 
     [MakeNonGeneric]
@@ -456,6 +492,12 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
+    public static explicit operator checked ushort(Float128<TAccelerator> x)
+    {
+        return (ushort)ToUnsignedInteger(x, ushort.MaxValue, isChecked: true);
+    }
+
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(uint n)
     {
         if (n == 0) return Zero;
@@ -472,6 +514,12 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
+    public static explicit operator checked uint(Float128<TAccelerator> x)
+    {
+        return (uint)ToUnsignedInteger(x, uint.MaxValue, isChecked: true);
+    }
+
+    [MakeNonGeneric]
     public static implicit operator Float128<TAccelerator>(ulong n)
     {
         if (n == 0) return Zero;
@@ -485,6 +533,12 @@ public partial struct Float128<TAccelerator>
     public static explicit operator ulong(Float128<TAccelerator> x)
     {
         return (ulong)ToUnsignedInteger(x, ulong.MaxValue);
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked ulong(Float128<TAccelerator> x)
+    {
+        return (ulong)ToUnsignedInteger(x, ulong.MaxValue, isChecked: true);
     }
 
     [MakeNonGeneric]
@@ -524,6 +578,12 @@ public partial struct Float128<TAccelerator>
         return ToUnsignedInteger(x, UInt128.MaxValue);
     }
 
+    [MakeNonGeneric]
+    public static explicit operator checked UInt128(Float128<TAccelerator> x)
+    {
+        return ToUnsignedInteger(x, UInt128.MaxValue, isChecked: true);
+    }
+
     #endregion
 
     #region Private API (integer conversion)
@@ -556,14 +616,14 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
-    private static Int128 ToSignedInteger(Float128<TAccelerator> x, Int128 minValue, Int128 maxValue)
+    private static Int128 ToSignedInteger(Float128<TAccelerator> x, Int128 minValue, Int128 maxValue, bool isChecked = false)
     {
         UInt128 magnitude = TruncateToMagnitude(x);
         UInt128 limit = x.RawSignBit ?
             (UInt128)(-(minValue + 1)) + 1 :
             (UInt128)maxValue;
 
-        if (magnitude > limit)
+        if (isChecked && magnitude > limit)
         {
             throw new OverflowException("Value is out of range of the target integer type.");
         }
@@ -574,11 +634,11 @@ public partial struct Float128<TAccelerator>
     }
 
     [MakeNonGeneric]
-    private static UInt128 ToUnsignedInteger(Float128<TAccelerator> x, UInt128 maxValue)
+    private static UInt128 ToUnsignedInteger(Float128<TAccelerator> x, UInt128 maxValue, bool isChecked = false)
     {
         UInt128 magnitude = TruncateToMagnitude(x);
 
-        if (magnitude > maxValue || (x.RawSignBit && magnitude != 0))
+        if (isChecked && magnitude > maxValue || (x.RawSignBit && magnitude != 0))
         {
             throw new OverflowException("Value is out of range of the target integer type.");
         }

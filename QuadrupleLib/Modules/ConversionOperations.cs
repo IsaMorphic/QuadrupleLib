@@ -274,6 +274,24 @@ public partial struct Float128<TAccelerator>
                 return true;
 
             default:
+                if (typeof(TOther) == typeof(Int128))
+                {
+                    result = (TOther)(object)checked((Int128)value);
+                    return true;
+                }
+
+                if (typeof(TOther) == typeof(UInt128))
+                {
+                    result = (TOther)(object)checked((UInt128)value);
+                    return true;
+                }
+
+                if (typeof(TOther) == typeof(Half))
+                {
+                    result = (TOther)(object)(Half)value;
+                    return true;
+                }
+
                 try
                 {
                     result = (TOther)(object)value;
@@ -301,13 +319,17 @@ public partial struct Float128<TAccelerator>
             case TypeCode.Int16:
             case TypeCode.Int32:
             case TypeCode.Int64:
-                return TOther.TryConvertFromSaturating((Int128)value, out result!);
+                return TOther.TryConvertFromSaturating((Int128)Min(Max(value,
+                        (Float128<TAccelerator>)Int128.MinValue),
+                        (Float128<TAccelerator>)Int128.MaxValue), out result!);
 
             case TypeCode.Byte:
             case TypeCode.UInt16:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
-                return TOther.TryConvertFromSaturating((UInt128)value, out result!);
+                return TOther.TryConvertFromSaturating((UInt128)Min(Max(value,
+                        (Float128<TAccelerator>)UInt128.MinValue),
+                        (Float128<TAccelerator>)UInt128.MaxValue), out result!);
 
             case TypeCode.Single:
                 result = (TOther)(object)(float)value;
@@ -317,6 +339,28 @@ public partial struct Float128<TAccelerator>
                 return true;
 
             default:
+                if (typeof(TOther) == typeof(Int128))
+                {
+                    result = (TOther)(object)checked((Int128)Min(Max(value,
+                        (Float128<TAccelerator>)Int128.MinValue),
+                        (Float128<TAccelerator>)Int128.MaxValue));
+                    return true;
+                }
+
+                if (typeof(TOther) == typeof(UInt128))
+                {
+                    result = (TOther)(object)checked((UInt128)Min(Max(value,
+                        (Float128<TAccelerator>)UInt128.MinValue),
+                        (Float128<TAccelerator>)UInt128.MaxValue));
+                    return true;
+                }
+
+                if (typeof(TOther) == typeof(Half))
+                {
+                    result = (TOther)(object)(Half)value;
+                    return true;
+                }
+
                 try
                 {
                     result = (TOther)(object)value;
@@ -344,13 +388,13 @@ public partial struct Float128<TAccelerator>
             case TypeCode.Int16:
             case TypeCode.Int32:
             case TypeCode.Int64:
-                return TOther.TryConvertFromTruncating((Int128)value, out result!);
+                return TOther.TryConvertFromTruncating(unchecked((Int128)value), out result!);
 
             case TypeCode.Byte:
             case TypeCode.UInt16:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
-                return TOther.TryConvertFromTruncating((UInt128)value, out result!);
+                return TOther.TryConvertFromTruncating(unchecked((UInt128)value), out result!);
 
             case TypeCode.Single:
                 result = (TOther)(object)(float)value;
@@ -360,6 +404,24 @@ public partial struct Float128<TAccelerator>
                 return true;
 
             default:
+                if (typeof(TOther) == typeof(Int128))
+                {
+                    result = (TOther)(object)unchecked((Int128)value);
+                    return true;
+                }
+
+                if (typeof(TOther) == typeof(UInt128))
+                {
+                    result = (TOther)(object)unchecked((UInt128)value);
+                    return true;
+                }
+
+                if (typeof(TOther) == typeof(Half))
+                {
+                    result = (TOther)(object)(Half)value;
+                    return true;
+                }
+
                 try
                 {
                     result = (TOther)(object)value;
