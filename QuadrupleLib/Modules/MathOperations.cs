@@ -320,7 +320,14 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Cosh(Float128<TAccelerator> x)
     {
-        return (Exp(x) + Exp(-x)) * 0.5;
+        if (IsZero(x))
+        {
+            return Zero;
+        }
+        else
+        {
+            return (Exp(x) + Exp(-x)) * 0.5;
+        }
     }
 
     public static Float128<TAccelerator> Sinh(Float128<TAccelerator> x)
@@ -329,8 +336,10 @@ public partial struct Float128<TAccelerator>
         {
             return x;
         }
-
-        return (Exp(x) - Exp(-x)) * 0.5;
+        else
+        {
+            return (Exp(x) - Exp(-x)) * 0.5;
+        }
     }
 
     public static Float128<TAccelerator> Tanh(Float128<TAccelerator> x)
@@ -380,6 +389,10 @@ public partial struct Float128<TAccelerator>
         else if (IsNegativeInfinity(x))
         {
             return _nInf;
+        }
+        else if (IsZero(x))
+        {
+            return x;
         }
         else if (x > 8.0)
         {
