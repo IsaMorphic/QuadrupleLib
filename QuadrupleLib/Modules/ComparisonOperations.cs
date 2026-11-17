@@ -47,7 +47,13 @@ public partial struct Float128<TAccelerator>
     public int CompareTo(Float128<TAccelerator> other)
     {
         if (Equals(other))
+        {
             return 0;
+        }
+        else if (IsNaN(other))
+        {
+            return int.MinValue;
+        }
         else if (RawSignBit == other.RawSignBit)
         {
             var expCmp = Exponent.CompareTo(other.Exponent);
