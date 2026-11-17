@@ -128,8 +128,7 @@ public partial struct Float128<TAccelerator>
     public static Float128<TAccelerator> ScaleB(Float128<TAccelerator> x, int n)
     {
         if (IsNaN(x)) return _qNaN;
-        else if (x == Zero) return Zero;
-        else if (n == 0) return x;
+        else if (n == 0 || x == Zero) return x;
 
         int normDist, newExponent = x.Exponent + n;
         if (newExponent > EXPONENT_BIAS)
