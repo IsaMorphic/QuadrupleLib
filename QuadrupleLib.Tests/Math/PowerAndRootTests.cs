@@ -349,6 +349,88 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(Float128<TAccelerator>.IsNaN(result));
             Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
         }
+
+        [Fact]
+        public void PowOfNegativeTwoToNegativeThreeIsNegativeEighth()
+        {
+            // exact result: (-2)^-3 = -0.125
+            Float128<TAccelerator> result = Float128<TAccelerator>.Pow((Float128<TAccelerator>)(-2.0), (Float128<TAccelerator>)(-3.0));
+
+            Assert.Equal(-0.125, (double)result);
+        }
+
+        [Fact]
+        public void SqrtOfLargeValueIsNearestSquareRoot()
+        {
+            // reference: double.Sqrt(1e100) = 1e50; tolerance is a few double ulps
+            Assert.Equal(double.Sqrt(1e100), (double)Float128<TAccelerator>.Sqrt(1e100), 1e35);
+        }
+
+        [Theory]
+        [InlineData(3.0, 5.0, 243.0)]
+        [InlineData(-3.0, 5.0, -243.0)]
+        [InlineData(10.0, 20.0, 1e20)]
+        [InlineData(2.0, 100.0, 1.2676506002282294e30)]
+        public void IntegerPowerWithExactResultIsExact(double x, double y, double expected)
+        {
+            // each result is exactly representable, so an integer power must return it exactly
+            Assert.Equal((Float128<TAccelerator>)expected, Float128<TAccelerator>.Pow(x, y));
+        }
+
+        [Fact]
+        public void LargeIntegerPowerIsExact()
+        {
+            // 3^40 = 12157665459056928801 has 64 significant bits, so it is exactly representable
+            Assert.Equal((Float128<TAccelerator>)12157665459056928801UL, Float128<TAccelerator>.Pow(3.0, 40.0));
+        }
+
+        [Fact]
+        public void IntegerPowerIsCorrectlyRounded()
+        {
+            // reference: 1.1^10, with 1.1 the nearest double, computed exactly and rounded to nearest
+            Float128<TAccelerator> result = Float128<TAccelerator>.Pow(1.1, 10.0);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("40004BFFC0C03023D82AFBBE21C5469F"), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Theory]
+        [InlineData(2.0, -16494.0)]
+        [InlineData(0.5, 16494.0)]
+        public void IntegerPowerToSmallestSubnormalIsExact(double x, double y)
+        {
+            // 2^-16494 is the smallest subnormal value
+            Assert.Equal(Float128<TAccelerator>.Epsilon, Float128<TAccelerator>.Pow(x, y));
+        }
+
+        [Theory]
+        [InlineData(32.0, 5, 2.0)]
+        [InlineData(1024.0, 10, 2.0)]
+        [InlineData(1e10, 10, 10.0)]
+        [InlineData(32.0, -5, 0.5)]
+        [InlineData(-32.0, 5, -2.0)]
+        public void RootNWithExactResultIsExact(double x, int n, double expected)
+        {
+            Assert.Equal((Float128<TAccelerator>)expected, Float128<TAccelerator>.RootN(x, n));
+        }
+
+        [Fact]
+        public void FifthRootIsCorrectlyRounded()
+        {
+            // reference: 2^(1/5), computed to 120 digits and rounded to nearest
+            Float128<TAccelerator> result = Float128<TAccelerator>.RootN(2.0, 5);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFF2611186BAE67496A521E420760E2"), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Fact]
+        public void RootNWithMinimumDegreeIsJustBelowOne()
+        {
+            // int.MinValue has no positive counterpart; 2^(-1/2^31) is about 1 - 3.2e-10
+            Float128<TAccelerator> result = Float128<TAccelerator>.RootN(2.0, int.MinValue);
+
+            Assert.True(result < Float128<TAccelerator>.One);
+            Assert.True(result > (Float128<TAccelerator>)0.9999999996);
+        }
     }
 
     public class PowerAndRootTests_DefaultAccelerator :

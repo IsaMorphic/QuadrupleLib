@@ -63,6 +63,23 @@ namespace QuadrupleLib.Tests.Math
             double y = double.Exp10(x);
             AssertX.NearlyEqual(y, Float128<TAccelerator>.Exp10(x), Precision.NearestTenThousandth);
         }
+
+        [Fact]
+        public void Exp2OfPositiveInfinityIsPositiveInfinity()
+        {
+            // IEEE 754: exp2(+Inf) is +Inf
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp2(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void Exp2OfNegativeInfinityIsPositiveZero()
+        {
+            // IEEE 754: exp2(-Inf) is +0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp2(Float128<TAccelerator>.NegativeInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
     }
 
     public class ExponentialTests_DefaultAccelerator :
@@ -71,5 +88,61 @@ namespace QuadrupleLib.Tests.Math
 
     public class ExponentialTests_SoftwareAccelerator :
         ExponentialTests<SoftwareAccelerator>
+    { }
+
+    // Every test in this class can loop without end on the current code. The timeout stops the test
+    // but not its thread, so the class runs under the Hang category.
+    public abstract class ExponentialHangTests<TAccelerator>
+        where TAccelerator : IAccelerator
+    {
+        [Trait("Category", "Hang")]
+        [Fact(Timeout = 10000)]
+        public void ExpOfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Trait("Category", "Hang")]
+        [Fact(Timeout = 10000)]
+        public void ExpOfNegativeInfinityIsPositiveZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp(Float128<TAccelerator>.NegativeInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Trait("Category", "Hang")]
+        [Fact(Timeout = 10000)]
+        public void ExpOfLargeFiniteIsPositiveInfinity()
+        {
+            // exp(1e30) overflows binary128
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp((Float128<TAccelerator>)1e30)));
+        }
+
+        [Trait("Category", "Hang")]
+        [Fact(Timeout = 10000)]
+        public void Exp10OfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp10(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Trait("Category", "Hang")]
+        [Fact(Timeout = 10000)]
+        public void Exp10OfNegativeInfinityIsPositiveZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp10(Float128<TAccelerator>.NegativeInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+    }
+
+    public class ExponentialHangTests_DefaultAccelerator :
+        ExponentialHangTests<DefaultAccelerator>
+    { }
+
+    public class ExponentialHangTests_SoftwareAccelerator :
+        ExponentialHangTests<SoftwareAccelerator>
     { }
 }

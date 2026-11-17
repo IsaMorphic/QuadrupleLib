@@ -73,79 +73,6 @@ public partial struct Float128<TAccelerator>
             BigInteger.TryParse(wholePartSpan, out BigInteger wholePart);
             BigInteger.TryParse(fracPartSpan, out BigInteger fracPart);
 
-            if (int.TryParse(exponentSpan, out int qExponent))
-            {
-                int numDigits = Math.Max(wholePartSpan.Length, 1) + fracPartSpan.Length;
-
-                StringBuilder builder = new();
-                builder.Append(leftSignSpan);
-
-                if (qExponent > 0)
-                {
-                    if (qExponent >= numDigits - 1)
-                    {
-                        builder.Append(wholePartSpan);
-                        builder.Append(fracPartSpan);
-                        for (int i = 0; i < qExponent - numDigits + 1; i++)
-                        {
-                            builder.Append('0');
-                        }
-                    }
-                    else
-                    {
-                        builder.Append(wholePartSpan);
-                        builder.Append(fracPartSpan);
-                        builder.Insert(qExponent + 1, formatter.NumberDecimalSeparator);
-                    }
-                }
-                else if (qExponent < 0)
-                {
-                    builder.Append('0');
-                    builder.Append(formatter.NumberDecimalSeparator);
-
-                    int zeroCnt = wholePart == 0 ? -qExponent : -qExponent - 1;
-                    for (int i = 0; i < zeroCnt; i++)
-                    {
-                        builder.Append('0');
-                    }
-
-                    if (wholePart != 0)
-                    {
-                        builder.Append(wholePartSpan);
-                    }
-
-                    builder.Append(fracPartSpan);
-                }
-
-                builder.Append(rightSignSpan);
-                return Parse(builder.ToString(), provider);
-            }
-
-            int zExponent;
-            for (zExponent = 0;
-                zExponent < fracPartSpan.Length &&
-                fracPartSpan[zExponent] == '0';
-                zExponent++) ;
-
-            int resultExponent;
-            if (wholePart == 0 && fracPart == 0)
-            {
-                resultExponent = -EXPONENT_BIAS + 1;
-            }
-            else
-            {
-                resultExponent = (int)BigInteger.Log2(wholePart);
-                int wholeDiff = (int)wholePart.GetBitLength() - 116;
-                if (wholeDiff > 0)
-                {
-                    wholePart >>= wholeDiff;
-                }
-                else if (wholeDiff < 0)
-                {
-                    wholePart <<= -wholeDiff;
-                }
-            }
-
             bool resultSign;
             switch (formatter.NumberNegativePattern)
             {
@@ -161,71 +88,83 @@ public partial struct Float128<TAccelerator>
                     break;
             }
 
-            UInt128 roundedSignificand = (UInt128)wholePart;
-            if (fracPart > 0)
+            // the value is exactly (wholePart * 10^L + fracPart) * 10^(E - L),
+            // where L is the number of fraction digits and E is the decimal exponent
+            BigInteger numerator = wholePart * Utilities.PowCache.GetPow10(fracPartSpan.Length) + fracPart;
+            if (numerator.IsZero)
             {
-                int log10Value = (int)Math.Floor(BigInteger.Log10(fracPart)) + 1;
-                while (Utilities.PowCache.GetPow10(log10Value) < fracPart)
-                {
-                    ++log10Value;
-                }
-
-                if (wholePart == 0)
-                {
-                    resultExponent = -(int)Math.Floor(BigInteger.Log(Utilities.PowCache.GetPow10(zExponent), 2)) + 1;
-                }
-
-                BigInteger pow10 = Utilities.PowCache.GetPow10(log10Value + zExponent);
-                for (int binIndex = 114 - resultExponent;
-                    binIndex > 0 && fracPart != 0;
-                    binIndex--, fracPart %= pow10)
-                {
-                    if ((fracPart <<= 1) / pow10 == 1)
-                    {
-                        roundedSignificand |= UInt128.One << binIndex;
-                    }
-                }
-
-                // set sticky bit
-                roundedSignificand |= (UInt128)BigInteger.Min(fracPart, 1);
-                if ((((roundedSignificand & 1) |
-                     ((roundedSignificand >> 2) & 1)) &
-                     ((roundedSignificand >> 1) & 1)) == 1) // check rounding condition
-                {
-                    roundedSignificand++; // increment pth bit from the left
-                }
+                return resultSign ? NegativeZero : Zero;
             }
 
-            UInt128 resultSignificand = roundedSignificand;
-            int normDist = (int)UInt128.LeadingZeroCount(resultSignificand >> 3) - 15;
-            if (resultExponent - normDist > EXPONENT_BIAS) // overflowing result
+            // an exponent beyond the range of a long is far outside the range of the format
+            if (!long.TryParse(exponentSpan, NumberStyles.AllowLeadingSign, formatter, out long decimalExponent) && !exponentSpan.IsEmpty)
+            {
+                decimalExponent = exponentSpan.StartsWith(formatter.NegativeSign) ? long.MinValue / 2 : long.MaxValue / 2;
+            }
+
+            // 1 <= numerator < 10^digitCount, so these bounds put the value beyond the largest
+            // finite value, or below half the smallest subnormal value
+            long scale = decimalExponent - fracPartSpan.Length;
+            long digitCount = wholePartSpan.Length + fracPartSpan.Length;
+            if (scale > 4933)
             {
                 return resultSign ? _nInf : _pInf;
             }
-            else if (resultExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing result
+            else if (scale + digitCount < -4966)
             {
-                normDist = resultExponent + EXPONENT_BIAS - 1;
+                return resultSign ? NegativeZero : Zero;
             }
 
-            if (normDist >= 0)
-                resultSignificand <<= normDist;
+            BigInteger denominator = BigInteger.One;
+            if (scale >= 0)
+            {
+                numerator *= Utilities.PowCache.GetPow10((int)scale);
+            }
             else
-                resultSignificand >>= -normDist;
-
-            resultExponent -= normDist;
-
-            // set sticky bit
-            resultSignificand &= UInt128.MaxValue << 1;
-            resultSignificand |= normDist > 0 ? 0 : UInt128.Min(roundedSignificand & ((UInt128.One << (-normDist + 1)) - 1), 1);
-
-            if ((((resultSignificand & 1) |
-                 ((resultSignificand >> 2) & 1)) &
-                 ((resultSignificand >> 1) & 1)) == 1) // check rounding condition
             {
-                resultSignificand++; // increment pth bit from the left
+                denominator = Utilities.PowCache.GetPow10((int)-scale);
             }
 
-            return new Float128<TAccelerator>(resultSignificand >> 3, resultExponent, resultSign);
+            // binary exponent of the leading bit, floor(log2(numerator / denominator))
+            int resultExponent = (int)(numerator.GetBitLength() - denominator.GetBitLength());
+            if (resultExponent >= 0 ? numerator < denominator << resultExponent : numerator << -resultExponent < denominator)
+            {
+                resultExponent--;
+            }
+
+            if (resultExponent > EXPONENT_BIAS) // overflowing result
+            {
+                return resultSign ? _nInf : _pInf;
+            }
+
+            // a subnormal result keeps fewer significant bits
+            resultExponent = Math.Max(resultExponent, -EXPONENT_BIAS + 1);
+
+            // scale the quotient to 113 significant bits, then round to nearest, ties to even
+            int shift = 112 - resultExponent;
+            BigInteger scaledNumerator = shift >= 0 ? numerator << shift : numerator;
+            BigInteger scaledDenominator = shift >= 0 ? denominator : denominator << -shift;
+            BigInteger quotient = BigInteger.DivRem(scaledNumerator, scaledDenominator, out BigInteger remainder);
+
+            int halfComparison = (remainder << 1).CompareTo(scaledDenominator);
+            if (halfComparison > 0 || (halfComparison == 0 && !quotient.IsEven))
+            {
+                quotient++;
+            }
+
+            UInt128 resultSignificand = (UInt128)quotient;
+            if ((resultSignificand >> 113) != 0) // rounding carried into a new leading bit
+            {
+                resultSignificand >>= 1;
+                resultExponent++;
+            }
+
+            if (resultExponent > EXPONENT_BIAS) // overflowing result
+            {
+                return resultSign ? _nInf : _pInf;
+            }
+
+            return new Float128<TAccelerator>(resultSignificand, resultExponent, resultSign);
         }
     }
 
@@ -404,8 +343,10 @@ public partial struct Float128<TAccelerator>
 
                     if (i < 0 && nextDigit > 9)
                     {
+                        // the carry adds a leading digit, which raises the decimal exponent
                         result.Remove(numDigits - 1, 1);
                         result.Insert(0, '1');
+                        ++offset;
                     }
                     else
                     {
@@ -428,8 +369,8 @@ public partial struct Float128<TAccelerator>
                 int trimIdx;
                 for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
 
-                int expInc = result.Length - trimIdx;
-                e2 += expInc; offset += expInc;
+                // trimming trailing zeros does not move the leading digit, so the decimal exponent is unchanged
+                e2 += result.Length - trimIdx;
                 if (trimIdx > 0 && e2 >= 0) --trimIdx;
 
                 result.Remove(trimIdx + 1, result.Length - trimIdx - 1);

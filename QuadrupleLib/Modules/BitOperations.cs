@@ -135,27 +135,20 @@ public partial struct Float128<TAccelerator>
         {
             return x.RawSignBit ? _nInf : _pInf;
         }
-        else if (newExponent <= -EXPONENT_BIAS + 1)
+        else if (newExponent < -EXPONENT_BIAS + 1)
         {
-            normDist = -EXPONENT_BIAS + 1 - newExponent;
-            UInt128 newSignificand = (x.Significand << 3) >> normDist;
+            normDist = Math.Min(-EXPONENT_BIAS + 1 - newExponent, 127);
+            UInt128 fullSignificand = x.Significand << 3;
+            UInt128 newSignificand = fullSignificand >> normDist;
 
             // set sticky bit
-            newSignificand &= UInt128.MaxValue << 1;
-            newSignificand |= UInt128.Min(x.Significand & ((UInt128.One << (normDist + 1)) - 1), 1);
+            newSignificand |= UInt128.Min(fullSignificand & ((UInt128.One << normDist) - 1), 1);
 
-            if ((((newSignificand & 1) |
-                 ((newSignificand >> 2) & 1)) &
-                 ((newSignificand >> 1) & 1)) == 1) // check rounding condition
-            {
-                newSignificand++; // increment pth bit from the left
-            }
-
-            return new Float128<TAccelerator>(newSignificand >> 3, -EXPONENT_BIAS + 1, x.RawSignBit);
+            return new Float128<TAccelerator>(RoundToNearestEven(newSignificand), -EXPONENT_BIAS + 1, x.RawSignBit);
         }
         else
         {
-            normDist = (int)UInt128.LeadingZeroCount(x.Significand) - 15;
+            normDist = Math.Min((int)UInt128.LeadingZeroCount(x.Significand) - 15, newExponent - (-EXPONENT_BIAS + 1));
             return new Float128<TAccelerator>(x.Significand << normDist, newExponent - normDist, x.RawSignBit);
         }
     }

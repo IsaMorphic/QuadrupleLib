@@ -16,12 +16,13 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Globalization;
 using System.Reflection;
 
 namespace QuadrupleLib.Tests
 {
     // Test-only access to the binary128 bit pattern. Reflection is used here because the raw
-    // field and the raw-bits constructor are private.
+    // field and the raw-bits and parts constructors are private.
     internal static class RawStorage<TAccelerator>
         where TAccelerator : IAccelerator
     {
@@ -30,6 +31,7 @@ namespace QuadrupleLib.Tests
 
         private static readonly FieldInfo _rawBitsField = typeof(Float128<TAccelerator>).GetField("_rawBits", INSTANCE_MEMBERS)!;
         private static readonly ConstructorInfo _rawBitsConstructor = typeof(Float128<TAccelerator>).GetConstructor(INSTANCE_MEMBERS, null, new[] { typeof(UInt128) }, null)!;
+        private static readonly ConstructorInfo _partsConstructor = typeof(Float128<TAccelerator>).GetConstructor(INSTANCE_MEMBERS, null, new[] { typeof(UInt128), typeof(int), typeof(bool) }, null)!;
 
         public static UInt128 Bits(Float128<TAccelerator> value)
         {
@@ -44,6 +46,21 @@ namespace QuadrupleLib.Tests
         public static Float128<TAccelerator> FromBits(UInt128 bits)
         {
             return (Float128<TAccelerator>)_rawBitsConstructor.Invoke(new object[] { bits });
+        }
+
+        public static Float128<TAccelerator> FromParts(UInt128 significand, int exponent, bool negative)
+        {
+            return (Float128<TAccelerator>)_partsConstructor.Invoke(new object[] { significand, exponent, negative });
+        }
+
+        public static UInt128 ParseBits(string hex)
+        {
+            return UInt128.Parse(hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture);
+        }
+
+        public static Float128<TAccelerator> LargestFinite()
+        {
+            return FromBits(((UInt128)0x7FFE << 112) | ((UInt128.One << 112) - UInt128.One));
         }
     }
 }
