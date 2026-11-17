@@ -349,6 +349,10 @@ public partial struct Float128<TAccelerator>
         {
             return _pInf;
         }
+        else if (x > 8.0)
+        {
+            return Log(x + Abs(x) - One / ScaleB(Abs(x), 1));
+        }
         else if (x > One)
         {
             return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
@@ -376,6 +380,10 @@ public partial struct Float128<TAccelerator>
         else if (IsNegativeInfinity(x))
         {
             return _nInf;
+        }
+        else if (x > 8.0)
+        {
+            return Log(x + Abs(x) + One / ScaleB(Abs(x), 1));
         }
         else
         {
