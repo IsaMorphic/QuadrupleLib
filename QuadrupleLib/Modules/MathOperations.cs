@@ -83,7 +83,20 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Hypot(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        return Sqrt(x * x + y * y);
+        Float128<TAccelerator> ax = Abs(x);
+        Float128<TAccelerator> ay = Abs(y);
+        if (IsPositiveInfinity(ax) || IsPositiveInfinity(ay))
+        {
+            return _pInf;
+        }
+        else if (ax == Zero && ay == Zero)
+        {
+            return Zero;
+        }
+        else
+        {
+            return Sqrt(x * x + y * y);
+        }
     }
 
     public static Float128<TAccelerator> Cos(Float128<TAccelerator> x)
@@ -108,13 +121,13 @@ public partial struct Float128<TAccelerator>
 
     public static (Float128<TAccelerator> Sin, Float128<TAccelerator> Cos) SinCos(Float128<TAccelerator> alpha)
     {
-        if (IsNaN(alpha))
+        if (IsNaN(alpha) || IsInfinity(alpha))
         {
             return (_qNaN, _qNaN);
         }
-        else if (IsInfinity(alpha))
+        else if (IsZero(alpha))
         {
-            return (_sNaN, _sNaN);
+            return (alpha, One);
         }
 
         Float128<TAccelerator> x = One, y = CopySign(Zero, alpha);
@@ -169,7 +182,7 @@ public partial struct Float128<TAccelerator>
     {
         if (x > One || x < NegativeOne)
         {
-            return _sNaN;
+            return _qNaN;
         }
         else
         {
@@ -181,7 +194,7 @@ public partial struct Float128<TAccelerator>
     {
         if (x > One || x < NegativeOne)
         {
-            return _sNaN;
+            return _qNaN;
         }
         else
         {
@@ -193,7 +206,7 @@ public partial struct Float128<TAccelerator>
     {
         if (x > One || x < NegativeOne)
         {
-            return _sNaN;
+            return _qNaN;
         }
         else
         {
@@ -205,7 +218,7 @@ public partial struct Float128<TAccelerator>
     {
         if (x > One || x < NegativeOne)
         {
-            return _sNaN;
+            return _qNaN;
         }
         else
         {
@@ -267,11 +280,7 @@ public partial struct Float128<TAccelerator>
     {
         if (IsNaN(y) || IsNaN(x))
         {
-            return _sNaN;
-        }
-        else if (x == Zero && y == Zero)
-        {
-            return Zero;
+            return _qNaN;
         }
         else if (y >= Zero && x < Zero)
         {
@@ -295,7 +304,8 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return _sNaN;
+            // atan2(+/-0, +/-0)
+            return IsNegative(x) ? CopySign(Pi, y) : y;
         }
     }
 
@@ -315,12 +325,18 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Sinh(Float128<TAccelerator> x)
     {
+        if (IsZero(x))
+        {
+            return x;
+        }
+
         return (Exp(x) - Exp(-x)) * 0.5;
     }
 
     public static Float128<TAccelerator> Tanh(Float128<TAccelerator> x)
     {
-        return (Exp(x) - Exp(-x)) / (Exp(x) + Exp(-x));
+        Float128<TAccelerator> t = Exp(-2 * Abs(x));
+        return CopySign((One - t) / (One + t), x);
     }
 
     public static Float128<TAccelerator> Acosh(Float128<TAccelerator> x)
@@ -343,7 +359,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return _sNaN;
+            return _qNaN;
         }
     }
 
@@ -363,19 +379,29 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Log(x + Sqrt(FusedMultiplyAdd(x, x, One)));
+            Float128<TAccelerator> absX = Abs(x);
+            return CopySign(Log(absX + Sqrt(FusedMultiplyAdd(absX, absX, One))), x);
         }
     }
 
     public static Float128<TAccelerator> Atanh(Float128<TAccelerator> x)
     {
-        if (Abs(x) <= One)
+        if (IsZero(x))
+        {
+            return x;
+        }
+        Float128<TAccelerator> absX = Abs(x);
+        if (absX < One)
         {
             return Log((One + x) / (One - x)) * 0.5;
         }
+        else if (absX == One)
+        {
+            return CopySign(_pInf, x);
+        }
         else
         {
-            return _sNaN;
+            return _qNaN;
         }
     }
 
@@ -411,7 +437,7 @@ public partial struct Float128<TAccelerator>
         }
         else if (x <= Zero)
         {
-            return _sNaN;
+            return _qNaN;
         }
         else if (IsPositiveInfinity(x))
         {
@@ -438,15 +464,15 @@ public partial struct Float128<TAccelerator>
         }
         else if (y <= Zero)
         {
-            return _sNaN;
-        }
-        else if (IsPositiveInfinity(y))
-        {
-            return _pInf;
+            return _qNaN;
         }
         else if (y == One)
         {
             return Zero;
+        }
+        else if (IsPositiveInfinity(y))
+        {
+            return _pInf;
         }
 
         Float128<TAccelerator> k = Log2(E);
@@ -467,15 +493,20 @@ public partial struct Float128<TAccelerator>
         }
         else if (y <= Zero || newBase <= Zero)
         {
-            return _sNaN;
-        }
-        else if (IsPositiveInfinity(y))
-        {
-            return _pInf;
+            return _qNaN;
         }
         else if (y == One)
         {
             return Zero;
+        }
+        else if (newBase == One)
+        {
+            // the base-1 logarithm is undefined (ln(1) is zero); matches System.Math.Log(a, 1), which returns NaN
+            return _qNaN;
+        }
+        else if (IsPositiveInfinity(y))
+        {
+            return newBase < One ? _nInf : _pInf;
         }
 
         Float128<TAccelerator> k = Log2(newBase);
@@ -508,15 +539,15 @@ public partial struct Float128<TAccelerator>
         }
         else if (y <= Zero)
         {
-            return _sNaN;
-        }
-        else if (IsPositiveInfinity(y))
-        {
-            return _pInf;
+            return _qNaN;
         }
         else if (y == One)
         {
             return Zero;
+        }
+        else if (IsPositiveInfinity(y))
+        {
+            return _pInf;
         }
 
         Float128<TAccelerator> k = Log2(10);
@@ -600,13 +631,41 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Pow(Float128<TAccelerator> x, Float128<TAccelerator> y)
     {
-        if (IsZero(x) && IsZero(y))
+        if (IsZero(y) || x == One)
         {
-            return _sNaN;
+            return One;
         }
-        else if (IsZero(x) && y < Zero)
+        else if (IsNaN(x) || IsNaN(y))
         {
-            return _pInf * Sign(x);
+            return _qNaN;
+        }
+        else if (IsInfinity(y))
+        {
+            Float128<TAccelerator> absX = Abs(x);
+            if (absX == One)
+            {
+                return One;
+            }
+            else
+            {
+                return (absX > One) == IsPositive(y) ? _pInf : Zero;
+            }
+        }
+
+        bool isOddPower = IsOddInteger(y);
+        if (IsZero(x))
+        {
+            Float128<TAccelerator> result = IsNegative(y) ? _pInf : Zero;
+            return isOddPower ? CopySign(result, x) : result;
+        }
+        else if (IsInfinity(x))
+        {
+            Float128<TAccelerator> result = y > Zero ? _pInf : Zero;
+            return isOddPower ? CopySign(result, x) : result;
+        }
+        else if (IsNegative(x) && !IsInteger(y))
+        {
+            return _qNaN;
         }
         else if (IsInteger(y) && Abs(y) <= 4.0)
         {
@@ -655,11 +714,15 @@ public partial struct Float128<TAccelerator>
         }
         else if (x < Zero)
         {
-            return _sNaN;
+            return _qNaN;
         }
         else if (x == Zero)
         {
-            return Zero;
+            return x;
+        }
+        else if (IsPositiveInfinity(x))
+        {
+            return x;
         }
         else
         {
@@ -678,9 +741,10 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (x == Zero)
+        else if (x == Zero || IsInfinity(x))
         {
-            return Zero;
+            // IEEE 754: the cube root of a zero or an infinity is that same value, sign included
+            return x;
         }
         else
         {
@@ -696,16 +760,28 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> RootN(Float128<TAccelerator> x, int n)
     {
-        if (IsNaN(x))
+        if (IsNaN(x) || n == 0)
         {
             return _qNaN;
+        }
+        else if (x < Zero)
+        {
+            return (n & 1) == 0 ? _qNaN : -RootN(-x, n);
+        }
+        else if (x == Zero)
+        {
+            // IEEE 754 rootn: a negative degree gives a pole, and an odd degree keeps the sign of zero
+            bool oddDegree = (n & 1) != 0;
+            if (n < 0)
+            {
+                return oddDegree && x.RawSignBit ? _nInf : _pInf;
+            }
+            return oddDegree ? x : Zero;
         }
         else
         {
             switch (n)
             {
-                case 0:
-                    return _sNaN;
                 case 1:
                     return x;
                 case 2:
@@ -713,18 +789,7 @@ public partial struct Float128<TAccelerator>
                 case 3:
                     return Cbrt(x);
                 default:
-                    if (x < Zero)
-                    {
-                        return (n & 1) == 0 ? _sNaN : -Pow(-x, One / n);
-                    }
-                    else if (x == Zero)
-                    {
-                        return Zero;
-                    }
-                    else
-                    {
-                        return Pow(x, One / n);
-                    }
+                    return Pow(x, One / n);
             }
         }
     }

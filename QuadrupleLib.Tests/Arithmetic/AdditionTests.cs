@@ -168,6 +168,14 @@ namespace QuadrupleLib.Tests.Arithmetic
             Float128<TAccelerator> half = Float128<TAccelerator>.ScaleB(-1.0, -(short.MaxValue >> 1) + 1);
             Assert.True(Float128<TAccelerator>.IsSubnormal(min + half));
         }
+
+        [Fact]
+        public void PositiveInfinityPlusNaNIsNaN()
+        {
+            // IEEE 754: an operation with a NaN operand returns NaN, whichever operand is the NaN
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.PositiveInfinity + Float128<TAccelerator>.NaN));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.NaN + Float128<TAccelerator>.PositiveInfinity));
+        }
     }
 
     public class AdditionTests_DefaultAccelerator :

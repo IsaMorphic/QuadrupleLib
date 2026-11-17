@@ -184,6 +184,56 @@ namespace QuadrupleLib.Tests.Arithmetic
         {
             Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.NegativeInfinity * Float128<TAccelerator>.PositiveInfinity));
         }
+
+        [Fact]
+        public void PositiveInfinityTimesZeroIsNaN()
+        {
+            // IEEE 754: infinity times zero is an invalid operation and returns NaN
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.PositiveInfinity * Float128<TAccelerator>.Zero));
+        }
+
+        [Fact]
+        public void ZeroTimesNegativeInfinityIsNaN()
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Zero * Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddWithInfiniteProductIsPositiveInfinity()
+        {
+            // the product +Inf * 2 is +Inf, and +Inf + 1 is +Inf
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.PositiveInfinity, (Float128<TAccelerator>)2.0, Float128<TAccelerator>.One);
+
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(result));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddWithNegativeInfiniteProductIsNegativeInfinity()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.NegativeInfinity, (Float128<TAccelerator>)2.0, Float128<TAccelerator>.One);
+
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(result));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddWithZeroTimesInfinityIsPositiveNaN()
+        {
+            // IEEE 754: inf * 0 is an invalid operation; this library then returns Float128.NaN, whose sign bit is clear
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.Zero, Float128<TAccelerator>.One);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddWithCancellingInfiniteProductIsPositiveNaN()
+        {
+            // IEEE 754: (+Inf) + (-Inf) is an invalid operation; this library then returns Float128.NaN, whose sign bit is clear
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.PositiveInfinity, (Float128<TAccelerator>)2.0, Float128<TAccelerator>.NegativeInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
     }
 
     public class MultiplicationTests_DefaultAccelerator :

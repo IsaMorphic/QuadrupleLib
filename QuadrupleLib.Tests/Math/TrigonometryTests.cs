@@ -628,6 +628,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Asin(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(y));
         }
 
         [Theory]
@@ -638,6 +639,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Acos(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(y));
         }
 
         [Theory]
@@ -703,6 +705,192 @@ namespace QuadrupleLib.Tests.Math
         {
             double c = double.Hypot(a, b);
             AssertX.NearlyEqual(c, Float128<TAccelerator>.Hypot(a, b), Precision.NearestTenThousandth);
+        }
+
+        [Fact]
+        public void HypotWithInfiniteLegIsPositiveInfinity()
+        {
+            // an infinite leg makes the hypotenuse +Inf, whatever the other leg is
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Hypot(Float128<TAccelerator>.PositiveInfinity, (Float128<TAccelerator>)3.0)));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Hypot((Float128<TAccelerator>)3.0, Float128<TAccelerator>.NegativeInfinity)));
+        }
+
+        [Fact]
+        public void HypotWithInfiniteLegAndNaNLegIsPositiveInfinity()
+        {
+            // IEEE 754-2019: hypot(+Inf, NaN) is +Inf, because an infinite operand takes precedence over NaN
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Hypot(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void HypotOfZeroLegsIsPositiveZero()
+        {
+            // IEEE 754: hypot(±0, ±0) is +0 for every sign combination
+            Float128<TAccelerator> result = Float128<TAccelerator>.Hypot(Float128<TAccelerator>.Zero, Float128<TAccelerator>.NegativeZero);
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void HypotWithPositiveInfinityAndZeroIsPositiveInfinity()
+        {
+            // IEEE 754: hypot(+Inf, 0) is +Inf
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Hypot(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.Zero)));
+        }
+
+        [Fact]
+        public void SinCosOfNegativeZeroIsNegativeZeroAndOne()
+        {
+            // IEEE 754: sin(-0) is -0 and cos(-0) is 1
+            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = Float128<TAccelerator>.SinCos(Float128<TAccelerator>.NegativeZero);
+            Assert.True(Float128<TAccelerator>.IsZero(sin));
+            Assert.True(RawStorage<TAccelerator>.IsSignSet(sin));
+            Assert.True(cos == Float128<TAccelerator>.One);
+        }
+
+        [Fact]
+        public void SinOfNaNIsNaN()
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Sin(Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void SinOfPositiveInfinityIsNaN()
+        {
+            // IEEE 754: sin of an infinity is an invalid operation; this library then returns Float128.NaN, whose sign bit is clear
+            Float128<TAccelerator> result = Float128<TAccelerator>.Sin(Float128<TAccelerator>.PositiveInfinity);
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void SinOfNegativeInfinityIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Sin(Float128<TAccelerator>.NegativeInfinity);
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void CosOfPositiveInfinityIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Cos(Float128<TAccelerator>.PositiveInfinity);
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void TanOfPositiveInfinityIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Tan(Float128<TAccelerator>.PositiveInfinity);
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void SinCosOfPositiveInfinityIsNaN()
+        {
+            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = Float128<TAccelerator>.SinCos(Float128<TAccelerator>.PositiveInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(sin));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(sin));
+            Assert.True(Float128<TAccelerator>.IsNaN(cos));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(cos));
+        }
+
+        [Fact]
+        public void CosOfNegativeInfinityIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Cos(Float128<TAccelerator>.NegativeInfinity);
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void TanOfNegativeInfinityIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Tan(Float128<TAccelerator>.NegativeInfinity);
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void SinCosOfNegativeInfinityIsNaN()
+        {
+            (Float128<TAccelerator> sin, Float128<TAccelerator> cos) = Float128<TAccelerator>.SinCos(Float128<TAccelerator>.NegativeInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(sin));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(sin));
+            Assert.True(Float128<TAccelerator>.IsNaN(cos));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(cos));
+        }
+
+        [Fact]
+        public void SinOfNegativeZeroIsNegativeZero()
+        {
+            // IEEE 754: sin preserves the sign of a zero argument
+            Float128<TAccelerator> result = Float128<TAccelerator>.Sin(-Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void AtanOfNaNIsNaN()
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Atan(Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void AtanOfPositiveInfinityIsHalfPi()
+        {
+            // tolerance is the one the library's own transcendental tests use
+            AssertX.NearlyEqual(Float128<TAccelerator>.HalfPi, Float128<TAccelerator>.Atan(Float128<TAccelerator>.PositiveInfinity), Precision.NearestTenThousandth);
+        }
+
+        [Fact]
+        public void AtanOfNegativeInfinityIsNegativeHalfPi()
+        {
+            AssertX.NearlyEqual(-Float128<TAccelerator>.HalfPi, Float128<TAccelerator>.Atan(Float128<TAccelerator>.NegativeInfinity), Precision.NearestTenThousandth);
+        }
+
+        [Fact]
+        public void Atan2OfZeroAndZeroIsPositiveZero()
+        {
+            // IEEE 754-2008: atan2(+0, +0) is +0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atan2(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void Atan2OfPositiveZeroAndNegativeZeroIsPi()
+        {
+            // IEEE 754-2008: atan2(+0, -0) is +pi; tolerance is the one the library's own transcendental tests use
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atan2(Float128<TAccelerator>.Zero, -Float128<TAccelerator>.Zero);
+
+            AssertX.NearlyEqual(Float128<TAccelerator>.Pi, result, Precision.NearestTenThousandth);
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void Atan2OfNegativeZeroAndNegativeZeroIsNegativePi()
+        {
+            // IEEE 754-2008: atan2(-0, -0) is -pi
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atan2(-Float128<TAccelerator>.Zero, -Float128<TAccelerator>.Zero);
+
+            AssertX.NearlyEqual(-Float128<TAccelerator>.Pi, result, Precision.NearestTenThousandth);
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void Atan2WithNaNOperandIsPositiveNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atan2(Float128<TAccelerator>.NaN, Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
         }
     }
 

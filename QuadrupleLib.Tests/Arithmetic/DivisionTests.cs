@@ -119,8 +119,10 @@ namespace QuadrupleLib.Tests.Arithmetic
         [InlineData(3.33)]
         public void DivideByBigNumberIsZero(double x)
         {
+            // the divisor overflows to +Inf, so the quotient is a zero with the sign of x
             Float128<TAccelerator> y = x / Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, short.MaxValue / 2 + 1);
             Assert.True(Float128<TAccelerator>.IsZero(y));
+            Assert.Equal(x < 0, Float128<TAccelerator>.IsNegative(y));
         }
 
         [Theory]
@@ -177,6 +179,7 @@ namespace QuadrupleLib.Tests.Arithmetic
         [Fact]
         public void PositiveInfinityDividedByZeroIsPositiveInfinity()
         {
+            // IEEE 754: an infinity divided by a zero is an infinity, with no invalid operation
             Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.PositiveInfinity / Float128<TAccelerator>.Zero));
         }
 
@@ -184,6 +187,15 @@ namespace QuadrupleLib.Tests.Arithmetic
         public void NegativeInfinityDividedByZeroIsNegativeInfinity()
         {
             Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.NegativeInfinity / Float128<TAccelerator>.Zero));
+        }
+
+        [Fact]
+        public void ZeroDividedByZeroIsPositiveNaN()
+        {
+            // IEEE 754: zero divided by zero is an invalid operation; this library then returns Float128.NaN, whose sign bit is clear
+            Float128<TAccelerator> result = Float128<TAccelerator>.Zero / Float128<TAccelerator>.Zero;
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
         }
 
         [Theory]
@@ -224,6 +236,61 @@ namespace QuadrupleLib.Tests.Arithmetic
         public void NegativeInfinityDividedByNegativeIsPositiveInfinity(double x)
         {
             Assert.Equal(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.NegativeInfinity / x);
+        }
+
+        [Fact]
+        public void OneDividedByNegativeInfinityIsNegativeZero()
+        {
+            // IEEE 754: a finite nonzero x divided by an infinity is a zero whose sign is the XOR of the operand signs
+            Float128<TAccelerator> result = Float128<TAccelerator>.One / Float128<TAccelerator>.NegativeInfinity;
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void NegativeOneDividedByPositiveInfinityIsNegativeZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.NegativeOne / Float128<TAccelerator>.PositiveInfinity;
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void DivideSmallestSubnormalByZeroIsPositiveInfinity()
+        {
+            // IEEE 754: a finite nonzero dividend divided by a zero is an infinity with the XOR of the signs
+            Float128<TAccelerator> smallestSubnormal = RawStorage<TAccelerator>.FromBits(UInt128.One);
+
+            Float128<TAccelerator> result = smallestSubnormal / Float128<TAccelerator>.Zero;
+
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(result));
+        }
+
+        [Theory]
+        [InlineData(2.0)]
+        [InlineData(0.0)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(double.NaN)]
+        public void PositiveInfinityRemainderIsPositiveNaN(double y)
+        {
+            // IEEE 754: the remainder of an infinity is an invalid operation; this library then returns Float128.NaN, whose sign bit is clear
+            Float128<TAccelerator> result = Float128<TAccelerator>.PositiveInfinity % y;
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void SmallestSubnormalRemainderZeroIsNaN()
+        {
+            // IEEE 754: the remainder with a zero divisor is an invalid operation, so it returns NaN rather than throwing
+            Float128<TAccelerator> smallestSubnormal = RawStorage<TAccelerator>.FromBits(UInt128.One);
+
+            Float128<TAccelerator> result = smallestSubnormal % Float128<TAccelerator>.Zero;
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
         }
     }
 

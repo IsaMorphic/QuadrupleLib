@@ -30,28 +30,22 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if ((IsInfinity(left) || IsInfinity(right)) && (IsZero(left) || IsZero(right)))
+
+        var prodSign = left.RawSignBit != right.RawSignBit;
+        if (IsInfinity(left) || IsInfinity(right))
         {
-            return _sNaN;
-        }
-        else if ((IsInfinity(left) || IsInfinity(right)) && IsInfinity(addend))
-        {
-            if (addend.RawSignBit == (left.RawSignBit ^ right.RawSignBit))
+            if (IsZero(left) || IsZero(right))
             {
-                return addend;
+                return _qNaN;
             }
-            else
-            {
-                return _sNaN;
-            }
+            return (prodSign ? _nInf : _pInf) + addend;
         }
-        else if (IsInfinity(left) || IsInfinity(right))
+        else if (IsInfinity(addend))
         {
-            return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
+            return addend;
         }
         else
         {
-            var prodSign = left.RawSignBit != right.RawSignBit;
             var prodExponent = left.Exponent + right.Exponent;
 
             BigMul256 bigSignificand = BigMul256.Multiply2x2<TAccelerator>(left.Significand, right.Significand);
@@ -193,9 +187,13 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> operator +(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        if (IsInfinity(left) && IsInfinity(right))
+        if (IsNaN(left) || IsNaN(right))
         {
-            return left.RawSignBit == right.RawSignBit ? left : _sNaN;
+            return _qNaN;
+        }
+        else if (IsInfinity(left) && IsInfinity(right))
+        {
+            return left.RawSignBit == right.RawSignBit ? left : _qNaN;
         }
         else if (IsInfinity(left) && !IsInfinity(right))
         {
@@ -204,10 +202,6 @@ public partial struct Float128<TAccelerator>
         else if (IsInfinity(right) && !IsInfinity(left))
         {
             return right;
-        }
-        else if (IsNaN(left) || IsNaN(right))
-        {
-            return _qNaN;
         }
         else
         {
@@ -309,7 +303,7 @@ public partial struct Float128<TAccelerator>
         }
         else if ((IsInfinity(left) || IsInfinity(right)) && (IsZero(left) || IsZero(right)))
         {
-            return _sNaN;
+            return _qNaN;
         }
         else if (IsInfinity(left) || IsInfinity(right))
         {
@@ -378,7 +372,7 @@ public partial struct Float128<TAccelerator>
         }
         else if ((IsInfinity(left) && IsInfinity(right)) || (IsZero(left) && IsZero(right)))
         {
-            return _sNaN;
+            return _qNaN;
         }
         else if (IsInfinity(left) || IsZero(right))
         {
