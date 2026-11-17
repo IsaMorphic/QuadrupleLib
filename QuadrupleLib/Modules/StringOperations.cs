@@ -73,54 +73,6 @@ public partial struct Float128<TAccelerator>
             BigInteger.TryParse(wholePartSpan, out BigInteger wholePart);
             BigInteger.TryParse(fracPartSpan, out BigInteger fracPart);
 
-            if (int.TryParse(exponentSpan, out int qExponent))
-            {
-                int numDigits = Math.Max(wholePartSpan.Length, 1) + fracPartSpan.Length;
-
-                StringBuilder builder = new();
-                builder.Append(leftSignSpan);
-
-                if (qExponent > 0)
-                {
-                    if (qExponent >= numDigits - 1)
-                    {
-                        builder.Append(wholePartSpan);
-                        builder.Append(fracPartSpan);
-                        for (int i = 0; i < qExponent - numDigits + 1; i++)
-                        {
-                            builder.Append('0');
-                        }
-                    }
-                    else
-                    {
-                        builder.Append(wholePartSpan);
-                        builder.Append(fracPartSpan);
-                        builder.Insert(qExponent + 1, formatter.NumberDecimalSeparator);
-                    }
-                }
-                else if (qExponent < 0)
-                {
-                    builder.Append('0');
-                    builder.Append(formatter.NumberDecimalSeparator);
-
-                    int zeroCnt = wholePart == 0 ? -qExponent : -qExponent - 1;
-                    for (int i = 0; i < zeroCnt; i++)
-                    {
-                        builder.Append('0');
-                    }
-
-                    if (wholePart != 0)
-                    {
-                        builder.Append(wholePartSpan);
-                    }
-
-                    builder.Append(fracPartSpan);
-                }
-
-                builder.Append(rightSignSpan);
-                return Parse(builder.ToString(), provider);
-            }
-
             bool resultSign;
             switch (formatter.NumberNegativePattern)
             {
@@ -136,12 +88,41 @@ public partial struct Float128<TAccelerator>
                     break;
             }
 
-            // the value is exactly numerator / 10^L, where L is the number of fraction digits
-            BigInteger denominator = Utilities.PowCache.GetPow10(fracPartSpan.Length);
-            BigInteger numerator = wholePart * denominator + fracPart;
+            // the value is exactly (wholePart * 10^L + fracPart) * 10^(E - L),
+            // where L is the number of fraction digits and E is the decimal exponent
+            BigInteger numerator = wholePart * Utilities.PowCache.GetPow10(fracPartSpan.Length) + fracPart;
             if (numerator.IsZero)
             {
                 return resultSign ? NegativeZero : Zero;
+            }
+
+            // an exponent beyond the range of a long is far outside the range of the format
+            if (!long.TryParse(exponentSpan, NumberStyles.AllowLeadingSign, formatter, out long decimalExponent) && !exponentSpan.IsEmpty)
+            {
+                decimalExponent = exponentSpan.StartsWith(formatter.NegativeSign) ? long.MinValue / 2 : long.MaxValue / 2;
+            }
+
+            // 1 <= numerator < 10^digitCount, so these bounds put the value beyond the largest
+            // finite value, or below half the smallest subnormal value
+            long scale = decimalExponent - fracPartSpan.Length;
+            long digitCount = wholePartSpan.Length + fracPartSpan.Length;
+            if (scale > 4933)
+            {
+                return resultSign ? _nInf : _pInf;
+            }
+            else if (scale + digitCount < -4966)
+            {
+                return resultSign ? NegativeZero : Zero;
+            }
+
+            BigInteger denominator = BigInteger.One;
+            if (scale >= 0)
+            {
+                numerator *= Utilities.PowCache.GetPow10((int)scale);
+            }
+            else
+            {
+                denominator = Utilities.PowCache.GetPow10((int)-scale);
             }
 
             // binary exponent of the leading bit, floor(log2(numerator / denominator))

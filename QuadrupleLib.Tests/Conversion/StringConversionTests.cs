@@ -87,6 +87,56 @@ namespace QuadrupleLib.Tests.Conversion
             Assert.Equal(expected, (double)value);
         }
 
+        [Theory]
+        [InlineData("12.5e1", 125.0)]
+        [InlineData("-12.5e1", -125.0)]
+        [InlineData("00012.5e-1", 1.25)]
+        [InlineData("-0.0125e3", -12.5)]
+        [InlineData("125e-2", 1.25)]
+        public void ExponentWithMultiDigitWholePartIsExact(string s, double expected)
+        {
+            // each value is exactly representable, wherever the decimal point falls
+            Assert.Equal((Float128<TAccelerator>)expected, Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture));
+        }
+
+        [Fact]
+        public void ExponentWithMultiDigitWholePartIsCorrectlyRounded()
+        {
+            // reference: 1.23456 rounded to nearest
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("123.456e-2", CultureInfo.InvariantCulture);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFF3C0C1FC8F32378AB0C88A47ECFEA"), RawStorage<TAccelerator>.Bits(value));
+        }
+
+        [Theory]
+        [InlineData("1e99999999999", false)]
+        [InlineData("-1e99999999999", true)]
+        public void ExponentBeyondIntRangeIsInfinity(string s, bool negative)
+        {
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture);
+
+            Assert.True(Float128<TAccelerator>.IsInfinity(value));
+            Assert.Equal(negative, Float128<TAccelerator>.IsNegative(value));
+        }
+
+        [Theory]
+        [InlineData("1e-99999999999", false)]
+        [InlineData("-1e-99999999999", true)]
+        public void NegativeExponentBeyondIntRangeIsZero(string s, bool negative)
+        {
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture);
+
+            Assert.True(Float128<TAccelerator>.IsZero(value));
+            Assert.Equal(negative, RawStorage<TAccelerator>.IsSignSet(value));
+        }
+
+        [Fact]
+        public void HalfOfSmallestSubnormalOrLessIsZero()
+        {
+            // 3e-4966 is below half of 2^-16494 (about 3.24e-4966), so it rounds to zero
+            Assert.True(Float128<TAccelerator>.IsZero(Float128<TAccelerator>.Parse("3e-4966", CultureInfo.InvariantCulture)));
+        }
+
         [Fact]
         public void TenthToStringLeadingDigitIsSingle()
         {

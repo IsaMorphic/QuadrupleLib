@@ -706,26 +706,21 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (IsInteger(y) && Abs(y) <= 4.0)
+        else if (IsInteger(y) && Abs(y) <= ulong.MaxValue)
         {
-            Float128<TAccelerator> result = One;
-
-            if (y > Zero)
+            // an integer power by repeated squaring is exact when the result is representable,
+            // and its error grows only with the exponent, so it is far closer than the exponential
+            // and logarithm
+            ulong n = (ulong)Abs(y);
+            if (IsPositive(y))
             {
-                for (int i = 0; i < y; i++)
-                {
-                    result *= x;
-                }
-            }
-            else if (y < Zero)
-            {
-                for (int i = 0; i > y; i--)
-                {
-                    result /= x;
-                }
+                return PowN(x, n);
             }
 
-            return result;
+            // take the reciprocal of a normal power; when the power overflows or loses bits
+            // as a subnormal, raise the reciprocal instead
+            Float128<TAccelerator> power = PowN(x, n);
+            return IsNormal(power) ? One / power : PowN(One / x, n);
         }
         else if (IsEvenInteger(y))
         {
@@ -738,6 +733,30 @@ public partial struct Float128<TAccelerator>
         else
         {
             return Exp(y * Log(x));
+        }
+    }
+
+    #endregion
+
+    #region Private API (exponential functions)
+
+    private static Float128<TAccelerator> PowN(Float128<TAccelerator> x, ulong n)
+    {
+        Float128<TAccelerator> result = One;
+        while (true)
+        {
+            if ((n & 1) != 0)
+            {
+                result *= x;
+            }
+
+            n >>= 1;
+            if (n == 0)
+            {
+                return result;
+            }
+
+            x *= x;
         }
     }
 
@@ -827,10 +846,48 @@ public partial struct Float128<TAccelerator>
                     return Sqrt(x);
                 case 3:
                     return Cbrt(x);
+                case < 0:
+                    // widen before negating, since int.MinValue has no positive counterpart
+                    return One / RootNPositive(x, (ulong)(-(long)n));
                 default:
-                    return Pow(x, One / n);
+                    return RootNPositive(x, (ulong)n);
             }
         }
+    }
+
+    #endregion
+
+    #region Private API (root functions)
+
+    private static Float128<TAccelerator> RootNPositive(Float128<TAccelerator> x, ulong n)
+    {
+        switch (n)
+        {
+            case 1:
+                return x;
+            case 2:
+                return Sqrt(x);
+            case 3:
+                return Cbrt(x);
+        }
+
+        // start from the exponential and logarithm estimate, then refine it with Newton's method
+        // on y^n = x; dividing the correction by n cancels the rounding error that the power adds
+        Float128<TAccelerator> degree = n;
+        Float128<TAccelerator> y = Pow(x, One / degree);
+        for (int i = 0; i < 8; i++)
+        {
+            Float128<TAccelerator> correction = (x / PowN(y, n - 1) - y) / degree;
+            if (IsZero(correction) || !IsFinite(correction))
+            {
+                // converged, or the power underflowed and the estimate cannot be refined
+                break;
+            }
+
+            y += correction;
+        }
+
+        return y;
     }
 
     #endregion

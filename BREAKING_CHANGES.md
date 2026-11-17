@@ -136,9 +136,16 @@ and an exact tie did not always round to even.
 | `Round` | `0.5 < \|x\| < 1` gave `0`; a value above a half with further fraction bits (for example `2.6`) rounded down | nearest integer, ties to even |
 | `Round` | a result of zero was always `+0` | keeps the sign of the input (`Round(−0.3)` is `−0`) |
 | `Parse` | could be off by one unit in the last place (for example `"0.1"`) | correctly rounded |
+| `Parse` with an exponent | the decimal point moved to the wrong place when the whole part had more than one digit, or the string had a sign (`"12.5e1"` gave `12.5`, `"-1.25e1"` gave `-1.25`); an exponent beyond the `int` range was ignored (`"1e99999999999"` gave `1`) | correctly rounded; an exponent beyond the range of the format gives `±inf` or `±0` |
 | `ToString` with an exponent, for values below 1 | the exponent was one too large (`1E-30` printed as `1.0…E-29`) | correct exponent |
 | `Exp`, `Exp10` | `NaN` when the result overflows or underflows | `+inf` or `0` |
 | `Hypot` | `+inf` when `x² + y²` overflows, even if the result does not | the scaled result, without the intermediate overflow |
+| `Pow` with an integer exponent outside `[-4, 4]` | computed as `Exp(y · Log(x))`, with a relative error up to about `1E-12` (`Pow(3, 5)` was not exactly `243`) | computed by repeated squaring: exact when the result is representable; otherwise a few units in the last place for small exponents, with an error that grows with the exponent |
+| `RootN` with `\|n\| ≥ 4` | computed as `Pow(x, 1 / n)`, with a relative error up to about `1E-18` (`RootN(32, 5)` was not exactly `2`) | refined with Newton's method: exact when the result is representable, otherwise within one unit in the last place |
+
+`Pow` with an integer exponent and `RootN` are not correctly rounded, but are now within a few
+units in the last place. The repeated squaring error grows with the exponent (`0.9^100` is about 6
+units off). `Pow` with a non-integer exponent still goes through `Exp` and `Log`, and is unchanged.
 
 Two existing tests expected `2·2^-16382 ± 1·2^-16382` to be subnormal. The exact result is
 `2^-16382`, the smallest normal number, so those tests now use operands whose result is subnormal.
