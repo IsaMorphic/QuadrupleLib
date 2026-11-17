@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Globalization;
 using QuadrupleLib.Accelerators;
 using QuadrupleLib.Tests.Assertions.Types;
 using Xunit;
@@ -71,6 +72,81 @@ namespace QuadrupleLib.Tests.Conversion
             AssertX.NearlyEqual((Float128<TAccelerator>)x,
                 Float128<TAccelerator>.Parse(s),
                 Precision.NearestTenThousandth);
+        }
+
+        [Theory]
+        [InlineData("1e-10", 1e-10)]
+        [InlineData("1e10", 1e10)]
+        [InlineData("1.5e-10", 1.5e-10)]
+        [InlineData("2.5e3", 2.5e3)]
+        public void LowercaseExponentParseIsNearestDouble(string s, double expected)
+        {
+            bool parsed = Float128<TAccelerator>.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out Float128<TAccelerator> value);
+
+            Assert.True(parsed);
+            Assert.Equal(expected, (double)value);
+        }
+
+        [Fact]
+        public void TenthToStringLeadingDigitIsSingle()
+        {
+            // a value below one prints a single digit before the decimal point
+            string text = Float128<TAccelerator>.Parse("0.1", CultureInfo.InvariantCulture).ToString();
+
+            Assert.DoesNotMatch(@"^-?0\d", text);
+        }
+
+        [Fact]
+        public void TenthToStringRoundTripIsNearestDouble()
+        {
+            string text = Float128<TAccelerator>.Parse("0.1", CultureInfo.InvariantCulture).ToString();
+
+            Assert.Equal(0.1, double.Parse(text, NumberStyles.Float, CultureInfo.CurrentCulture));
+        }
+
+        [Fact]
+        public void OneEMinusThirtyToStringRoundTripIsNearestDouble()
+        {
+            string text = Float128<TAccelerator>.Parse("1E-30", CultureInfo.InvariantCulture).ToString();
+
+            Assert.Equal(1e-30, double.Parse(text, NumberStyles.Float, CultureInfo.CurrentCulture));
+        }
+
+        [Fact]
+        public void LongFractionParseIsNearestDouble()
+        {
+            // 0.1000000000000000005 rounds to the double 0.1
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("0.1000000000000000005", CultureInfo.InvariantCulture);
+
+            Assert.Equal(double.Parse("0.1000000000000000005", NumberStyles.Float, CultureInfo.InvariantCulture), (double)value);
+        }
+
+        [Fact]
+        public void ParseOfTenthIsNearestBinary128()
+        {
+            // reference: 1/10 rounded to nearest binary128 is 3FFB999999999999999999999999999A
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("0.1", CultureInfo.InvariantCulture);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFB999999999999999999999999999A"), RawStorage<TAccelerator>.Bits(value));
+        }
+
+        [Fact]
+        public void ParseOfLongFractionIsNearestBinary128()
+        {
+            // reference: 1000000000000000005 / 10^19 rounded to nearest binary128 is 3FFB9999999999999A2D2C88282BB6F7
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("0.1000000000000000005", CultureInfo.InvariantCulture);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFB9999999999999A2D2C88282BB6F7"), RawStorage<TAccelerator>.Bits(value));
+        }
+
+        [Fact]
+        public void TryFormatIntoTooSmallBufferIsFalse()
+        {
+            // ISpanFormattable: a destination that cannot hold the text returns false
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("123.456", CultureInfo.InvariantCulture);
+            Span<char> destination = stackalloc char[3];
+            Assert.False(value.TryFormat(destination, out int charsWritten, default, CultureInfo.InvariantCulture));
+            Assert.Equal(0, charsWritten);
         }
     }
 

@@ -94,6 +94,63 @@ namespace QuadrupleLib.Tests.Integers
             Float128<TAccelerator> y1 = Float128<TAccelerator>.Round(x, digits);
             AssertX.NearlyEqual(y0, y1, (Precision)digits);
         }
+
+        [Theory]
+        [InlineData(2.6, 3.0)]
+        [InlineData(2.8, 3.0)]
+        [InlineData(4.6, 5.0)]
+        [InlineData(-2.6, -3.0)]
+        [InlineData(-2.8, -3.0)]
+        public void RoundAboveHalfIsNearestInteger(double x, double expected)
+        {
+            // roundToIntegralTiesToEven: only an exact half is decided by the even rule
+            Assert.Equal(expected, (double)Float128<TAccelerator>.Round((Float128<TAccelerator>)x));
+        }
+
+        [Fact]
+        public void FloorOfNegativeZeroIsNegativeZero()
+        {
+            // IEEE 754: floor of a zero returns that zero with its sign
+            Float128<TAccelerator> result = Float128<TAccelerator>.Floor(-Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void CeilingOfZeroIsPositiveZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Ceiling(Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void RoundBelowOneIsNearestInteger()
+        {
+            // roundToIntegralTiesToEven: |x| above one half rounds to +/-1, and a smaller |x| rounds to a zero with the sign of x
+            Assert.Equal(1.0, (double)Float128<TAccelerator>.Round((Float128<TAccelerator>)0.7));
+            Assert.Equal(-1.0, (double)Float128<TAccelerator>.Round((Float128<TAccelerator>)(-0.7)));
+
+            Float128<TAccelerator> positiveZero = Float128<TAccelerator>.Round((Float128<TAccelerator>)0.3);
+            Assert.True(Float128<TAccelerator>.IsZero(positiveZero));
+            Assert.False(Float128<TAccelerator>.IsNegative(positiveZero));
+
+            Float128<TAccelerator> negativeZero = Float128<TAccelerator>.Round((Float128<TAccelerator>)(-0.3));
+            Assert.True(Float128<TAccelerator>.IsZero(negativeZero));
+            Assert.True(Float128<TAccelerator>.IsNegative(negativeZero));
+        }
+
+        [Fact]
+        public void CeilingOfNegativeFractionIsNegativeZero()
+        {
+            // IEEE 754 roundToIntegralTowardPositive: a negative x above -1 gives -0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Ceiling((Float128<TAccelerator>)(-0.5));
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
     }
 
     public class RoundingTests_DefaultAccelerator :

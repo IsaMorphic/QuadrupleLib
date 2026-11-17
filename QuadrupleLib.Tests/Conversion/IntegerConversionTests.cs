@@ -223,6 +223,85 @@ namespace QuadrupleLib.Tests.Conversion
         {
             Assert.Equal((byte)x, (byte)(Float128<TAccelerator>)x);
         }
+
+        [Theory]
+        [InlineData("sbyte")]
+        [InlineData("short")]
+        [InlineData("int")]
+        [InlineData("long")]
+        [InlineData("Int128")]
+        [InlineData("byte")]
+        [InlineData("ushort")]
+        [InlineData("uint")]
+        [InlineData("ulong")]
+        [InlineData("UInt128")]
+        public void PositiveInfinityToIntegerConversionIsOverflowException(string target)
+        {
+            Assert.Throws<OverflowException>(() => ConvertToIntegerType(target, Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Theory]
+        [InlineData("sbyte")]
+        [InlineData("short")]
+        [InlineData("int")]
+        [InlineData("long")]
+        [InlineData("Int128")]
+        [InlineData("byte")]
+        [InlineData("ushort")]
+        [InlineData("uint")]
+        [InlineData("ulong")]
+        [InlineData("UInt128")]
+        public void NaNToIntegerConversionIsOverflowException(string target)
+        {
+            Assert.Throws<OverflowException>(() => ConvertToIntegerType(target, Float128<TAccelerator>.NaN));
+        }
+
+        [Theory]
+        [InlineData("sbyte")]
+        [InlineData("short")]
+        [InlineData("int")]
+        [InlineData("long")]
+        [InlineData("Int128")]
+        [InlineData("byte")]
+        [InlineData("ushort")]
+        [InlineData("uint")]
+        [InlineData("ulong")]
+        [InlineData("UInt128")]
+        public void OutOfRangeToIntegerConversionIsOverflowException(string target)
+        {
+            Float128<TAccelerator> value = 1e300;
+
+            Assert.Throws<OverflowException>(() => ConvertToIntegerType(target, value));
+        }
+
+        private static object ConvertToIntegerType(string target, Float128<TAccelerator> value)
+        {
+            return target switch
+            {
+                "sbyte" => (object)(sbyte)value,
+                "short" => (object)(short)value,
+                "int" => (object)(int)value,
+                "long" => (object)(long)value,
+                "Int128" => (object)(Int128)value,
+                "byte" => (object)(byte)value,
+                "ushort" => (object)(ushort)value,
+                "uint" => (object)(uint)value,
+                "ulong" => (object)(ulong)value,
+                "UInt128" => (object)(UInt128)value,
+                _ => throw new ArgumentException(target, nameof(target))
+            };
+        }
+
+        [Fact]
+        public void MinValueConversionRoundTripIsExact()
+        {
+            // the most negative value of each signed type is a power of two, so binary128 holds it exactly
+            Assert.Equal(sbyte.MinValue, (sbyte)(Float128<TAccelerator>)sbyte.MinValue);
+            Assert.Equal(short.MinValue, (short)(Float128<TAccelerator>)short.MinValue);
+            Assert.Equal(int.MinValue, (int)(Float128<TAccelerator>)int.MinValue);
+            Assert.Equal(long.MinValue, (long)(Float128<TAccelerator>)long.MinValue);
+            Assert.Equal(Int128.MinValue, (Int128)(Float128<TAccelerator>)Int128.MinValue);
+        }
     }
 
     public class IntegerConversionTests_DefaultAccelerator :

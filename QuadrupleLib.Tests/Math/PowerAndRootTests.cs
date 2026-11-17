@@ -349,6 +349,22 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(Float128<TAccelerator>.IsNaN(result));
             Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
         }
+
+        [Fact]
+        public void PowOfNegativeTwoToNegativeThreeIsNegativeEighth()
+        {
+            // exact result: (-2)^-3 = -0.125
+            Float128<TAccelerator> result = Float128<TAccelerator>.Pow((Float128<TAccelerator>)(-2.0), (Float128<TAccelerator>)(-3.0));
+
+            Assert.Equal(-0.125, (double)result);
+        }
+
+        [Fact]
+        public void SqrtOfLargeValueIsNearestSquareRoot()
+        {
+            // reference: double.Sqrt(1e100) = 1e50; tolerance is a few double ulps
+            Assert.Equal(double.Sqrt(1e100), (double)Float128<TAccelerator>.Sqrt(1e100), 1e35);
+        }
     }
 
     public class PowerAndRootTests_DefaultAccelerator :

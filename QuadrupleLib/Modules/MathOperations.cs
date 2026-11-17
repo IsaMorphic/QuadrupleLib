@@ -95,7 +95,11 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Sqrt(x * x + y * y);
+            // scale both legs by a power of two, which is exact, so the sum of squares neither overflows nor underflows
+            int scale = Math.Max(ax.Exponent, ay.Exponent);
+            Float128<TAccelerator> sx = ScaleB(ax, -scale);
+            Float128<TAccelerator> sy = ScaleB(ay, -scale);
+            return ScaleB(Sqrt(FusedMultiplyAdd(sx, sx, sy * sy)), scale);
         }
     }
 
@@ -599,6 +603,12 @@ public partial struct Float128<TAccelerator>
         }
 
         Float128<TAccelerator> x_n = Exp2(y / Log(2));
+        if (IsInfinity(x_n) || IsZero(x_n))
+        {
+            // the result overflows or underflows, and refining it would produce NaN
+            return x_n;
+        }
+
         for (int n = 0; n < 15; n++)
         {
             x_n = Abs(FusedMultiplyAdd(x_n, y - Log(x_n), x_n));
@@ -619,6 +629,12 @@ public partial struct Float128<TAccelerator>
         }
 
         Float128<TAccelerator> x_n = Exp2(y / Log10(2));
+        if (IsInfinity(x_n) || IsZero(x_n))
+        {
+            // the result overflows or underflows, and refining it would produce NaN
+            return x_n;
+        }
+
         for (int n = 0; n < 15; n++)
         {
             x_n = Abs(FusedMultiplyAdd(x_n, y - Log10(x_n), x_n));

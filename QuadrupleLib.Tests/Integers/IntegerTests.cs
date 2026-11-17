@@ -91,6 +91,38 @@ namespace QuadrupleLib.Tests.Integers
             // NaN is not a number, so it is not an integer
             Assert.False(Float128<TAccelerator>.IsInteger(Float128<TAccelerator>.NaN));
         }
+
+        [Fact]
+        public void IsIntegerOfZeroIsTrue()
+        {
+            Assert.True(Float128<TAccelerator>.IsInteger(Float128<TAccelerator>.Zero));
+        }
+
+        [Fact]
+        public void IsIntegerOfNegativeZeroIsTrue()
+        {
+            Assert.True(Float128<TAccelerator>.IsInteger(-Float128<TAccelerator>.Zero));
+        }
+
+        [Fact]
+        public void IsEvenIntegerOfZeroIsTrue()
+        {
+            Assert.True(Float128<TAccelerator>.IsEvenInteger(Float128<TAccelerator>.Zero));
+        }
+
+        [Fact]
+        public void IsEvenIntegerOfNegativeZeroIsTrue()
+        {
+            Assert.True(Float128<TAccelerator>.IsEvenInteger(-Float128<TAccelerator>.Zero));
+        }
+
+        [Fact]
+        public void IsOddIntegerOfZeroIsFalse()
+        {
+            // zero is an even integer, so neither signed zero is odd
+            Assert.False(Float128<TAccelerator>.IsOddInteger(Float128<TAccelerator>.Zero));
+            Assert.False(Float128<TAccelerator>.IsOddInteger(Float128<TAccelerator>.NegativeZero));
+        }
     }
 
     public class IntegerTests_DefaultAccelerator :

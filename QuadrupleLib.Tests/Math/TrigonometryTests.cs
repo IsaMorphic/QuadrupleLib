@@ -892,6 +892,15 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(Float128<TAccelerator>.IsNaN(result));
             Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
         }
+
+        [Fact]
+        public void HypotOfLargeEqualLegsIsScaledSquareRootOfTwo()
+        {
+            // hypot(a, a) = a * sqrt(2), and a = 2^16000 squares far beyond the binary128 range
+            Float128<TAccelerator> leg = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 16000);
+            Float128<TAccelerator> ratio = Float128<TAccelerator>.Hypot(leg, leg) / leg;
+            Assert.Equal(double.Sqrt(2.0), (double)ratio, 15);
+        }
     }
 
     public class TrigonometryTests_DefaultAccelerator :

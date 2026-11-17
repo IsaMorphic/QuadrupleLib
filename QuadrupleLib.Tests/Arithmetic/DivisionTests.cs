@@ -292,6 +292,97 @@ namespace QuadrupleLib.Tests.Arithmetic
 
             Assert.True(Float128<TAccelerator>.IsNaN(result));
         }
+
+        [Fact]
+        public void SubnormalQuotientWithThreeSignificandIsExact()
+        {
+            // (3 * 2^-16383) / 2 = 3 * 2^-16384, the subnormal with fraction 3 * 2^110
+            Float128<TAccelerator> threeTimesTwoToTheMinus16383 = RawStorage<TAccelerator>.FromBits((UInt128.One << 112) | (UInt128.One << 111));
+
+            Float128<TAccelerator> quotient = threeTimesTwoToTheMinus16383 / (Float128<TAccelerator>)2.0;
+
+            Assert.Equal((UInt128)3 << 110, RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void OneDividedByOnePlusThreeUlpsIsRoundedQuotient()
+        {
+            // reference: 2^112 / (2^112 + 3) = 1 - 6 * 2^-113 + O(2^-224), which rounds to 1 - 6 * 2^-113
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | (UInt128)3);
+
+            Float128<TAccelerator> quotient = Float128<TAccelerator>.One / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFEFFFFFFFFFFFFFFFFFFFFFFFFFFFA"), RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void OneDividedByOnePlusTwoToTheMinus100IsRoundedQuotient()
+        {
+            // reference: 2^100 / (2^100 + 1) = 1 - 2^-100 + O(2^-200), which is the binary128 value 1 - 2^-100
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | ((UInt128)1 << 12));
+
+            Float128<TAccelerator> quotient = Float128<TAccelerator>.One / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFEFFFFFFFFFFFFFFFFFFFFFFFFE000"), RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void FiveDividedByTwoToThe90PlusOneIsRoundedQuotient()
+        {
+            // reference: 5 / (2^90 + 1) rounded to nearest, from exact arithmetic on the rational 5 / (2^90 + 1)
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(((UInt128)16473 << 112) | ((UInt128)1 << 22));
+
+            Float128<TAccelerator> quotient = (Float128<TAccelerator>)5.0 / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FA73FFFFFFFFFFFFFFFFFFFFFB00000"), RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void SevenDividedByOnePlusFiveUlpsIsRoundedQuotient()
+        {
+            // reference: 7 * 2^112 / (2^112 + 5) rounded to nearest, from exact arithmetic on the rational
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | (UInt128)5);
+
+            Float128<TAccelerator> quotient = (Float128<TAccelerator>)7.0 / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("4001BFFFFFFFFFFFFFFFFFFFFFFFFFF7"), RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void NormalDividedBySubnormalIsTwo()
+        {
+            // reference: 2^-16382 / 2^-16383 = 2 exactly
+            Float128<TAccelerator> dividend = RawStorage<TAccelerator>.FromBits(UInt128.One << 112);
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(UInt128.One << 111);
+
+            Float128<TAccelerator> quotient = dividend / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("40000000000000000000000000000000"), RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void NormalDividedBySubnormalIsFour()
+        {
+            // reference: 2^-16382 / 2^-16384 = 4 exactly; 2^-16384 is the subnormal with raw significand 2^110
+            Float128<TAccelerator> dividend = RawStorage<TAccelerator>.FromBits(UInt128.One << 112);
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(UInt128.One << 110);
+
+            Float128<TAccelerator> quotient = dividend / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("40010000000000000000000000000000"), RawStorage<TAccelerator>.Bits(quotient));
+        }
+
+        [Fact]
+        public void NormalDividedBySubnormalIsFourThirds()
+        {
+            // reference: 2^-16382 / (3 * 2^-16384) = 4/3, rounded to nearest; the fraction is floor(2^112 / 3) = 0x5555...5
+            Float128<TAccelerator> dividend = RawStorage<TAccelerator>.FromBits(UInt128.One << 112);
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits((UInt128)3 << 110);
+
+            Float128<TAccelerator> quotient = dividend / divisor;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFF5555555555555555555555555555"), RawStorage<TAccelerator>.Bits(quotient));
+        }
     }
 
     public class DivisionTests_DefaultAccelerator :

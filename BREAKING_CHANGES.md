@@ -2,30 +2,33 @@
 
 This release corrects the library's handling of **special values** (infinity, zero, and NaN)
 to match **IEEE 754-2019**. Where IEEE 754 leaves a function's special cases open (`Pow`, `RootN`),
-the C99 Annex F results are used. These corrections change observable results for edge-case
-inputs. If your code depends on the previous behavior for these inputs, update it.
+the C99 Annex F results are used. It also corrects the **rounding** of finite results, so that
+arithmetic, conversions, and parsing return the correctly rounded value (§5). These corrections
+change observable results. If your code depends on the previous behavior, update it.
 
 The baseline is release **0.5.2**. Every row below was confirmed by evaluating each public
 static operation of `Float128` on 0.5.2 and on this release over the inputs `NaN`, `±inf`, `±0`,
-`±1`, `±2`, `±0.5`, `±2.5`, `±3`, and the smallest subnormal `±ε`. In that comparison, results for
-finite inputs changed only for `Tanh` and `Asinh` (see §4).
+`±1`, `±2`, `±0.5`, `±2.5`, `±3`, and the smallest subnormal `±ε`. In that comparison, apart from
+the rounding corrections in §5, results for finite inputs changed only for `Tanh` and `Asinh`
+(see §4).
 
 ## 1. NaN results now have the sign bit clear
 
-The library has two NaN values. Both have payload 1, and they differ only in the sign bit:
+The library has two NaN values:
 
-- `qNaN` (sign bit clear), and
-- `sNaN` (sign bit set).
+- `qNaN`, which is `Float128.NaN`: sign bit clear, trailing significand 1.
+- `sNaN`: in 0.5.2 this was the same pattern with the sign bit set. It now has the sign bit clear
+  and only the most significant bit of the trailing significand (the IEEE 754 quiet bit) set.
+  `Parse` returns it for a string that is not a number.
 
-Most invalid operations used to return `sNaN`. They now return `qNaN`, as IEEE 754 requires for
-an invalid operation. The NaN propagation cases listed below also return `qNaN` now.
+Most invalid operations used to return the 0.5.2 `sNaN`. They now return `qNaN`. The NaN
+propagation cases listed below also return `qNaN` now.
 
-`IsNaN` is unchanged and returns `true` for both. Only the sign bit of the result changes, so
+`IsNaN` is unchanged and returns `true` for both. Only the bit pattern of the result changes, so
 this matters only if you inspect the raw bits or the sign of a NaN.
 
-> **Note.** Neither NaN sets the IEEE 754 quiet bit (the most significant bit of the trailing
-> significand), so both are signaling NaNs by IEEE bit encoding. This release does not change
-> that encoding.
+> **Note.** `qNaN` does not set the IEEE 754 quiet bit, so by IEEE bit encoding it is a signaling
+> NaN. This release does not change that encoding.
 
 | Operation | Inputs whose NaN result now has the sign bit clear |
 |-----------|----------------------------------------------------|
@@ -114,10 +117,38 @@ this matters only if you inspect the raw bits or the sign of a NaN.
   the sign of `−0`. Results for negative inputs differ from 0.5.2 at about the 17th significant
   digit. Results for positive inputs are unchanged.
 
+## 5. Correctly rounded results
+
+The operations below now round to nearest, ties to even, as IEEE 754 requires. Before, the
+rounding step read the guard, round, and sticky bits at the wrong positions, and several
+operations dropped or mis-set the sticky bit. A result could be one unit in the last place off,
+and an exact tie did not always round to even.
+
+| Operation | Before | After |
+|-----------|--------|-------|
+| `+`, `-`, `*`, `/` | could be off by one unit in the last place, in either direction | correctly rounded |
+| `FusedMultiplyAdd` | only the top bits of the product were kept before the addition; a product that cancels against the addend, or a subnormal product with a zero addend, could give `0` | the exact product is added, then rounded once |
+| `ScaleB` to a subnormal result | could be off by one unit in the last place | correctly rounded |
+| conversion of a subnormal `double`, `float`, or `Half` to `Float128` | a quarter of the correct value | exact |
+| conversion of `Float128` to `double`, `float`, or `Half` | could be off by one unit in the last place; a subnormal result was four times the correct value, so the round trip only worked because both errors cancelled | correctly rounded |
+| conversion of `int.MinValue`, `long.MinValue`, or `Int128.MinValue` to `Float128` | a wrong value (for example about `−1.7E+38` for `int.MinValue`) | exact |
+| conversion of `Float128` to an integer type, when the value is at least `2^112` | `0` or a wrong value (for example `(Int128)(Float128)Int128.MinValue` was `0`) | exact; `OverflowException` when out of range, as before |
+| `Round` | `0.5 < \|x\| < 1` gave `0`; a value above a half with further fraction bits (for example `2.6`) rounded down | nearest integer, ties to even |
+| `Round` | a result of zero was always `+0` | keeps the sign of the input (`Round(−0.3)` is `−0`) |
+| `Parse` | could be off by one unit in the last place (for example `"0.1"`) | correctly rounded |
+| `ToString` with an exponent, for values below 1 | the exponent was one too large (`1E-30` printed as `1.0…E-29`) | correct exponent |
+| `Exp`, `Exp10` | `NaN` when the result overflows or underflows | `+inf` or `0` |
+| `Hypot` | `+inf` when `x² + y²` overflows, even if the result does not | the scaled result, without the intermediate overflow |
+
+Two existing tests expected `2·2^-16382 ± 1·2^-16382` to be subnormal. The exact result is
+`2^-16382`, the smallest normal number, so those tests now use operands whose result is subnormal.
+
 ## Migration guidance
 
-- **Most consumers are unaffected.** Apart from the `Tanh` and `Asinh` digits in §4, only results
-  for special-value inputs (infinity, zero, NaN) change.
+- **Most consumers are unaffected.** Apart from the `Tanh` and `Asinh` digits in §4 and the
+  rounding corrections in §5, only results for special-value inputs (infinity, zero, NaN)
+  change. The rounding corrections change finite results by at most one unit in the last place,
+  except where §5 lists a larger error that is now fixed.
 - If you compare NaN bit patterns or read a NaN's sign, expect the sign bit to be clear (§1).
 - Code that caught `DivideByZeroException` from dividing a subnormal by zero, or from `%` with a
   zero divisor, now gets an infinity or a NaN instead (§2).

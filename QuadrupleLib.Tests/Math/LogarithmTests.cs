@@ -141,6 +141,24 @@ namespace QuadrupleLib.Tests.Math
             Float128<TAccelerator> y = Float128<TAccelerator>.Log(x, b);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
+
+        [Fact]
+        public void Log2OfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Log2(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void LogOfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Log(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void Log10OfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Log10(Float128<TAccelerator>.PositiveInfinity)));
+        }
     }
 
     public class LogarithmTests_DefaultAccelerator :

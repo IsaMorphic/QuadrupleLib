@@ -135,6 +135,7 @@ namespace QuadrupleLib.Tests.Arithmetic
         [InlineData(1.0)]
         [InlineData(-1.0)]
         [InlineData(1.33)]
+        [InlineData(0.75)]
         public void MultiplyNormalBySubnormalIsSubnormal(double x)
         {
             Assert.True(Float128<TAccelerator>.IsSubnormal(x * Float128<TAccelerator>.Epsilon));
@@ -233,6 +234,105 @@ namespace QuadrupleLib.Tests.Arithmetic
 
             Assert.True(Float128<TAccelerator>.IsNaN(result));
             Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void UnderflowingProductByHalfIsSubnormal()
+        {
+            // 2^-16382 * 0.5 = 2^-16383, the subnormal with fraction 2^111
+            Float128<TAccelerator> smallestNormal = RawStorage<TAccelerator>.FromBits(UInt128.One << 112);
+
+            Float128<TAccelerator> product = smallestNormal * (Float128<TAccelerator>)0.5;
+
+            Assert.Equal(UInt128.One << 111, RawStorage<TAccelerator>.Bits(product));
+        }
+
+        [Fact]
+        public void UnderflowingProductByQuarterIsSubnormal()
+        {
+            // 2^-16382 * 0.25 = 2^-16384, the subnormal with fraction 2^110
+            Float128<TAccelerator> smallestNormal = RawStorage<TAccelerator>.FromBits(UInt128.One << 112);
+
+            Float128<TAccelerator> product = smallestNormal * (Float128<TAccelerator>)0.25;
+
+            Assert.Equal(UInt128.One << 110, RawStorage<TAccelerator>.Bits(product));
+        }
+
+        [Fact]
+        public void OverflowingProductIsPositiveInfinity()
+        {
+            Float128<TAccelerator> largest = RawStorage<TAccelerator>.LargestFinite();
+
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(largest * (Float128<TAccelerator>)1.5));
+        }
+
+        [Fact]
+        public void NegativeOverflowingProductIsNegativeInfinity()
+        {
+            Float128<TAccelerator> largest = RawStorage<TAccelerator>.LargestFinite();
+
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(-largest * (Float128<TAccelerator>)1.5));
+        }
+
+        [Theory]
+        [InlineData(2.0, 3.0, "40018000000000000000000000000000")]
+        [InlineData(3.0, 5.0, "4002E000000000000000000000000000")]
+        [InlineData(-2.0, 3.0, "C0018000000000000000000000000000")]
+        [InlineData(0.5, 0.25, "3FFC0000000000000000000000000000")]
+        public void FusedMultiplyAddZeroAddendIsExactProduct(double x, double y, string expected)
+        {
+            // reference: the exact products 6, 15, -6 and 1/8 are representable, so the result is the product itself
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(x, y, Float128<TAccelerator>.Zero);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits(expected), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddInexactProductWithZeroAddendIsRoundedProduct()
+        {
+            // reference: 15 * 2^-16498 is 15/16 of the smallest subnormal 2^-16494, so round-to-nearest gives 2^-16494
+            Float128<TAccelerator> product = RawStorage<TAccelerator>.FromBits(15);
+
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(product, (Float128<TAccelerator>)0.0625, Float128<TAccelerator>.Zero);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("00000000000000000000000000000001"), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Fact]
+        public void TieProductIsRoundedToEven()
+        {
+            // reference: 1.5 * (1 + 2^-112) = 1.5 + 1.5 * 2^-112 is halfway between two binary128 values,
+            // and ties-to-even chooses the one with the even significand
+            Float128<TAccelerator> x = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | UInt128.One);
+
+            Float128<TAccelerator> result = x * (Float128<TAccelerator>)1.5;
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFF8000000000000000000000000002"), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddCancelledProductIsTwoToTheMinus224()
+        {
+            // reference: (1 + 2^-112)^2 - (1 + 2^-111) = 2^-224 exactly, so the single rounding is exact
+            Float128<TAccelerator> x = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | UInt128.One);
+            Float128<TAccelerator> addend = RawStorage<TAccelerator>.FromBits((UInt128.One << 127) | ((UInt128)16383 << 112) | (UInt128)2);
+
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(x, x, addend);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3F1F0000000000000000000000000000"), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Fact]
+        public void FusedMultiplyAddCancelledProductIsThreeTimesTwoToTheMinus224()
+        {
+            // reference: (1 + 2^-112)(1 + 3 * 2^-112) - (1 + 2^-110) = 3 * 2^-224 exactly
+            Float128<TAccelerator> x = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | UInt128.One);
+            Float128<TAccelerator> y = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | (UInt128)3);
+            Float128<TAccelerator> addend = RawStorage<TAccelerator>.FromBits((UInt128.One << 127) | ((UInt128)16383 << 112) | (UInt128)4);
+
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(x, y, addend);
+
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("3F208000000000000000000000000000"), RawStorage<TAccelerator>.Bits(result));
         }
     }
 

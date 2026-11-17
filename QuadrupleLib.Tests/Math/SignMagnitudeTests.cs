@@ -70,6 +70,8 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(2.0, 1.0)]
         [InlineData(-3.0, 4.0)]
         [InlineData(-1.0, 2.0)]
+        [InlineData(-5.0, 2.0)]
+        [InlineData(2.0, -5.0)]
         public void MaxMagnitudeReturnsCorrectValue(double x, double y)
         {
             Assert.Equal(System.Math.MaxMagnitude(x, y), Float128<TAccelerator>.MaxMagnitude(x, y));
@@ -81,9 +83,59 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(2.0, 1.0)]
         [InlineData(-3.0, 4.0)]
         [InlineData(-1.0, 2.0)]
+        [InlineData(-5.0, 2.0)]
+        [InlineData(2.0, -5.0)]
         public void MinMagnitudeReturnsCorrectValue(double x, double y)
         {
             Assert.Equal(System.Math.MinMagnitude(x, y), Float128<TAccelerator>.MinMagnitude(x, y));
+        }
+
+        // IEEE 754-2019 maximum, minimum, maximumMagnitude and minimumMagnitude return NaN when either operand is NaN,
+        // so the result does not depend on operand order. System.Double.Max and System.Double.MaxMagnitude agree.
+        [Fact]
+        public void MaxMagnitudeWithNaNOperandIsNaNInEitherOrder()
+        {
+            Float128<TAccelerator> five = 5.0;
+
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.MaxMagnitude(Float128<TAccelerator>.NaN, five)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.MaxMagnitude(five, Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void MinMagnitudeWithNaNOperandIsNaNInEitherOrder()
+        {
+            Float128<TAccelerator> five = 5.0;
+
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.MinMagnitude(Float128<TAccelerator>.NaN, five)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.MinMagnitude(five, Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void MaxWithNaNOperandIsNaNInEitherOrder()
+        {
+            Float128<TAccelerator> five = 5.0;
+
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Max(Float128<TAccelerator>.NaN, five)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Max(five, Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void MinWithNaNOperandIsNaNInEitherOrder()
+        {
+            Float128<TAccelerator> five = 5.0;
+
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Min(Float128<TAccelerator>.NaN, five)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Min(five, Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void NegativeZeroIsZeroWithSignBit()
+        {
+            Float128<TAccelerator> value = Float128<TAccelerator>.NegativeZero;
+
+            Assert.True(Float128<TAccelerator>.IsZero(value));
+            Assert.True(Float128<TAccelerator>.IsNegative(value));
+            Assert.Equal(UInt128.One << 127, RawStorage<TAccelerator>.Bits(value));
         }
     }
 
