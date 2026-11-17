@@ -143,7 +143,7 @@ public partial struct Float128<TAccelerator>
 
             // set sticky bit
             newSignificand &= UInt128.MaxValue << 1;
-            newSignificand |= UInt128.Min(newSignificand & ((UInt128.One << normDist) - 1), 1);
+            newSignificand |= UInt128.Min(x.Significand & ((UInt128.One << (normDist + 1)) - 1), 1);
 
             if ((((newSignificand & 1) |
                  ((newSignificand >> 2) & 1)) &
