@@ -610,7 +610,7 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (IsInfinity(y))
+        else if (Abs(y) >= EXPONENT_BIAS + 1)
         {
             return y > Zero ? _pInf : Zero;
         }
