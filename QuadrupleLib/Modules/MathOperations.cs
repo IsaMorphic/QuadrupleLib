@@ -358,17 +358,17 @@ public partial struct Float128<TAccelerator>
         {
             return _pInf;
         }
-        else if (x > 8.0)
+        else if (x == One)
+        {
+            return Zero;
+        }
+        else if (x > ScaleB(One, EXPONENT_BIAS / 2))
         {
             return Log(x + Abs(x) - One / ScaleB(Abs(x), 1));
         }
         else if (x > One)
         {
             return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
-        }
-        else if (x == One)
-        {
-            return Zero;
         }
         else
         {
@@ -394,7 +394,7 @@ public partial struct Float128<TAccelerator>
         {
             return x;
         }
-        else if (x > 8.0)
+        else if (x > ScaleB(One, EXPONENT_BIAS / 2))
         {
             return Log(x + Abs(x) + One / ScaleB(Abs(x), 1));
         }
@@ -411,6 +411,7 @@ public partial struct Float128<TAccelerator>
         {
             return x;
         }
+        
         Float128<TAccelerator> absX = Abs(x);
         if (absX < One)
         {
