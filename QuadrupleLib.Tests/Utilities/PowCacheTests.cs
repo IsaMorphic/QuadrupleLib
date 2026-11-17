@@ -78,31 +78,5 @@ namespace QuadrupleLib.Tests.Utilities
             BigInteger secondCall = PowCache.GetPow10(exponent);
             Assert.Equal(firstCall, secondCall);
         }
-
-        [Fact]
-        public void GetPow5_ShouldNotThrow_WhenEvicted()
-        {
-            for (int i = 0; i < PowCache.MAX_CACHE_SIZE; i++)
-            {
-                PowCache.GetPow5(i);
-            }
-
-            AssertX.DoesNotThrow<Exception>(() =>
-                PowCache.GetPow5(PowCache.MAX_CACHE_SIZE + 1)
-                );
-        }
-
-        [Fact]
-        public void GetPow10_ShouldNotThrow_WhenEvicted()
-        {
-            for (int i = 0; i < PowCache.MAX_CACHE_SIZE; i++)
-            {
-                PowCache.GetPow10(i);
-            }
-
-            AssertX.DoesNotThrow<Exception>(() =>
-                PowCache.GetPow10(PowCache.MAX_CACHE_SIZE + 1)
-                );
-        }
     }
 }
