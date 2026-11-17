@@ -175,15 +175,15 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Fact]
-        public void PositiveInfinityDividedByZeroIsNaN()
+        public void PositiveInfinityDividedByZeroIsPositiveInfinity()
         {
-            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.PositiveInfinity / Float128<TAccelerator>.Zero));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.PositiveInfinity / Float128<TAccelerator>.Zero));
         }
 
         [Fact]
-        public void NegativeInfinityDividedByZeroIsNaN()
+        public void NegativeInfinityDividedByZeroIsNegativeInfinity()
         {
-            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.NegativeInfinity / Float128<TAccelerator>.Zero));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.NegativeInfinity / Float128<TAccelerator>.Zero));
         }
 
         [Theory]
