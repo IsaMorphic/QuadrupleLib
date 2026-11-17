@@ -278,13 +278,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator sbyte(Float128<TAccelerator> x)
     {
+        if(IsNaN(x)) return sbyte.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (sbyte)-n : (sbyte)n;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked sbyte(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > sbyte.MaxValue || Truncate(x) < sbyte.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
             return x.RawSignBit ? (sbyte)-n : (sbyte)n;
@@ -321,13 +338,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator short(Float128<TAccelerator> x)
     {
+        if(IsNaN(x)) return short.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (short)-n : (short)n;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked short(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > short.MaxValue || Truncate(x) < short.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
             return x.RawSignBit ? (short)-n : (short)n;
@@ -364,13 +398,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator int(Float128<TAccelerator> x)
     {
+        if(IsNaN(x)) return int.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (int)-n : (int)n;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked int(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > int.MaxValue || Truncate(x) < int.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
             return x.RawSignBit ? (int)-n : (int)n;
@@ -407,13 +458,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator long(Float128<TAccelerator> x)
     {
+        if (IsNaN(x)) return long.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? (long)-n : (long)n;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked long(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > long.MaxValue || Truncate(x) < long.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
             return x.RawSignBit ? (long)-n : (long)n;
@@ -472,6 +540,23 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator Int128(Float128<TAccelerator> x)
     {
+        if (IsNaN(x)) return Int128.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
+            return x.RawSignBit ? -n : n;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked Int128(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) ||
             Truncate(x) > (Float128<TAccelerator>)Int128.MaxValue ||
             Truncate(x) < (Float128<TAccelerator>)Int128.MinValue)
@@ -480,7 +565,7 @@ public partial struct Float128<TAccelerator>
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> (112 - x.Exponent);
             return x.RawSignBit ? -n : n;
@@ -500,9 +585,26 @@ public partial struct Float128<TAccelerator>
         int leftShift = (int)UInt128.LeadingZeroCount(mantissa) - 15;
         return new Float128<TAccelerator>(mantissa << leftShift, 112 - leftShift, false);
     }
-
+    
     [MakeNonGeneric]
     public static explicit operator byte(Float128<TAccelerator> x)
+    {
+        if (IsNaN(x)) return byte.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (byte)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked byte(Float128<TAccelerator> x)
     {
         if (IsNaN(x) || Truncate(x) > byte.MaxValue || Truncate(x) < byte.MinValue)
         {
@@ -510,7 +612,7 @@ public partial struct Float128<TAccelerator>
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> rightShift;
             return (byte)(x.RawSignBit ? -n : n);
@@ -534,13 +636,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator ushort(Float128<TAccelerator> x)
     {
+        if (IsNaN(x)) return ushort.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (ushort)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked ushort(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > ushort.MaxValue || Truncate(x) < ushort.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> rightShift;
             return (ushort)(x.RawSignBit ? -n : n);
@@ -564,13 +683,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator uint(Float128<TAccelerator> x)
     {
+        if (IsNaN(x)) return uint.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (uint)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked uint(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > uint.MaxValue || Truncate(x) < uint.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> rightShift;
             return (uint)(x.RawSignBit ? -n : n);
@@ -594,13 +730,30 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static explicit operator ulong(Float128<TAccelerator> x)
     {
+        if (IsNaN(x)) return ulong.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (ulong)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked ulong(Float128<TAccelerator> x)
+    {
         if (IsNaN(x) || Truncate(x) > ulong.MaxValue || Truncate(x) < ulong.MinValue)
         {
             throw new OverflowException();
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> rightShift;
             return (ulong)(x.RawSignBit ? -n : n);
@@ -641,9 +794,26 @@ public partial struct Float128<TAccelerator>
 
         return new Float128<TAccelerator>(rounded >> 3, 112 - expShift, false);
     }
-
+    
     [MakeNonGeneric]
     public static explicit operator UInt128(Float128<TAccelerator> x)
+    {
+        if (IsNaN(x)) return UInt128.MinValue;
+
+        int rightShift = 112 - x.Exponent;
+        if (rightShift < 128)
+        {
+            Int128 n = (Int128)x.Significand >> rightShift;
+            return (UInt128)(x.RawSignBit ? -n : n);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    [MakeNonGeneric]
+    public static explicit operator checked UInt128(Float128<TAccelerator> x)
     {
         if (IsNaN(x) ||
             Truncate(x) > (Float128<TAccelerator>)UInt128.MaxValue ||
@@ -653,7 +823,7 @@ public partial struct Float128<TAccelerator>
         }
 
         int rightShift = 112 - x.Exponent;
-        if (rightShift <= 128)
+        if (rightShift < 128)
         {
             Int128 n = (Int128)x.Significand >> rightShift;
             return (UInt128)(x.RawSignBit ? -n : n);
