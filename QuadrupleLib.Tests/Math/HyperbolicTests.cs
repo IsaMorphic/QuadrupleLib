@@ -90,6 +90,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Acosh(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(y));
         }
 
         [Theory]
@@ -103,7 +104,6 @@ namespace QuadrupleLib.Tests.Math
 
         [Theory]
         [InlineData(1.345)]
-        [InlineData(-1.0)]
         [InlineData(-1.5678)]
         public void IsInverseTanhNaN(double x)
         {
@@ -111,11 +111,134 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(Float128<TAccelerator>.IsNaN(y));
         }
 
-        [Fact]
-        public void IsInverseTanhInfinity()
+        [Theory]
+        [InlineData(1.0)]
+        [InlineData(-1.0)]
+        public void InverseTanhPoleIsInfinity(double x)
         {
-            Float128<TAccelerator> y = Float128<TAccelerator>.Atanh(1.0);
+            // IEEE 754 and C99: atanh(+/-1) is a pole, so the result is +/-Inf
+            Float128<TAccelerator> y = Float128<TAccelerator>.Atanh(x);
+
             Assert.True(Float128<TAccelerator>.IsInfinity(y));
+            Assert.Equal(x < 0, Float128<TAccelerator>.IsNegative(y));
+        }
+
+        [Fact]
+        public void AcoshOfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Acosh(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void AsinhOfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Asinh(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void AsinhOfNegativeInfinityIsNegativeInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Asinh(Float128<TAccelerator>.NegativeInfinity)));
+        }
+
+        [Fact]
+        public void AtanhOfOneIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Atanh(Float128<TAccelerator>.One)));
+        }
+
+        [Fact]
+        public void AtanhOfNegativeOneIsNegativeInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Atanh(Float128<TAccelerator>.NegativeOne)));
+        }
+
+        [Theory]
+        [InlineData(2.0)]
+        [InlineData(-2.0)]
+        public void AtanhOutsideUnitIntervalIsPositiveNaN(double x)
+        {
+            // an invalid operation returns Float128.NaN, which has the sign bit clear
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atanh((Float128<TAccelerator>)x);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void AtanhOfPositiveInfinityIsPositiveNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atanh(Float128<TAccelerator>.PositiveInfinity);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void SinhOfNegativeZeroIsNegativeZero()
+        {
+            // IEEE 754 and C99: sinh(-0) is -0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Sinh(-Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void TanhOfNegativeZeroIsNegativeZero()
+        {
+            // IEEE 754 and C99: tanh(-0) is -0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Tanh(-Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void AsinhOfNegativeZeroIsNegativeZero()
+        {
+            // IEEE 754 and C99: asinh(-0) is -0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Asinh(-Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void CoshOfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Cosh(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void CoshOfNegativeInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Cosh(Float128<TAccelerator>.NegativeInfinity)));
+        }
+
+        [Fact]
+        public void SinhOfPositiveInfinityIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Sinh(Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void SinhOfNegativeInfinityIsNegativeInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Sinh(Float128<TAccelerator>.NegativeInfinity)));
+        }
+
+        [Fact]
+        public void TanhOfPositiveInfinityIsOne()
+        {
+            // tanh(+Inf) is exactly 1
+            Assert.Equal(1.0, (double)Float128<TAccelerator>.Tanh(Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Fact]
+        public void TanhOfNegativeInfinityIsNegativeOne()
+        {
+            Assert.Equal(-1.0, (double)Float128<TAccelerator>.Tanh(Float128<TAccelerator>.NegativeInfinity));
         }
     }
 

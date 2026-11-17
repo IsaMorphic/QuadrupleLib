@@ -1,0 +1,49 @@
+﻿/*
+ *  Copyright 2026 Chosen Few Software
+ *  This file is part of QuadrupleLib.
+ *
+ *  QuadrupleLib is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  QuadrupleLib is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+using System.Reflection;
+
+namespace QuadrupleLib.Tests
+{
+    // Test-only access to the binary128 bit pattern. Reflection is used here because the raw
+    // field and the raw-bits constructor are private.
+    internal static class RawStorage<TAccelerator>
+        where TAccelerator : IAccelerator
+    {
+        private const BindingFlags INSTANCE_MEMBERS = BindingFlags.NonPublic | BindingFlags.Instance;
+        private static readonly UInt128 SIGN_BIT = UInt128.One << 127;
+
+        private static readonly FieldInfo _rawBitsField = typeof(Float128<TAccelerator>).GetField("_rawBits", INSTANCE_MEMBERS)!;
+        private static readonly ConstructorInfo _rawBitsConstructor = typeof(Float128<TAccelerator>).GetConstructor(INSTANCE_MEMBERS, null, new[] { typeof(UInt128) }, null)!;
+
+        public static UInt128 Bits(Float128<TAccelerator> value)
+        {
+            return (UInt128)_rawBitsField.GetValue(value)!;
+        }
+
+        public static bool IsSignSet(Float128<TAccelerator> value)
+        {
+            return (Bits(value) & SIGN_BIT) != UInt128.Zero;
+        }
+
+        public static Float128<TAccelerator> FromBits(UInt128 bits)
+        {
+            return (Float128<TAccelerator>)_rawBitsConstructor.Invoke(new object[] { bits });
+        }
+    }
+}

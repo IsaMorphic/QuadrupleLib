@@ -58,6 +58,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Log(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(y));
         }
 
         [Theory]
@@ -79,6 +80,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Log2(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(y));
         }
 
         [Theory]
@@ -100,6 +102,7 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Log10(x);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(y));
         }
 
         [Theory]
@@ -130,6 +133,9 @@ namespace QuadrupleLib.Tests.Math
         [InlineData(1.0, -1.0)]
         [InlineData(2.0, -1.0)]
         [InlineData(3.0, -1.0)]
+        [InlineData(0.5, 1.0)]
+        [InlineData(2.0, 1.0)]
+        [InlineData(3.0, 1.0)]
         public void IsLogBNaN(double x, double b)
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Log(x, b);

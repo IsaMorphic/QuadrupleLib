@@ -27,16 +27,22 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public static bool IsInteger(Float128<TAccelerator> value)
     {
+        if (IsNaN(value))
+        {
+            return false;
+        }
+        if (IsInfinity(value))
+        {
+            return false;
+        }
         if (IsZero(value))
         {
             return true;
         }
-        else
-        {
-            int m = (int)UInt128.TrailingZeroCount(value.Significand);
-            int exp = value.Exponent + m - 112;
-            return exp >= 0;
-        }
+
+        int m = (int)UInt128.TrailingZeroCount(value.Significand);
+        int exp = value.Exponent + m - 112;
+        return exp >= 0;
     }
 
     [MakeNonGeneric]

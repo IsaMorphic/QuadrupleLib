@@ -71,6 +71,26 @@ namespace QuadrupleLib.Tests.Integers
             bool actual = Float128<TAccelerator>.IsOddInteger(x);
             Assert.Equal(expected, actual);
         }
+
+        [Fact]
+        public void IsIntegerOfPositiveInfinityIsFalse()
+        {
+            // an infinity is not a finite integer
+            Assert.False(Float128<TAccelerator>.IsInteger(Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Fact]
+        public void IsIntegerOfNegativeInfinityIsFalse()
+        {
+            Assert.False(Float128<TAccelerator>.IsInteger(Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Fact]
+        public void IsIntegerOfNaNIsFalse()
+        {
+            // NaN is not a number, so it is not an integer
+            Assert.False(Float128<TAccelerator>.IsInteger(Float128<TAccelerator>.NaN));
+        }
     }
 
     public class IntegerTests_DefaultAccelerator :
