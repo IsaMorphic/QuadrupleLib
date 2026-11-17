@@ -121,7 +121,8 @@ public partial struct Float128<TAccelerator>
 
     public static (Float128<TAccelerator> Sin, Float128<TAccelerator> Cos) SinCos(Float128<TAccelerator> alpha)
     {
-        if (IsNaN(alpha) || IsInfinity(alpha))
+        if (IsNaN(alpha) || IsInfinity(alpha) || 
+            alpha.Exponent >= 112)
         {
             return (_qNaN, _qNaN);
         }
