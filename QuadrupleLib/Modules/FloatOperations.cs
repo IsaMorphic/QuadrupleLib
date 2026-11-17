@@ -437,7 +437,7 @@ public partial struct Float128<TAccelerator>
         else if (x == 0.0)
         {
             ulong bits = Unsafe.As<double, ulong>(ref x);
-            bool negative = (bits & (1U << 63)) != 0;
+            bool negative = (bits & (1UL << 63)) != 0;
             return negative ? NegativeZero : Zero;
         }
         else
