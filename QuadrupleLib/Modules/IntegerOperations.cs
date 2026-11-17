@@ -153,7 +153,7 @@ public partial struct Float128<TAccelerator>
                 result = value; //NaN, +inf, -inf
                 break;
             case < 0:
-                result = value.RawSignBit ? -1 : 0;
+                result = value.RawSignBit ? NegativeOne : Zero;
                 break;
             default:
                 result = value;
@@ -182,7 +182,7 @@ public partial struct Float128<TAccelerator>
                 result = value; //NaN, +inf, -inf
                 break;
             case < 0:
-                result = value.RawSignBit ? 0 : 1;
+                result = value.RawSignBit ? NegativeZero : One;
                 break;
             default:
                 result = value;
