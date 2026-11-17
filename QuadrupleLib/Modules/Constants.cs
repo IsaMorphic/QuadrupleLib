@@ -34,7 +34,7 @@ public partial struct Float128<TAccelerator>
     #region Public API (constants)
 
     private static readonly Float128<TAccelerator> _qNaN = new Float128<TAccelerator>(UInt128.One, short.MaxValue, false);
-    private static readonly Float128<TAccelerator> _sNaN = new Float128<TAccelerator>(UInt128.One, short.MaxValue, true);
+    private static readonly Float128<TAccelerator> _sNaN = new Float128<TAccelerator>(UInt128.One << 111, short.MaxValue, false);
 
     private static readonly Float128<TAccelerator> _pInf = new Float128<TAccelerator>(UInt128.Zero, short.MaxValue, false);
     private static readonly Float128<TAccelerator> _nInf = new Float128<TAccelerator>(UInt128.Zero, short.MaxValue, true);
