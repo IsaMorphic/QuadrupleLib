@@ -132,7 +132,7 @@ and an exact tie did not always round to even.
 | conversion of a subnormal `double`, `float`, or `Half` to `Float128` | a quarter of the correct value | exact |
 | conversion of `Float128` to `double`, `float`, or `Half` | could be off by one unit in the last place; a subnormal result was four times the correct value, so the round trip only worked because both errors cancelled | correctly rounded |
 | conversion of `int.MinValue`, `long.MinValue`, or `Int128.MinValue` to `Float128` | a wrong value (for example about `−1.7E+38` for `int.MinValue`) | exact |
-| conversion of `Float128` to an integer type, when the value is at least `2^112` | `0` or a wrong value (for example `(Int128)(Float128)Int128.MinValue` was `0`) | exact; `OverflowException` when out of range, as before |
+| conversion of `Float128` to an integer type, when the value is at least `2^112` | `0` or a wrong value (for example `(Int128)(Float128)Int128.MinValue` was `0`) | exact; out of range, a `checked` conversion throws `OverflowException`, and an unchecked conversion keeps the low bits of the two's complement value, as a conversion between integer types does (`(uint)(Float128)(-1)` is `uint.MaxValue`); NaN and infinities throw `OverflowException` in both |
 | `Round` | `0.5 < \|x\| < 1` gave `0`; a value above a half with further fraction bits (for example `2.6`) rounded down | nearest integer, ties to even |
 | `Round` | a result of zero was always `+0` | keeps the sign of the input (`Round(−0.3)` is `−0`) |
 | `Parse` | could be off by one unit in the last place (for example `"0.1"`) | correctly rounded |

@@ -589,7 +589,7 @@ public partial struct Float128<TAccelerator>
     #region Private API (integer conversion)
 
     [MakeNonGeneric]
-    private static UInt128 TruncateToMagnitude(Float128<TAccelerator> x)
+    private static UInt128 TruncateToMagnitude(Float128<TAccelerator> x, bool isChecked)
     {
         if (IsNaN(x) || IsInfinity(x))
         {
@@ -601,12 +601,19 @@ public partial struct Float128<TAccelerator>
         {
             return UInt128.Zero;
         }
-        else if (exponent > 127)
+        else if (exponent > 127 && isChecked)
         {
             throw new OverflowException("Value is out of range of the target integer type.");
         }
+        else if (exponent >= 240)
+        {
+            // the value is a multiple of 2^128, so its low 128 bits are zero
+            // (a shift of 128 or more would wrap around, since shift counts are taken mod 128)
+            return UInt128.Zero;
+        }
         else if (exponent >= 112)
         {
+            // for an exponent above 127 the shift drops the high bits, which wraps the value mod 2^128
             return x.Significand << (exponent - 112);
         }
         else
@@ -618,7 +625,7 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     private static Int128 ToSignedInteger(Float128<TAccelerator> x, Int128 minValue, Int128 maxValue, bool isChecked = false)
     {
-        UInt128 magnitude = TruncateToMagnitude(x);
+        UInt128 magnitude = TruncateToMagnitude(x, isChecked);
         UInt128 limit = x.RawSignBit ?
             (UInt128)(-(minValue + 1)) + 1 :
             (UInt128)maxValue;
@@ -628,22 +635,27 @@ public partial struct Float128<TAccelerator>
             throw new OverflowException("Value is out of range of the target integer type.");
         }
 
+        // an unchecked conversion keeps the low bits of the two's complement value
         return x.RawSignBit ?
             unchecked((Int128)(UInt128.Zero - magnitude)) :
-            (Int128)magnitude;
+            unchecked((Int128)magnitude);
     }
 
     [MakeNonGeneric]
     private static UInt128 ToUnsignedInteger(Float128<TAccelerator> x, UInt128 maxValue, bool isChecked = false)
     {
-        UInt128 magnitude = TruncateToMagnitude(x);
+        UInt128 magnitude = TruncateToMagnitude(x, isChecked);
 
-        if (isChecked && magnitude > maxValue || (x.RawSignBit && magnitude != 0))
+        if (isChecked && (magnitude > maxValue || (x.RawSignBit && magnitude != 0)))
         {
             throw new OverflowException("Value is out of range of the target integer type.");
         }
 
-        return magnitude;
+        // an unchecked conversion of a negative value keeps the low bits of its two's complement,
+        // as it does for the signed types
+        return x.RawSignBit ?
+            UInt128.Zero - magnitude :
+            magnitude;
     }
 
     #endregion
