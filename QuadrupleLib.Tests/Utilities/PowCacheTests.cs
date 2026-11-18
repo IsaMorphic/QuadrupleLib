@@ -78,5 +78,25 @@ namespace QuadrupleLib.Tests.Utilities
             BigInteger secondCall = PowCache.GetPow10(exponent);
             Assert.Equal(firstCall, secondCall);
         }
+
+        [Fact]
+        public void GetPow5_ShouldEvictCache()
+        {
+            for (int i = 0; i < 10000; i++)
+            {
+                PowCache.GetPow5(i);
+                Assert.InRange(PowCache.CurrSizeBytes, 0, PowCache.MAX_SIZE_BYTES);
+            }
+        }
+
+        [Fact]
+        public void GetPow10_ShouldEvictCache()
+        {
+            for (int i = 0; i < 10000; i++)
+            {
+                PowCache.GetPow10(i);
+                Assert.InRange(PowCache.CurrSizeBytes, 0, PowCache.MAX_SIZE_BYTES);
+            }
+        }
     }
 }

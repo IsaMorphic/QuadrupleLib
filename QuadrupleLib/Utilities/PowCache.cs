@@ -23,13 +23,15 @@ namespace QuadrupleLib.Utilities
 {
     internal static class PowCache
     {
-        private const long MAX_CACHE_SIZE_BYTES = 4096;
+        public const long MAX_SIZE_BYTES = 4096;
 
-        private static readonly ConcurrentQueue<int> _pow5CacheQueue = new();
+        private static readonly ConcurrentQueue<int> _pow5Queue = new();
 
-        private static readonly ConcurrentDictionary<int, BigInteger> _pow5Cache = new();
+        private static readonly ConcurrentDictionary<int, BigInteger> _pow5Map = new();
 
-        private static long _currCacheSizeBytes;
+        private static long _currSizeBytes;
+
+        public static long CurrSizeBytes => _currSizeBytes;
 
         public static BigInteger GetPow10(int n)
         {
@@ -42,35 +44,30 @@ namespace QuadrupleLib.Utilities
 
             bool wasAdded;
             BigInteger pow5;
-            if (!_pow5Cache.TryGetValue(n, out pow5))
+            if (!_pow5Map.TryGetValue(n, out pow5))
             {
                 pow5 = BigInteger.Pow(5, n);
-                wasAdded = _pow5Cache.TryAdd(n, pow5);
+                wasAdded = _pow5Map.TryAdd(n, pow5);
             }
-            else
-            {
-                wasAdded = false;
-            }
+            else wasAdded = false;
 
             if (wasAdded)
             {
-                Interlocked.Add(ref _currCacheSizeBytes, pow5.GetBitLength() / 8);
-                _pow5CacheQueue.Enqueue(n);
+                Interlocked.Add(ref _currSizeBytes, pow5.GetByteCount());
+                _pow5Queue.Enqueue(n);
             }
+            else return pow5;
 
             int oldestExp;
             BigInteger removed;
-            while (wasAdded && _currCacheSizeBytes > MAX_CACHE_SIZE_BYTES)
+            while (_currSizeBytes > MAX_SIZE_BYTES)
             {
-                if (_pow5CacheQueue.TryDequeue(out oldestExp) &&
-                    _pow5Cache.TryRemove(oldestExp, out removed))
+                if (_pow5Queue.TryDequeue(out oldestExp) &&
+                    _pow5Map.TryRemove(oldestExp, out removed))
                 {
-                    Interlocked.Add(ref _currCacheSizeBytes, -removed.GetBitLength() / 8);
+                    Interlocked.Add(ref _currSizeBytes, -removed.GetByteCount());
                 }
-                else
-                {
-                    Thread.Yield();
-                }
+                else Thread.Yield();
             }
 
             return pow5;
