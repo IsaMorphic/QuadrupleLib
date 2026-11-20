@@ -403,9 +403,9 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ToStringRoundingCarryAllAddsLeadingDigit()
         {
-            // 9.96875 * 10^30 rounded to 2 significant digits carries through every kept digit,
+            // 9.96875 * 10^30 rounded to 1 fractional digit carries through every kept digit,
             // giving 1.0 * 10^31
-            NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = 2 };
+            NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = 1 };
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse("9.96875E30", CultureInfo.InvariantCulture);
 
             Assert.Equal("1.0E+31", value.ToString(formatter));
