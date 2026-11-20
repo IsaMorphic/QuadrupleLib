@@ -17,7 +17,6 @@
  */
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace QuadrupleLib.Utilities
@@ -32,7 +31,7 @@ namespace QuadrupleLib.Utilities
 
         private static long _currSizeBytes;
 
-        public static long CurrSizeBytes => _currSizeBytes;
+        public static long CurrSizeBytes => Interlocked.Read(ref _currSizeBytes);
 
         public static BigInteger GetPow10(int n)
         {
@@ -42,6 +41,7 @@ namespace QuadrupleLib.Utilities
         public static BigInteger GetPow5(int n)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(n, nameof(n));
+            long newSizeBytes = Interlocked.Read(ref _currSizeBytes);
 
             bool wasAdded;
             BigInteger pow5;
@@ -54,33 +54,28 @@ namespace QuadrupleLib.Utilities
 
             if (wasAdded)
             {
-                Interlocked.Add(ref _currSizeBytes, pow5.GetByteCount());
+                newSizeBytes += pow5.GetByteCount();
                 _pow5Queue.Enqueue(n);
             }
             else return pow5;
 
-            EvictOldestWhileOverSize();
-
-            return pow5;
-        }
-
-        // The eviction loop's else branch (a defensive yield for a concurrent cache miss) is only
-        // reachable under contention the single-threaded tests never create, so the whole loop is
-        // excluded from coverage.
-        [ExcludeFromCodeCoverage]
-        private static void EvictOldestWhileOverSize()
-        {
             int oldestExp;
             BigInteger removed;
-            while (_currSizeBytes > MAX_SIZE_BYTES)
+            while (newSizeBytes > MAX_SIZE_BYTES)
             {
                 if (_pow5Queue.TryDequeue(out oldestExp) &&
                     _pow5Map.TryRemove(oldestExp, out removed))
                 {
-                    Interlocked.Add(ref _currSizeBytes, -removed.GetByteCount());
+                    newSizeBytes -= removed.GetByteCount();
                 }
-                else Thread.Yield();
+                else if (Thread.Yield())
+                {
+                    newSizeBytes = Interlocked.Read(ref _currSizeBytes);
+                }
             }
+
+            Interlocked.Exchange(ref _currSizeBytes, newSizeBytes);
+            return pow5;
         }
     }
 }

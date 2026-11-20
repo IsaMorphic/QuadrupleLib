@@ -98,5 +98,43 @@ namespace QuadrupleLib.Tests.Utilities
                 Assert.InRange(PowCache.CurrSizeBytes, 0, PowCache.MAX_SIZE_BYTES);
             }
         }
+
+        [Fact]
+        public void GetPow5_ContentionShouldNotFail()
+        {
+            Parallel.For(0, 10000, i =>
+            {
+                AssertX.DoesNotThrow<Exception>(() => PowCache.GetPow5(i));
+            });
+        }
+
+        [Fact]
+        public void GetPow10_ContentionShouldNotFail()
+        {
+            Parallel.For(0, 10000, i =>
+            {
+                AssertX.DoesNotThrow<Exception>(() => PowCache.GetPow10(i));
+            });
+        }
+
+        [Fact]
+        public void GetPow5_ContentionShouldEvictCache()
+        {
+            Parallel.For(0, 10000, i =>
+            {
+                PowCache.GetPow5(i);
+                Assert.InRange(PowCache.CurrSizeBytes, 0, PowCache.MAX_SIZE_BYTES);
+            });
+        }
+
+        [Fact]
+        public void GetPow10_ContentionShouldEvictCache()
+        {
+            Parallel.For(0, 10000, i =>
+            {
+                PowCache.GetPow10(i);
+                Assert.InRange(PowCache.CurrSizeBytes, 0, PowCache.MAX_SIZE_BYTES);
+            });
+        }
     }
 }
