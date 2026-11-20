@@ -296,98 +296,98 @@ public partial struct Float128<TAccelerator>
                     break;
             }
 
-            int maxDigits = significand == 0 ? 1 :
-                (int)Math.Floor(BigInteger.Log10(significand)) + 1;
-            Span<char> strBuf = stackalloc char[maxDigits + 1];
-            significand.TryFormat(strBuf, out maxDigits);
+            // significand * 10^min(e2, 0) is the exact value; decimalExponent is the power of ten of its leading digit
+            // (built once; the exact expansion has up to 4,933 digits for the largest finite value, and about
+            // 11,500 for the smallest subnormal, 2^-16494, whose digits are those of 5^16494)
+            string digits = significand.ToString(CultureInfo.InvariantCulture);
+            int decimalExponent = Math.Min(e2, 0) + digits.Length - 1;
+            bool expFlag = decimalExponent > 0 ?
+                decimalExponent >= MAX_PADDING_DIGITS :
+                decimalExponent < -MAX_PADDING_DIGITS;
 
-            StringBuilder result = new StringBuilder(maxDigits);
-            result.Append(strBuf[..maxDigits]);
-
-            bool expFlag;
-            int offset = e2 < 0 ? maxDigits + --e2 : maxDigits - 1;
-            if (offset <= 0 && offset >= -MAX_PADDING_DIGITS)
+            // NumberDecimalDigits counts the digits after the decimal point: of the value itself in plain
+            // notation, and of the mantissa in E notation
+            int lastPlace = expFlag ?
+                decimalExponent - formatter.NumberDecimalDigits :
+                -formatter.NumberDecimalDigits;
+            int keptDigits = decimalExponent - lastPlace + 1;
+            if (keptDigits < digits.Length)
             {
-                for (int i = offset; i < 0; i++)
+                // round the exact digits half to even, as IEEE 754 binary-to-decimal conversion and double.ToString("F") do
+                bool roundUp = false;
+                if (keptDigits >= 0 && digits[keptDigits] >= '5')
                 {
-                    result.Insert(0, '0');
+                    bool exactTie = digits[keptDigits] == '5' && digits.AsSpan(keptDigits + 1).TrimEnd('0').IsEmpty;
+                    bool lastKeptIsOdd = keptDigits > 0 && (digits[keptDigits - 1] - '0') % 2 == 1;
+                    roundUp = !exactTie || lastKeptIsOdd;
                 }
 
-                expFlag = false;
-            }
-            else
-            {
-                expFlag = Math.Abs(offset) >= MAX_PADDING_DIGITS;
-            }
+                StringBuilder kept = new StringBuilder(digits, 0, Math.Max(keptDigits, 0), digits.Length);
 
-            int numDigits = offset <= 0 || expFlag ? formatter.NumberDecimalDigits + 1 :
-                Math.Min(formatter.NumberDecimalDigits + offset + 1, result.Length);
-            if (result.Length > numDigits)
-            {
-                e2 += result.Length - numDigits;
-
-                int lastDigit = result[numDigits] - '0';
-                int nextDigit = result[numDigits - 1] - '0';
-
-                result.Remove(numDigits, result.Length - numDigits);
-                if (lastDigit >= 5)
+                int i = kept.Length - 1;
+                for (; roundUp && i >= 0 && kept[i] == '9'; i--)
                 {
-                    int i;
-                    for (i = result.Length - 1; i >= 0; i--)
-                    {
-                        nextDigit = result[i] - '0';
-                        result[i] = (char)(++nextDigit % 10 + '0');
-
-                        if (nextDigit < 10) break;
-                    }
-
-                    if (i < 0 && nextDigit > 9)
-                    {
-                        // the carry adds a leading digit, which raises the decimal exponent
-                        result.Remove(numDigits - 1, 1);
-                        result.Insert(0, '1');
-                        ++offset;
-                    }
-                    else
-                    {
-                        ++e2; result.Remove(numDigits - 1, 1);
-                    }
+                    kept[i] = '0';
                 }
-                else
+
+                if (roundUp && i >= 0)
                 {
-                    ++e2; result.Remove(numDigits - 1, 1);
+                    kept[i]++;
                 }
+                else if (roundUp)
+                {
+                    // the carry passed every kept digit, so the value gains a leading 1
+                    kept.Insert(0, '1');
+                    ++decimalExponent;
+                }
+
+                if (kept.Length == 0)
+                {
+                    // the value rounds to zero at this many decimal places
+                    kept.Append('0');
+                    decimalExponent = 0;
+                }
+
+                digits = kept.ToString();
             }
 
-            if (!expFlag && e2 < 0 && result.Length + e2 + 1 < result.Length)
+            // trim trailing zeros after the decimal point
+            int minLength = expFlag ? 1 : Math.Max(decimalExponent + 1, 1);
+            int length = digits.Length;
+            while (length > minLength && digits[length - 1] == '0')
             {
-                result.Insert(result.Length + e2 + 1, formatter.NumberDecimalSeparator);
+                length--;
             }
 
-            if (e2 < 0)
-            {
-                int trimIdx;
-                for (trimIdx = result.Length - 1; trimIdx > 0 && result[trimIdx] == '0'; trimIdx--) ;
-
-                // trimming trailing zeros does not move the leading digit, so the decimal exponent is unchanged
-                e2 += result.Length - trimIdx;
-                if (trimIdx > 0 && e2 >= 0) --trimIdx;
-
-                result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
-            }
-
-            AppendZeroIfEmpty(result);
-
+            StringBuilder result = new StringBuilder(length + 8);
             if (expFlag)
             {
-                if (result.Length > 1)
+                result.Append(digits[0]);
+                if (length > 1)
                 {
-                    result.Insert(1, formatter.NumberDecimalSeparator);
+                    result.Append(formatter.NumberDecimalSeparator);
+                    result.Append(digits, 1, length - 1);
                 }
 
                 result.Append('E');
-                result.Append(offset < 0 ? formatter.NegativeSign : formatter.PositiveSign);
-                result.Append(Math.Abs(offset));
+                result.Append(decimalExponent < 0 ? formatter.NegativeSign : formatter.PositiveSign);
+                result.Append(Math.Abs(decimalExponent));
+            }
+            else if (decimalExponent >= 0)
+            {
+                result.Append(digits, 0, decimalExponent + 1);
+                if (length > decimalExponent + 1)
+                {
+                    result.Append(formatter.NumberDecimalSeparator);
+                    result.Append(digits, decimalExponent + 1, length - decimalExponent - 1);
+                }
+            }
+            else
+            {
+                result.Append('0');
+                result.Append(formatter.NumberDecimalSeparator);
+                result.Append('0', -decimalExponent - 1);
+                result.Append(digits, 0, length);
             }
 
             switch (formatter.NumberNegativePattern)
@@ -430,18 +430,6 @@ public partial struct Float128<TAccelerator>
             }
 
             return result.ToString();
-        }
-    }
-
-    // The leading digit is always non-zero, so the buffer is never empty here; this guard is
-    // unreachable and excluded from coverage.
-    [MakeNonGeneric]
-    [ExcludeFromCodeCoverage]
-    private static void AppendZeroIfEmpty(StringBuilder result)
-    {
-        if (result.Length == 0)
-        {
-            result.Append('0');
         }
     }
 
