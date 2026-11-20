@@ -400,16 +400,91 @@ namespace QuadrupleLib.Tests.Conversion
             Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Parse("-" + s, CultureInfo.InvariantCulture)));
         }
 
-        [Fact]
-        public void ToStringRoundingCarryAllAddsLeadingDigit()
+        // reference: double.ToString("F" + digits), the exact decimal value rounded half to even, with the
+        // trailing zeros after the decimal point removed as Float128 does; each input is exact in double and binary128
+        [Theory]
+        [InlineData(0.0123456, 2)]
+        [InlineData(0.123456, 1)]
+        [InlineData(1.23456, 3)]
+        [InlineData(9.96, 0)]
+        [InlineData(99.96, 1)]
+        [InlineData(123.456, 0)]
+        [InlineData(12345.678, 1)]
+        [InlineData(2.5, 0)]
+        [InlineData(3.5, 0)]
+        [InlineData(0.125, 2)]
+        [InlineData(0.375, 2)]
+        [InlineData(0.75, 0)]
+        [InlineData(0.25, 0)]
+        [InlineData(-0.25, 0)]
+        [InlineData(0.000123456, 2)]
+        [InlineData(-12.3456, 2)]
+        public void ToStringWithDecimalDigitsMatchesDoubleFixedFormat(double x, int digits)
         {
-            // 9.96875 * 10^30 rounded to 1 fractional digit carries through every kept digit,
-            // giving 1.0 * 10^31
-            NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = 1 };
-            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("9.96875E30", CultureInfo.InvariantCulture);
+            NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = digits };
+            Float128<TAccelerator> value = x;
 
-            Assert.Equal("1.0E+31", value.ToString(formatter));
-            Assert.Equal("-1.0E+31", (-value).ToString(formatter));
+            Assert.Equal(TrimFractionZeros(x.ToString("F" + digits, CultureInfo.InvariantCulture)), value.ToString(formatter));
+        }
+
+        // reference: double.ToString("E" + digits) with its exponent written without padding, as Float128 does
+        [Theory]
+        [InlineData(9.96875E30, 2)]
+        [InlineData(9.96875E30, 0)]
+        [InlineData(9.96875E30, 1)]
+        [InlineData(1.5E30, 0)]
+        [InlineData(1.5E30, 38)]
+        [InlineData(1.23456E-30, 3)]
+        [InlineData(-1.23456E-30, 1)]
+        public void ToStringWithDecimalDigitsMatchesDoubleExponentFormat(double x, int digits)
+        {
+            NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = digits };
+            Float128<TAccelerator> value = x;
+
+            string[] parts = x.ToString("E" + digits, CultureInfo.InvariantCulture).Split('E');
+            int exponent = int.Parse(parts[1], CultureInfo.InvariantCulture);
+            string expected = $"{TrimFractionZeros(parts[0])}E{(exponent < 0 ? "-" : "+")}{System.Math.Abs(exponent)}";
+
+            Assert.Equal(expected, value.ToString(formatter));
+        }
+
+        [Fact]
+        public void ToStringWithInvariantCultureHasTwoDecimalPlaces()
+        {
+            // InvariantCulture's NumberDecimalDigits is 2, and 0.125 is a tie that rounds to the even digit
+            Float128<TAccelerator> value = 0.125;
+
+            Assert.Equal("0.12", value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        // reference: double.ToString("F38"); with no provider, ToString keeps 38 decimal places in plain
+        // notation, and each input is exact in double and binary128
+        [Theory]
+        [InlineData(0.1)]
+        [InlineData(0.5)]
+        [InlineData(2.5)]
+        [InlineData(123.456)]
+        [InlineData(-123.456)]
+        public void ToStringWithNoProviderHas38DecimalPlaces(double x)
+        {
+            Float128<TAccelerator> value = x;
+
+            Assert.Equal(TrimFractionZeros(x.ToString("F38", CultureInfo.InvariantCulture)), value.ToString());
+        }
+
+        [Fact]
+        public void ToStringWithNoProviderTrimsExponentFormZeros()
+        {
+            // 1.5 * 10^30 = 15 * 5^29 * 2^29 with 15 * 5^29 < 2^113, so it is exact in binary128 (unlike in
+            // double), and E notation drops the mantissa's trailing zeros
+            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("1.5E30", CultureInfo.InvariantCulture);
+
+            Assert.Equal("1.5E+30", value.ToString());
+        }
+
+        private static string TrimFractionZeros(string s)
+        {
+            return s.Contains('.') ? s.TrimEnd('0').TrimEnd('.') : s;
         }
     }
 
