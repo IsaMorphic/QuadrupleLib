@@ -326,14 +326,14 @@ public partial struct Float128<TAccelerator>
             {
                 e2 += result.Length - numDigits;
 
-                int lastDigit = result[numDigits - 1] - '0';
-                int nextDigit = result[numDigits - 2] - '0';
+                int lastDigit = result[numDigits] - '0';
+                int nextDigit = result[numDigits - 1] - '0';
 
-                result.Remove(numDigits - 1, result.Length - numDigits);
+                result.Remove(numDigits, result.Length - numDigits);
                 if (lastDigit >= 5)
                 {
                     int i;
-                    for (i = result.Length - 2; i >= 0; i--)
+                    for (i = result.Length - 1; i >= 0; i--)
                     {
                         nextDigit = result[i] - '0';
                         result[i] = (char)(++nextDigit % 10 + '0');
