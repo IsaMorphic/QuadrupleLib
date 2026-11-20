@@ -79,4 +79,4 @@ dotnet pack --no-build --output build/
 
 # Contributing
 
-Before contributing any changes to the project, make sure that all the standard unit tests are passing. If your changes are a work-in-progress, please mark those PRs as drafts. I will not accept any changes which do not pass all existing unit tests; any new features should include new tests to cover them. Finally, do NOT contribute code written by Copilot or other LLMs. QuadrupleLib is written by humans, for humans. 
+Before contributing any changes to the project, make sure that all the standard unit tests are passing. If your changes are a work-in-progress, please mark those PRs as drafts. I will not accept any changes which do not pass all existing unit tests; any new features should include new tests to cover them. 
