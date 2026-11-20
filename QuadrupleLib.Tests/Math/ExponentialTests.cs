@@ -80,6 +80,50 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(Float128<TAccelerator>.IsZero(result));
             Assert.False(Float128<TAccelerator>.IsNegative(result));
         }
+
+        [Fact]
+        public void ExpOfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void Exp2OfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp2(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void Exp10OfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp10(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void Exp10OfLargeValueIsPositiveInfinity()
+        {
+            // 10^(1e30) overflows binary128
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp10((Float128<TAccelerator>)1e30)));
+        }
+
+        [Fact]
+        public void Exp10OfLargeNegativeValueIsPositiveZero()
+        {
+            // 10^(-1e30) underflows binary128
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp10((Float128<TAccelerator>)(-1e30));
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
     }
 
     public class ExponentialTests_DefaultAccelerator :

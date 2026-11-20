@@ -383,6 +383,18 @@ namespace QuadrupleLib.Tests.Arithmetic
 
             Assert.Equal(RawStorage<TAccelerator>.ParseBits("3FFF5555555555555555555555555555"), RawStorage<TAccelerator>.Bits(quotient));
         }
+
+        [Fact]
+        public void DivideNormalByTinySubnormalOverflowsToInfinity()
+        {
+            // reference: 1.0 / 2^-16491 = 2^16491, which exceeds the largest normal (≈ 2^16384), so it overflows to +Inf
+            Float128<TAccelerator> dividend = RawStorage<TAccelerator>.FromBits((UInt128)16383 << 112);
+            Float128<TAccelerator> divisor = RawStorage<TAccelerator>.FromBits(UInt128.One << 3);
+
+            Float128<TAccelerator> quotient = dividend / divisor;
+
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(quotient));
+        }
     }
 
     public class DivisionTests_DefaultAccelerator :

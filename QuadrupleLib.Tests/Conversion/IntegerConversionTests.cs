@@ -531,6 +531,108 @@ namespace QuadrupleLib.Tests.Conversion
             Assert.Equal(UInt128.Zero, (UInt128)(Float128<TAccelerator>)0.0);
             Assert.Equal(UInt128.Zero, checked((UInt128)(Float128<TAccelerator>)0.0));
         }
+
+        [Fact]
+        public void IntegerZeroToFloat128IsZero()
+        {
+            // zero converts to a positive zero for every integer type
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(sbyte)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(short)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(int)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(long)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)Int128.Zero);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(byte)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(ushort)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(uint)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)(ulong)0);
+            Assert.Equal(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)UInt128.Zero);
+        }
+
+        [Fact]
+        public void CheckedInRangeSignedConversionsAreExact()
+        {
+            // 42 is within every signed integer type's range, so each checked conversion is exact
+            Float128<TAccelerator> value = 42;
+
+            Assert.Equal((sbyte)42, checked((sbyte)value));
+            Assert.Equal((short)42, checked((short)value));
+            Assert.Equal(42, checked((int)value));
+            Assert.Equal(42L, checked((long)value));
+            Assert.Equal((Int128)42, checked((Int128)value));
+        }
+
+        [Fact]
+        public void CheckedInRangeUnsignedConversionsAreExact()
+        {
+            // 42 is within every unsigned integer type's range, so each checked conversion is exact
+            Float128<TAccelerator> value = 42;
+
+            Assert.Equal((byte)42, checked((byte)value));
+            Assert.Equal((ushort)42, checked((ushort)value));
+            Assert.Equal(42U, checked((uint)value));
+            Assert.Equal(42UL, checked((ulong)value));
+            Assert.Equal((UInt128)42, checked((UInt128)value));
+        }
+
+        [Fact]
+        public void CheckedOutOfRangeSignedConversionIsOverflowException()
+        {
+            // 300 exceeds sbyte.MaxValue (127), so the checked conversion throws
+            Float128<TAccelerator> value = 300;
+
+            Assert.Throws<OverflowException>(() => {
+                _ = checked((sbyte)value);
+            });
+        }
+
+        [Fact]
+        public void CheckedOutOfRangeUnsignedConversionIsOverflowException()
+        {
+            // 300 exceeds byte.MaxValue (255), so the checked conversion throws
+            Float128<TAccelerator> value = 300;
+
+            Assert.Throws<OverflowException>(() => {
+                _ = checked((byte)value);
+            });
+        }
+
+        [Fact]
+        public void CheckedNegativeUnsignedConversionIsOverflowException()
+        {
+            // a negative value cannot be represented as an unsigned integer
+            Float128<TAccelerator> value = -1;
+
+            Assert.Throws<OverflowException>(() => {
+                _ = checked((byte)value);
+            });
+        }
+
+        [Fact]
+        public void Int128ToFloat128IsExact()
+        {
+            // reference: these Int128 values are exactly representable in binary128
+            Assert.Equal((Float128<TAccelerator>)42, (Float128<TAccelerator>)(Int128)42);
+            Assert.Equal(-(Float128<TAccelerator>)42, (Float128<TAccelerator>)(Int128)(-42));
+            Assert.Equal(Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 112), (Float128<TAccelerator>)(Int128.One << 112));
+            Assert.Equal(Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 116), (Float128<TAccelerator>)(Int128.One << 116));
+        }
+
+        [Fact]
+        public void UInt128ToFloat128IsExact()
+        {
+            // reference: these UInt128 values are exactly representable in binary128
+            Assert.Equal((Float128<TAccelerator>)42, (Float128<TAccelerator>)(UInt128)42);
+            Assert.Equal(Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 112), (Float128<TAccelerator>)(UInt128.One << 112));
+            Assert.Equal(Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 116), (Float128<TAccelerator>)(UInt128.One << 116));
+        }
+
+        [Fact]
+        public void FractionToIntegerConversionIsZero()
+        {
+            // a fraction in (-1, 1) truncates to a zero with the sign of the value
+            Assert.Equal(0, (int)(Float128<TAccelerator>)0.5);
+            Assert.Equal(0, (int)(Float128<TAccelerator>)(-0.5));
+        }
     }
 
     public class IntegerConversionTests_DefaultAccelerator :

@@ -45,7 +45,7 @@ namespace QuadrupleLib.Utilities
 
         public static explicit operator UInt256(BigInteger n)
         {
-            return new UInt256((UInt128)n, (UInt128)(n >> 128));
+            return new UInt256((UInt128)(n & UInt128.MaxValue), (UInt128)(n >> 128));
         }
 
         public static implicit operator BigInteger(UInt256 n)

@@ -431,6 +431,88 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(result < Float128<TAccelerator>.One);
             Assert.True(result > (Float128<TAccelerator>)0.9999999996);
         }
+
+        [Fact]
+        public void SqrtOfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Sqrt(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void CbrtOfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Cbrt(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void PowWithNaNBaseIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Pow(Float128<TAccelerator>.NaN, 2.0);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void PowWithNaNExponentIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Pow(2.0, Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void PowWithLargeEvenIntegerExponentIsPositiveInfinity()
+        {
+            // 2^(2^65) overflows binary128; the exponent exceeds ulong.MaxValue, so the exponential path is used
+            Float128<TAccelerator> y = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 65);
+
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Pow(2.0, y)));
+        }
+
+        [Fact]
+        public void PowWithLargeOddIntegerExponentIsNegativeInfinity()
+        {
+            // (-2)^(2^65 + 1) is -Inf; the exponent exceeds ulong.MaxValue, so the exponential path is used
+            Float128<TAccelerator> y = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 65) + 1.0;
+
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Pow(-2.0, y)));
+        }
+
+        [Fact]
+        public void RootNWithDegreeOneIsIdentity()
+        {
+            // IEEE 754 rootn(x, 1) is x
+            Assert.Equal((Float128<TAccelerator>)2.1, Float128<TAccelerator>.RootN(2.1, 1));
+        }
+
+        [Fact]
+        public void RootNWithNegativeDegreeOneIsReciprocal()
+        {
+            // IEEE 754 rootn(x, -1) is 1/x
+            Assert.Equal(1.0 / 2.1, (double)Float128<TAccelerator>.RootN(2.1, -1), 1e-12);
+        }
+
+        [Fact]
+        public void RootNWithNegativeDegreeTwoIsReciprocalSquareRoot()
+        {
+            // IEEE 754 rootn(4, -2) is 1/sqrt(4) = 0.5
+            Assert.Equal(0.5, (double)Float128<TAccelerator>.RootN(4.0, -2), 1e-15);
+        }
+
+        [Fact]
+        public void RootNWithNegativeDegreeThreeIsReciprocalCubeRoot()
+        {
+            // IEEE 754 rootn(8, -3) is 1/cbrt(8) = 0.5
+            Assert.Equal(0.5, (double)Float128<TAccelerator>.RootN(8.0, -3), 1e-15);
+        }
     }
 
     public class PowerAndRootTests_DefaultAccelerator :

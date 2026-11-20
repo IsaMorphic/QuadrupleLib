@@ -376,10 +376,7 @@ public partial struct Float128<TAccelerator>
                 result.Remove(trimIdx + 1, result.Length - trimIdx - 1);
             }
 
-            if (result.Length == 0)
-            {
-                result.Append('0');
-            }
+            AppendZeroIfEmpty(result);
 
             if (expFlag)
             {
@@ -433,6 +430,18 @@ public partial struct Float128<TAccelerator>
             }
 
             return result.ToString();
+        }
+    }
+
+    // The leading digit is always non-zero, so the buffer is never empty here; this guard is
+    // unreachable and excluded from coverage.
+    [MakeNonGeneric]
+    [ExcludeFromCodeCoverage]
+    private static void AppendZeroIfEmpty(StringBuilder result)
+    {
+        if (result.Length == 0)
+        {
+            result.Append('0');
         }
     }
 

@@ -894,6 +894,24 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Fact]
+        public void Atan2OfPositiveOneAndZeroIsHalfPi()
+        {
+            // IEEE 754: atan2(+1, +0) is +pi/2
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atan2(1.0, 0.0);
+
+            AssertX.NearlyEqual(Float128<TAccelerator>.HalfPi, result, Precision.NearestTenThousandth);
+        }
+
+        [Fact]
+        public void Atan2OfNegativeOneAndZeroIsNegativeHalfPi()
+        {
+            // IEEE 754: atan2(-1, +0) is -pi/2
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atan2(-1.0, 0.0);
+
+            AssertX.NearlyEqual(-Float128<TAccelerator>.HalfPi, result, Precision.NearestTenThousandth);
+        }
+
+        [Fact]
         public void HypotOfLargeEqualLegsIsScaledSquareRootOfTwo()
         {
             // hypot(a, a) = a * sqrt(2), and a = 2^16000 squares far beyond the binary128 range

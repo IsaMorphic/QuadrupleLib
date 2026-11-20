@@ -80,6 +80,24 @@ namespace QuadrupleLib.Tests.Integers
         }
 
         [Theory]
+        [InlineData(1.0)]
+        [InlineData(1.1)]
+        [InlineData(1.8)]
+        [InlineData(2.5)]
+        [InlineData(-1.0)]
+        [InlineData(-1.1)]
+        [InlineData(-1.8)]
+        [InlineData(-2.5)]
+        [InlineData(3.5)]
+        [InlineData(0.5)]
+        public void IsTruncateCorrect(double x)
+        {
+            double y0 = double.Truncate(x);
+            Float128<TAccelerator> y1 = Float128<TAccelerator>.Truncate(x);
+            Assert.Equal(y0, y1);
+        }
+
+        [Theory]
         [InlineData(1.12345, 0)]
         [InlineData(1.12345, 1)]
         [InlineData(1.12345, 2)]
@@ -150,6 +168,108 @@ namespace QuadrupleLib.Tests.Integers
 
             Assert.True(Float128<TAccelerator>.IsZero(result));
             Assert.True(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void TruncateOfFractionIsZero()
+        {
+            // truncation toward zero: a fraction in (0, 1) gives a zero with the sign of the value
+            Float128<TAccelerator> positive = Float128<TAccelerator>.Truncate((Float128<TAccelerator>)0.5);
+            Assert.True(Float128<TAccelerator>.IsZero(positive));
+            Assert.False(Float128<TAccelerator>.IsNegative(positive));
+
+            Float128<TAccelerator> negative = Float128<TAccelerator>.Truncate((Float128<TAccelerator>)(-0.5));
+            Assert.True(Float128<TAccelerator>.IsZero(negative));
+            Assert.True(Float128<TAccelerator>.IsNegative(negative));
+        }
+
+        [Fact]
+        public void TruncateOfZeroIsUnchanged()
+        {
+            // a zero is returned as-is, keeping its sign
+            Float128<TAccelerator> positive = Float128<TAccelerator>.Truncate(Float128<TAccelerator>.Zero);
+            Assert.True(Float128<TAccelerator>.IsZero(positive));
+            Assert.False(Float128<TAccelerator>.IsNegative(positive));
+
+            Float128<TAccelerator> negative = Float128<TAccelerator>.Truncate(-Float128<TAccelerator>.Zero);
+            Assert.True(Float128<TAccelerator>.IsZero(negative));
+            Assert.True(Float128<TAccelerator>.IsNegative(negative));
+        }
+
+        [Fact]
+        public void TruncateOfSpecialValuesIsUnchanged()
+        {
+            // NaN, infinities and values at or above 2^112 are returned unchanged
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Truncate(Float128<TAccelerator>.NaN)));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Truncate(Float128<TAccelerator>.PositiveInfinity)));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Truncate(Float128<TAccelerator>.NegativeInfinity)));
+
+            double large = System.Math.Pow(2, 200);
+            Assert.Equal(large, (double)Float128<TAccelerator>.Truncate((Float128<TAccelerator>)large));
+        }
+
+        [Fact]
+        public void RoundOfSpecialValuesIsUnchanged()
+        {
+            // NaN, infinities and values at or above 2^112 are returned unchanged
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Round(Float128<TAccelerator>.NaN)));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Round(Float128<TAccelerator>.PositiveInfinity)));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Round(Float128<TAccelerator>.NegativeInfinity)));
+
+            double large = System.Math.Pow(2, 200);
+            Assert.Equal(large, (double)Float128<TAccelerator>.Round((Float128<TAccelerator>)large));
+        }
+
+        [Fact]
+        public void FloorOfSpecialValuesIsUnchanged()
+        {
+            // NaN, infinities and values at or above 2^112 are returned unchanged
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Floor(Float128<TAccelerator>.NaN)));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Floor(Float128<TAccelerator>.PositiveInfinity)));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Floor(Float128<TAccelerator>.NegativeInfinity)));
+
+            double large = System.Math.Pow(2, 200);
+            Assert.Equal(large, (double)Float128<TAccelerator>.Floor((Float128<TAccelerator>)large));
+        }
+
+        [Fact]
+        public void CeilingOfSpecialValuesIsUnchanged()
+        {
+            // NaN, infinities and values at or above 2^112 are returned unchanged
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Ceiling(Float128<TAccelerator>.NaN)));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Ceiling(Float128<TAccelerator>.PositiveInfinity)));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Ceiling(Float128<TAccelerator>.NegativeInfinity)));
+
+            double large = System.Math.Pow(2, 200);
+            Assert.Equal(large, (double)Float128<TAccelerator>.Ceiling((Float128<TAccelerator>)large));
+        }
+
+        [Fact]
+        public void RoundWithUnsupportedModeIsArgumentException()
+        {
+            // only round-to-even is implemented
+            Assert.Throws<ArgumentException>(() => Float128<TAccelerator>.Round((Float128<TAccelerator>)1.0, 0, MidpointRounding.AwayFromZero));
+        }
+
+        [Fact]
+        public void RoundWithNegativeDigitsIsArgumentOutOfRangeException()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => Float128<TAccelerator>.Round((Float128<TAccelerator>)1.0, -1));
+        }
+
+        [Fact]
+        public void RoundWithManyDigitsIsUnchanged()
+        {
+            // 38 digits is the full precision of binary128, so the value is returned unchanged
+            Assert.Equal(1.12345, (double)Float128<TAccelerator>.Round((Float128<TAccelerator>)1.12345, 38));
+        }
+
+        [Fact]
+        public void RoundOfLargeValueIsUnchanged()
+        {
+            // a value at or above 2^112 is already an integer, so it is returned unchanged
+            double large = System.Math.Pow(2, 200);
+            Assert.Equal(large, (double)Float128<TAccelerator>.Round((Float128<TAccelerator>)large, 0));
         }
     }
 
