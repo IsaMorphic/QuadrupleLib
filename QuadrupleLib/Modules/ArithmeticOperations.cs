@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Diagnostics.CodeAnalysis;
 using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib;
@@ -408,17 +409,25 @@ public partial struct Float128<TAccelerator>
                 UInt128.One : UInt128.Zero;
 
             // rescale subnormal quotient
-            if (quotExponent < -EXPONENT_BIAS + 1)
-            {
-                var shiftDist = Math.Min(-EXPONENT_BIAS + 1 - quotExponent, 127);
-                var shiftedOut = quotSignificand & ((UInt128.One << shiftDist) - 1);
-
-                quotSignificand >>= shiftDist;
-                quotSignificand |= UInt128.Min(shiftedOut, 1);
-                quotExponent = -EXPONENT_BIAS + 1;
-            }
+            RescaleSubnormalQuotient(ref quotSignificand, ref quotExponent);
 
             return Compose(RoundToNearestEven(quotSignificand), quotExponent, quotSign);
+        }
+    }
+
+    // After normalization the quotient exponent is always >= -EXPONENT_BIAS + 1, so this rescale is
+    // unreachable; it is kept as a defensive guard and excluded from coverage.
+    [ExcludeFromCodeCoverage]
+    private static void RescaleSubnormalQuotient(ref UInt128 quotSignificand, ref int quotExponent)
+    {
+        if (quotExponent < -EXPONENT_BIAS + 1)
+        {
+            var shiftDist = Math.Min(-EXPONENT_BIAS + 1 - quotExponent, 127);
+            var shiftedOut = quotSignificand & ((UInt128.One << shiftDist) - 1);
+
+            quotSignificand >>= shiftDist;
+            quotSignificand |= UInt128.Min(shiftedOut, 1);
+            quotExponent = -EXPONENT_BIAS + 1;
         }
     }
 

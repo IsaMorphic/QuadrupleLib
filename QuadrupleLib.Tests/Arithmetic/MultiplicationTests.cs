@@ -237,6 +237,28 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Fact]
+        public void FusedMultiplyAddWithNaNOperandIsNaN()
+        {
+            // IEEE 754: any NaN operand makes the result NaN
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.NaN, (Float128<TAccelerator>)1.0, (Float128<TAccelerator>)1.0);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void FusedMultiplyAddWithInfiniteAddendIsAddend(bool positive)
+        {
+            // IEEE 754: a finite product plus an infinite addend is the addend
+            Float128<TAccelerator> addend = positive ? Float128<TAccelerator>.PositiveInfinity : Float128<TAccelerator>.NegativeInfinity;
+
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd((Float128<TAccelerator>)1.0, (Float128<TAccelerator>)2.0, addend);
+
+            Assert.True(positive ? Float128<TAccelerator>.IsPositiveInfinity(result) : Float128<TAccelerator>.IsNegativeInfinity(result));
+        }
+
+        [Fact]
         public void UnderflowingProductByHalfIsSubnormal()
         {
             // 2^-16382 * 0.5 = 2^-16383, the subnormal with fraction 2^111

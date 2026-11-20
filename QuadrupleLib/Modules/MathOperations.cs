@@ -327,7 +327,7 @@ public partial struct Float128<TAccelerator>
     {
         if (IsZero(x))
         {
-            return Zero;
+            return One;
         }
         else
         {

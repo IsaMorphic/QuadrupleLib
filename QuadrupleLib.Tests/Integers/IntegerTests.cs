@@ -123,6 +123,37 @@ namespace QuadrupleLib.Tests.Integers
             Assert.False(Float128<TAccelerator>.IsOddInteger(Float128<TAccelerator>.Zero));
             Assert.False(Float128<TAccelerator>.IsOddInteger(Float128<TAccelerator>.NegativeZero));
         }
+
+        [Fact]
+        public void IsEvenIntegerOfPositiveInfinityIsFalse()
+        {
+            // an infinity is not a finite integer, so it is not an even integer
+            Assert.False(Float128<TAccelerator>.IsEvenInteger(Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Fact]
+        public void IsEvenIntegerOfNegativeInfinityIsFalse()
+        {
+            Assert.False(Float128<TAccelerator>.IsEvenInteger(Float128<TAccelerator>.NegativeInfinity));
+        }
+
+        [Fact]
+        public void IsEvenIntegerOfLargePowerOfTwoIsTrue()
+        {
+            // reference: 2^113 is a power of two greater than one, so it is an even integer
+            Float128<TAccelerator> value = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 113);
+
+            Assert.True(Float128<TAccelerator>.IsEvenInteger(value));
+        }
+
+        [Fact]
+        public void IsOddIntegerOfLargePowerOfTwoIsFalse()
+        {
+            // reference: 2^113 is a power of two greater than one, so it is not an odd integer
+            Float128<TAccelerator> value = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 113);
+
+            Assert.False(Float128<TAccelerator>.IsOddInteger(value));
+        }
     }
 
     public class IntegerTests_DefaultAccelerator :

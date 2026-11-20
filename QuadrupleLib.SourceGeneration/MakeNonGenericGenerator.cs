@@ -51,28 +51,24 @@ namespace QuadrupleLib.SourceGeneration
                     );
 
             var rewriter = new GenericNameSyntaxRewriter(new[] { "Float128" });
+            // generated copies are tested through the generic originals, so exclude them from coverage
+            var excludeAttribute = Attribute(ParseName("ExcludeFromCodeCoverage"));
             foreach (var member in members.Select(x => rewriter.Visit(x)).Cast<MemberDeclarationSyntax>())
             {
-                var attributes = member.AttributeLists.SelectMany(x => x.Attributes);
-                var newAttributes = attributes.Where(
-                    x => !(x.Name is IdentifierNameSyntax n) ||
-                    n.Identifier.Text != "MakeNonGeneric");
+                var attributes = member.AttributeLists.SelectMany(x => x.Attributes)
+                    .Where(x => !(x.Name is IdentifierNameSyntax n) || n.Identifier.Text != "MakeNonGeneric");
+                if (!attributes.Any(x => x.Name is IdentifierNameSyntax n && n.Identifier.Text == "ExcludeFromCodeCoverage"))
+                {
+                    attributes = attributes.Append(excludeAttribute);
+                }
 
-                MemberDeclarationSyntax newMember;
-                if (newAttributes.Any())
-                {
-                    newMember = member.WithAttributeLists(
-                        SingletonList(
-                            AttributeList(
-                                SeparatedList(newAttributes)
-                                )
+                var newMember = member.WithAttributeLists(
+                    SingletonList(
+                        AttributeList(
+                            SeparatedList(attributes)
                             )
-                        );
-                }
-                else
-                {
-                    newMember = member.WithAttributeLists(List<AttributeListSyntax>());
-                }
+                        )
+                    );
 
                 @struct = @struct.AddMembers(newMember);
             }

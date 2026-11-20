@@ -46,13 +46,18 @@ public partial struct Float128<TAccelerator>
     [MakeNonGeneric]
     public int CompareTo(Float128<TAccelerator> other)
     {
-        if (Equals(other))
+        // NaN sorts below every other value and equal to itself, as double.CompareTo does
+        if (IsNaN(this))
         {
-            return 0;
+            return IsNaN(other) ? 0 : -1;
         }
         else if (IsNaN(other))
         {
-            return int.MinValue;
+            return 1;
+        }
+        else if (Equals(other))
+        {
+            return 0;
         }
         else if (RawSignBit == other.RawSignBit)
         {

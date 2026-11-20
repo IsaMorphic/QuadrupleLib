@@ -98,6 +98,28 @@ this matters only if you inspect the raw bits or the sign of a NaN.
 | `Tanh` / `Asinh` | `−0` and negative subnormals | `+0` | `−0` (the input) |
 | `Sinh` / `Atanh` | `−0` | `+0` | `−0` |
 | `Atanh` | `−1` | `qNaN` | `−inf` |
+| `Cosh` | `±0` | `+0` | `1` |
+
+### Comparison
+
+| Operation | Input | Before | After |
+|-----------|-------|--------|-------|
+| `CompareTo` | `x.CompareTo(NaN)`, `x` not NaN | `int.MinValue`, so NaN sorted above every value | positive: NaN sorts below every value, as `double.CompareTo` does |
+| `CompareTo` | `NaN.CompareTo(NaN)` | nonzero | `0` |
+
+### `UInt256`
+
+| Operation | Input | Before | After |
+|-----------|-------|--------|-------|
+| explicit conversion from `BigInteger` | `2^128 ≤ n < 2^256` | `OverflowException` | the exact value |
+
+### Byte layout (`IFloatingPoint<T>`)
+
+| Operation | Input | Before | After |
+|-----------|-------|--------|-------|
+| `GetSignificandByteCount` | any value | `14` | `16` (the significand is written as a full `UInt128`, as `double` writes a full `ulong`) |
+| `TryWriteSignificandBigEndian`, `TryWriteSignificandLittleEndian` | destination of 16 bytes or more | `false`, nothing written (the 16-byte `UInt128` did not fit the 14-byte slice) | `true`, 16 bytes written |
+| `TryWriteExponent*`, `TryWriteSignificand*` | destination shorter than the byte count | `ArgumentOutOfRangeException` | `false`, `bytesWritten` is `0` |
 
 ## 3. Classification methods
 

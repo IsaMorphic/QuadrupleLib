@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using QuadrupleLib.Annotations;
 
@@ -42,11 +43,17 @@ public partial struct Float128<TAccelerator>
 
     public int GetSignificandByteCount()
     {
-        return 14;
+        return 16;
     }
 
     public bool TryWriteExponentBigEndian(Span<byte> destination, out int bytesWritten)
     {
+        if (destination.Length < GetExponentByteCount())
+        {
+            bytesWritten = 0;
+            return false;
+        }
+
         bytesWritten = GetExponentByteCount();
         Span<byte> exponentBytes = destination.Slice(0, bytesWritten);
 
@@ -60,19 +67,28 @@ public partial struct Float128<TAccelerator>
 
     public bool TryWriteExponentLittleEndian(Span<byte> destination, out int bytesWritten)
     {
+        if (destination.Length < GetExponentByteCount())
+        {
+            bytesWritten = 0;
+            return false;
+        }
+
         bytesWritten = GetExponentByteCount();
         Span<byte> exponentBytes = destination.Slice(0, bytesWritten);
 
         bool flag = BitConverter.TryWriteBytes(exponentBytes, Exponent);
-        if (!BitConverter.IsLittleEndian)
-        {
-            exponentBytes.Reverse();
-        }
+        ReverseIfBigEndian(exponentBytes);
         return flag;
     }
 
     public bool TryWriteSignificandBigEndian(Span<byte> destination, out int bytesWritten)
     {
+        if (destination.Length < GetSignificandByteCount())
+        {
+            bytesWritten = 0;
+            return false;
+        }
+
         bytesWritten = GetSignificandByteCount();
         Span<byte> significandBytes = destination.Slice(0, bytesWritten);
 
@@ -87,16 +103,29 @@ public partial struct Float128<TAccelerator>
 
     public bool TryWriteSignificandLittleEndian(Span<byte> destination, out int bytesWritten)
     {
+        if (destination.Length < GetSignificandByteCount())
+        {
+            bytesWritten = 0;
+            return false;
+        }
+
         bytesWritten = GetSignificandByteCount();
         Span<byte> significandBytes = destination.Slice(0, bytesWritten);
 
         UInt128 significand = Significand;
         bool flag = MemoryMarshal.TryWrite(significandBytes, in significand);
+        ReverseIfBigEndian(significandBytes);
+        return flag;
+    }
+
+    // The little-endian writers only reverse the bytes on a big-endian machine, which the test suite never runs on.
+    [ExcludeFromCodeCoverage]
+    private static void ReverseIfBigEndian(Span<byte> bytes)
+    {
         if (!BitConverter.IsLittleEndian)
         {
-            significandBytes.Reverse();
+            bytes.Reverse();
         }
-        return flag;
     }
 
     public static Float128<TAccelerator> BitDecrement(Float128<TAccelerator> x)

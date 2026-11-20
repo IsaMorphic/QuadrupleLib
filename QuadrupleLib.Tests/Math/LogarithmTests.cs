@@ -159,6 +159,70 @@ namespace QuadrupleLib.Tests.Math
         {
             Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Log10(Float128<TAccelerator>.PositiveInfinity)));
         }
+
+        [Fact]
+        public void Log2OfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Log2(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void LogOfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Log(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void LogWithNaNOperandIsNaN()
+        {
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Log(Float128<TAccelerator>.NaN, 2.0)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Log(2.0, Float128<TAccelerator>.NaN)));
+        }
+
+        [Fact]
+        public void LogOfOneIsZero()
+        {
+            // IEEE 754: log_b(1) is 0 for any valid base
+            Float128<TAccelerator> result = Float128<TAccelerator>.Log(1.0, 2.0);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+        }
+
+        [Fact]
+        public void LogOfPositiveInfinityWithBaseTwoIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Log(Float128<TAccelerator>.PositiveInfinity, 2.0)));
+        }
+
+        [Fact]
+        public void LogOfPositiveInfinityWithBaseHalfIsNegativeInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Log(Float128<TAccelerator>.PositiveInfinity, 0.5)));
+        }
+
+        [Fact]
+        public void Log10OfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Log10(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void Log10OfOneIsZero()
+        {
+            // IEEE 754: log10(1) is 0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Log10(1.0);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+        }
     }
 
     public class LogarithmTests_DefaultAccelerator :

@@ -49,6 +49,14 @@ namespace QuadrupleLib.Tests.Math
             AssertX.NearlyEqual(y, Float128<TAccelerator>.Cosh(x), Precision.NearestTenThousandth);
         }
 
+        [Fact]
+        public void CoshOfZeroIsOne()
+        {
+            // cosh(0) = (e^0 + e^-0) / 2 = 1 exactly, for both signed zeros
+            Assert.Equal(Float128<TAccelerator>.One, Float128<TAccelerator>.Cosh(Float128<TAccelerator>.Zero));
+            Assert.Equal(Float128<TAccelerator>.One, Float128<TAccelerator>.Cosh(Float128<TAccelerator>.NegativeZero));
+        }
+
         [Theory]
         [InlineData(-0.288)]
         [InlineData(0.5)]
@@ -130,6 +138,24 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Fact]
+        public void AcoshOfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Acosh(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void AcoshOfLargeValueIsCorrect()
+        {
+            // acosh(2^9000) is ln(2 * 2^9000) = 9001 * ln(2)
+            Float128<TAccelerator> x = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 9000);
+
+            Assert.Equal(9001 * double.Log(2.0), (double)Float128<TAccelerator>.Acosh(x), 1e-9);
+        }
+
+        [Fact]
         public void AsinhOfPositiveInfinityIsPositiveInfinity()
         {
             Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Asinh(Float128<TAccelerator>.PositiveInfinity)));
@@ -142,6 +168,24 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Fact]
+        public void AsinhOfNaNIsNaN()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Asinh(Float128<TAccelerator>.NaN);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
+        public void AsinhOfLargeValueIsCorrect()
+        {
+            // asinh(2^9000) is ln(2 * 2^9000) = 9001 * ln(2)
+            Float128<TAccelerator> x = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 9000);
+
+            Assert.Equal(9001 * double.Log(2.0), (double)Float128<TAccelerator>.Asinh(x), 1e-9);
+        }
+
+        [Fact]
         public void AtanhOfOneIsPositiveInfinity()
         {
             Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Atanh(Float128<TAccelerator>.One)));
@@ -151,6 +195,16 @@ namespace QuadrupleLib.Tests.Math
         public void AtanhOfNegativeOneIsNegativeInfinity()
         {
             Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Atanh(Float128<TAccelerator>.NegativeOne)));
+        }
+
+        [Fact]
+        public void AtanhOfZeroIsZero()
+        {
+            // IEEE 754: atanh(0) is 0
+            Float128<TAccelerator> result = Float128<TAccelerator>.Atanh(Float128<TAccelerator>.Zero);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
         }
 
         [Theory]

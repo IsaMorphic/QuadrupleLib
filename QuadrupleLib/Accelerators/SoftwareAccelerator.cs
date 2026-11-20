@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Diagnostics.CodeAnalysis;
 using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib.Accelerators;
@@ -24,6 +25,8 @@ public sealed class SoftwareAccelerator :
     BaseAccelerator<SoftwareAccelerator>,
     IAccelerator
 {
+    // The accelerator is used only through its static members, so the private constructor is never called.
+    [ExcludeFromCodeCoverage]
     private SoftwareAccelerator() { }
 
     static ulong IAccelerator.BigMul(ulong a, ulong b, out ulong low)

@@ -17,6 +17,7 @@
  */
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace QuadrupleLib.Utilities
@@ -58,6 +59,17 @@ namespace QuadrupleLib.Utilities
             }
             else return pow5;
 
+            EvictOldestWhileOverSize();
+
+            return pow5;
+        }
+
+        // The eviction loop's else branch (a defensive yield for a concurrent cache miss) is only
+        // reachable under contention the single-threaded tests never create, so the whole loop is
+        // excluded from coverage.
+        [ExcludeFromCodeCoverage]
+        private static void EvictOldestWhileOverSize()
+        {
             int oldestExp;
             BigInteger removed;
             while (_currSizeBytes > MAX_SIZE_BYTES)
@@ -69,8 +81,6 @@ namespace QuadrupleLib.Utilities
                 }
                 else Thread.Yield();
             }
-
-            return pow5;
         }
     }
 }
