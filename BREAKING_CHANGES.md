@@ -166,6 +166,7 @@ and an exact tie did not always round to even.
 | `Hypot` | `+inf` when `x² + y²` overflows, even if the result does not | the scaled result, without the intermediate overflow |
 | `Pow` with an integer exponent outside `[-4, 4]` | computed as `Exp(y · Log(x))`, with a relative error up to about `1E-12` (`Pow(3, 5)` was not exactly `243`) | computed by repeated squaring: exact when the result is representable; otherwise a few units in the last place for small exponents, with an error that grows with the exponent |
 | `RootN` with `\|n\| ≥ 4` | computed as `Pow(x, 1 / n)`, with a relative error up to about `1E-18` (`RootN(32, 5)` was not exactly `2`) | refined with Newton's method: exact when the result is representable, otherwise within one unit in the last place |
+| `IAccelerator.DivRem` (public API) | a wrong quotient or remainder for some dividends of 225 or more bits, when the divisor's top 32-bit digit is small (for example `2^255` divided by `2^96 + 1`) | correct for every dividend and divisor |
 
 `Pow` with an integer exponent and `RootN` are not correctly rounded, but are now within a few
 units in the last place. The repeated squaring error grows with the exponent (`0.9^100` is about 6
