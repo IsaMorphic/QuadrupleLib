@@ -25,6 +25,7 @@ namespace QuadrupleLib.Tests.Math
     public abstract class HyperbolicTests<TAccelerator>
         where TAccelerator : IAccelerator
     {
+        private static readonly Float128<TAccelerator> _relativeTolerance = Float128<TAccelerator>.Parse("1E-32");
         [Theory]
         [InlineData(-0.288)]
         [InlineData(0.5)]
@@ -55,6 +56,14 @@ namespace QuadrupleLib.Tests.Math
             // cosh(0) = (e^0 + e^-0) / 2 = 1 exactly, for both signed zeros
             Assert.Equal(Float128<TAccelerator>.One, Float128<TAccelerator>.Cosh(Float128<TAccelerator>.Zero));
             Assert.Equal(Float128<TAccelerator>.One, Float128<TAccelerator>.Cosh(Float128<TAccelerator>.NegativeZero));
+        }
+
+        [Fact]
+        public void SinhOfHalfIsReferenceValueTo30Digits()
+        {
+            // reference: sinh(0.5) = (e^0.5 - e^-0.5) / 2; Python decimal module at 60 significant digits
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("0.521095305493747361622425626411491546202");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Sinh(Float128<TAccelerator>.Parse("0.5")), _relativeTolerance);
         }
 
         [Theory]

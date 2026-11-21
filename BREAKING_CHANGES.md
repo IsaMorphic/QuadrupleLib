@@ -10,7 +10,7 @@ The baseline is release **0.5.2**. Every row below was confirmed by evaluating e
 static operation of `Float128` on 0.5.2 and on this release over the inputs `NaN`, `±inf`, `±0`,
 `±1`, `±2`, `±0.5`, `±2.5`, `±3`, and the smallest subnormal `±ε`. In that comparison, apart from
 the rounding corrections in §5, results for finite inputs changed only for `Tanh` and `Asinh`
-(see §4).
+(see §4). §6 describes a later change to `Exp` and `Log`.
 
 ## 1. NaN results now have the sign bit clear
 
@@ -169,16 +169,31 @@ and an exact tie did not always round to even.
 
 `Pow` with an integer exponent and `RootN` are not correctly rounded, but are now within a few
 units in the last place. The repeated squaring error grows with the exponent (`0.9^100` is about 6
-units off). `Pow` with a non-integer exponent still goes through `Exp` and `Log`, and is unchanged.
+units off). `Pow` with a non-integer exponent goes through `Exp` and `Log`, which changed as described in §6.
 
 Two existing tests expected `2·2^-16382 ± 1·2^-16382` to be subnormal. The exact result is
 `2^-16382`, the smallest normal number, so those tests now use operands whose result is subnormal.
 
+## 6. `Exp` and `Log` are accurate to about one unit in the last place
+
+`Exp` and `Log` previously refined a double-precision estimate with Newton iterations. Over 300
+sampled inputs (`Exp` on [-30, 30], `Log` on (0, 4000)), the largest error was 2.5e23 ulp for `Exp`
+at `x = 23.56` and 2.9e22 ulp for `Log` at `2041.04`, about `5e-11` relative. They now reduce the
+argument and evaluate a series at binary128 precision. On the same samples the largest error is
+1.07 ulp for `Exp` and 1.26 ulp for `Log`, measured against a 400-bit reference. The tests check
+`Exp` and `Log` against reference values to a relative tolerance of `1E-32`, about 32 significant
+digits.
+
+Functions that call `Exp` or `Log` change in their last digits, for example `Log(3)`,
+`Exp(1.5)`, `Sinh`, `Cosh`, `Tanh`, `Asinh`, `Acosh`, `Atanh`, and `Pow` with a non-integer
+exponent. In a spot check, `Exp2`, `Exp10`, `Log2`, `Log10`, and `Log(x, base)` gave identical
+results, because they do not call `Exp` or `Log`.
+
 ## Migration guidance
 
-- **Most consumers are unaffected.** Apart from the `Tanh` and `Asinh` digits in §4 and the
-  rounding corrections in §5, only results for special-value inputs (infinity, zero, NaN)
-  change. The rounding corrections change finite results by at most one unit in the last place,
+- **Most consumers are unaffected.** Apart from the `Tanh` and `Asinh` digits in §4, the
+  rounding corrections in §5, and the `Exp` and `Log` changes in §6, only results for special-value
+  inputs (infinity, zero, NaN) change. The rounding corrections change finite results by at most one unit in the last place,
   except where §5 lists a larger error that is now fixed.
 - If you compare NaN bit patterns or read a NaN's sign, expect the sign bit to be clear (§1).
 - Code that caught `DivideByZeroException` from dividing a subnormal by zero, or from `%` with a

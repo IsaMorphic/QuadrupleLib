@@ -71,6 +71,10 @@ public partial struct Float128<TAccelerator>
 
     private static readonly Float128<TAccelerator> _e = Parse("2.7182818284590452353602874713526625");
 
+    // ln(2) = _ln2Hi + _ln2Lo. _ln2Hi has 96 significant bits, so k * _ln2Hi is exact for |k| < 2^17.
+    private static readonly Float128<TAccelerator> _ln2Hi = new(new UInt128(0x62e42fefa39eUL, 0xf35793c767300000UL), -1, false); // exact: 0x1.62e42fefa39ef3p-1
+    private static readonly Float128<TAccelerator> _ln2Lo = Parse("0.000000000000000000000000000000194704509238074995158795957333327380278528298909288512357468");
+
     [MakeNonGeneric]
     public static Float128<TAccelerator> E => _e;
 
