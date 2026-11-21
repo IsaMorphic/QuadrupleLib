@@ -124,6 +124,77 @@ namespace QuadrupleLib.Tests.Math
             Assert.True(Float128<TAccelerator>.IsZero(result));
             Assert.False(Float128<TAccelerator>.IsNegative(result));
         }
+
+        private static readonly Float128<TAccelerator> _relativeTolerance = Float128<TAccelerator>.Parse("1E-32");
+
+        [Fact]
+        public void ExpOfOneIsEulerNumberTo30Digits()
+        {
+            // reference: e (Euler's number), known constant
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("2.718281828459045235360287471352662497757247093");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Exp(Float128<TAccelerator>.One), _relativeTolerance);
+        }
+
+        [Fact]
+        public void ExpOfNegativeOneIsInverseEulerNumberTo30Digits()
+        {
+            // reference: 1/e, known constant
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("0.367879441171442321595523770161460867445811131");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Exp(Float128<TAccelerator>.Parse("-1")), _relativeTolerance);
+        }
+
+        [Fact]
+        public void ExpOfTenIsReferenceValueTo30Digits()
+        {
+            // reference: e^10, known constant
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("22026.46579480671651695790064528424");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Exp(Float128<TAccelerator>.Parse("10")), _relativeTolerance);
+        }
+
+        [Theory]
+        [InlineData("-16.98046875")]
+        [InlineData("-0.5")]
+        [InlineData("0.25")]
+        [InlineData("2.5")]
+        [InlineData("11.75")]
+        public void ExpOfLogReturnsInputAfterRoundTripTo30Digits(string x)
+        {
+            Float128<TAccelerator> input = Float128<TAccelerator>.Parse(x);
+            Float128<TAccelerator> roundTrip = Float128<TAccelerator>.Log(Float128<TAccelerator>.Exp(input));
+            AssertX.RelativelyEqual(input, roundTrip, _relativeTolerance);
+        }
+
+        [Fact]
+        public void ExpOfOverflowBoundaryIsPositiveInfinity()
+        {
+            // exp(11358) overflows binary128
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp((Float128<TAccelerator>)11358)));
+        }
+
+        [Fact]
+        public void ExpJustBelowOverflowBoundaryIsFinite()
+        {
+            // exp(11356) is finite
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp((Float128<TAccelerator>)11356);
+            Assert.True(Float128<TAccelerator>.IsFinite(result));
+        }
+
+        [Fact]
+        public void ExpOfUnderflowBoundaryIsPositiveZero()
+        {
+            // exp(-11435) underflows binary128
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp((Float128<TAccelerator>)(-11435));
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void ExpJustAboveUnderflowBoundaryIsNonzero()
+        {
+            // exp(-11433) is nonzero
+            Float128<TAccelerator> result = Float128<TAccelerator>.Exp((Float128<TAccelerator>)(-11433));
+            Assert.False(Float128<TAccelerator>.IsZero(result));
+        }
     }
 
     public class ExponentialTests_DefaultAccelerator :

@@ -223,6 +223,39 @@ namespace QuadrupleLib.Tests.Math
 
             Assert.True(Float128<TAccelerator>.IsZero(result));
         }
+
+        private static readonly Float128<TAccelerator> _relativeTolerance = Float128<TAccelerator>.Parse("1E-32");
+
+        [Fact]
+        public void LogOfTwoIsReferenceValueTo30Digits()
+        {
+            // reference: ln(2), known constant
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("0.693147180559945309417232121458176568075500134");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(Float128<TAccelerator>.Parse("2")), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfTenIsReferenceValueTo30Digits()
+        {
+            // reference: ln(10), known constant
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("2.302585092994045684017991454684364207601101488");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(Float128<TAccelerator>.Parse("10")), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfHalfIsNegativeLogOfTwoTo30Digits()
+        {
+            // reference: -ln(2), known constant
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("-0.693147180559945309417232121458176568075500134");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(Float128<TAccelerator>.Parse("0.5")), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfEulerNumberIsOneTo30Digits()
+        {
+            Float128<TAccelerator> e = Float128<TAccelerator>.Parse("2.718281828459045235360287471352662497757247093");
+            AssertX.RelativelyEqual(Float128<TAccelerator>.One, Float128<TAccelerator>.Log(e), _relativeTolerance);
+        }
     }
 
     public class LogarithmTests_DefaultAccelerator :
