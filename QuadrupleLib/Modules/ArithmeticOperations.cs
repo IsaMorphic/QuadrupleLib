@@ -355,7 +355,7 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            var leftAdjust = (int)UInt256.LeadingZeroCount(left.Significand) - 32;
+            var leftAdjust = (int)UInt256.LeadingZeroCount(left.Significand);
             var leftSignificand = (UInt256)left.Significand << leftAdjust;
             var leftExponent = left.Exponent - leftAdjust + 115;
 

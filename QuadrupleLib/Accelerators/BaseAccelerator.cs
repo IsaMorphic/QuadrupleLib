@@ -24,7 +24,7 @@ namespace QuadrupleLib.Accelerators
         where TAccelerator : BaseAccelerator<TAccelerator>,
         IAccelerator
     {
-        #region Private API: unsigned 128-bit division routine
+        #region Private API: unsigned 256-bit division routine
 
         private static UInt256 Divide(UInt256 n, uint d, out uint r)
         {
