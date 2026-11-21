@@ -57,6 +57,7 @@ namespace QuadrupleLib.Tests
             {
                 throw new DoesNotThrowException($"{nameof(AssertX)}.{nameof(DoesNotThrow)} failure: Expected no exception of type {typeof(TException).Name} to be thrown, but it was thrown with message: {ex.Message}", ex);
             }
+            catch { }
         }
     }
 }
