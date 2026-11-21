@@ -162,13 +162,37 @@ public partial struct Float128<TAccelerator>
         return DDAdd(DDLog(u.Hi), DDLog1pSmall((u.Lo / u.Hi, Zero)));
     }
 
-    // exp(r) for |r| <= 0.35, by the Taylor series in Horner form
+    private const int ExpSeriesTerms = 27;
+
+    // 1/n as extended-precision values for n = 1 .. ExpSeriesTerms (index 0 is unused). Built on first use, not in a
+    // static initialiser, because the static fields of this type are initialised in no defined order across files.
+    private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[]? _reciprocals;
+
+    private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[] Reciprocals
+    {
+        get
+        {
+            if (_reciprocals == null)
+            {
+                var table = new (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[ExpSeriesTerms + 1];
+                for (int n = 1; n <= ExpSeriesTerms; n++)
+                {
+                    table[n] = DDDiv((One, Zero), (n, Zero));
+                }
+                _reciprocals = table;
+            }
+            return _reciprocals;
+        }
+    }
+
+    // exp(r) for |r| <= 0.35, by the Taylor series in Horner form; each term multiplies by a precomputed 1/n
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDExpSmall((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) r)
     {
+        var reciprocals = Reciprocals;
         var s = (One, Zero);
-        for (int n = 27; n >= 1; n--)
+        for (int n = ExpSeriesTerms; n >= 1; n--)
         {
-            s = DDAdd((One, Zero), DDMul(DDDiv(r, (n, Zero)), s));
+            s = DDAdd((One, Zero), DDMul(DDMul(r, reciprocals[n]), s));
         }
         return s;
     }
@@ -200,7 +224,7 @@ public partial struct Float128<TAccelerator>
         return e.Hi + e.Lo;
     }
 
-    // exp(a) as an extended-precision value, for 0 <= a <= 90
+    // exp(a) as an extended-precision value, for finite a whose exp(a) is in range (the caller checks this)
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDExpOf(Float128<TAccelerator> a)
     {
         return DDExp2(DDMul((a, Zero), (_invLn2Hi, _invLn2Lo)));

@@ -265,6 +265,30 @@ namespace QuadrupleLib.Tests.Math
             AssertX.RelativelyEqual(Float128<TAccelerator>.Parse("2.718281828459045235360287471352662497757247093"), ratio, Float128<TAccelerator>.Parse("1E-20"));
         }
 
+        [Fact]
+        public void ExpJustBelowOverflowIsFinite()
+        {
+            // exp(11356.5) = 1.16220766207028327431422236902680407566322196e4932, which is below MaxValue
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("1.16220766207028327431422236902680407566322196e4932");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Exp(Float128<TAccelerator>.Parse("11356.5")), _relativeTolerance);
+        }
+
+        [Fact]
+        public void ExpOfArgumentRoundingToSmallestSubnormalIsSmallestSubnormal()
+        {
+            // exp(-11433.3) = 0.588 * 2^-16494, which rounds to the smallest subnormal 2^-16494
+            Float128<TAccelerator> smallest = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -16494);
+            Assert.Equal(smallest, Float128<TAccelerator>.Exp(Float128<TAccelerator>.Parse("-11433.3")));
+        }
+
+        [Fact]
+        public void ExpOfArgumentBelowHalfSmallestSubnormalIsZero()
+        {
+            // exp(-11433.6) = 0.436 * 2^-16494, which rounds to zero
+            Assert.Equal(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Exp(Float128<TAccelerator>.Parse("-11433.6")));
+            Assert.Equal(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Exp(Float128<TAccelerator>.Parse("-11434")));
+        }
+
         [Fact(Timeout = 10000)]
         public void ExpOfPositiveInfinityIsPositiveInfinity()
         {

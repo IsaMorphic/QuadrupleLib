@@ -594,26 +594,28 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (IsZero(y))
+        else if (newBase == One)
         {
-            return newBase < One ? _pInf : _nInf;
+            // ln(newBase) is zero, so the quotient divides by zero for every y; matches System.Math.Log(a, 1),
+            // which returns NaN
+            return _qNaN;
         }
         else if (y == One)
         {
             return Zero;
         }
-        else if (newBase == One)
+        else if (IsPositiveInfinity(newBase))
         {
-            // the base-1 logarithm is undefined (ln(1) is zero); matches System.Math.Log(a, 1), which returns NaN
+            // matches System.Math.Log(a, +Infinity), which is NaN for a != 1; y = 1 was handled above and gives 0
             return _qNaN;
+        }
+        else if (IsZero(y))
+        {
+            return newBase < One ? _pInf : _nInf;
         }
         else if (IsPositiveInfinity(y))
         {
             return newBase < One ? _nInf : _pInf;
-        }
-        else if (IsPositiveInfinity(newBase))
-        {
-            return Zero;
         }
 
         var quotient = DDDiv(DDLog(y), DDLog(newBase));

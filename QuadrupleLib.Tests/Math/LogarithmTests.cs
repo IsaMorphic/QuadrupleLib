@@ -155,6 +155,35 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Fact]
+        public void LogOfOneWithBaseOneIsNaN()
+        {
+            // ln(1) / ln(1) is 0 / 0; matches System.Math.Log(1, 1), which is NaN
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Log(1.0, 1.0)));
+        }
+
+        [Fact]
+        public void LogOfPositiveInfinityWithPositiveInfinityBaseIsNaN()
+        {
+            // ln(+inf) / ln(+inf) is inf / inf
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Log(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void LogOfZeroWithPositiveInfinityBaseIsNaN()
+        {
+            // ln(0) / ln(+inf) is -inf / inf
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Log(0.0, Float128<TAccelerator>.PositiveInfinity)));
+        }
+
+        [Fact]
+        public void LogWithPositiveInfinityBaseIsNaNExceptForOne()
+        {
+            // matches System.Math.Log(a, +Infinity): NaN for a != 1, and 0 for a = 1
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Log(3.0, Float128<TAccelerator>.PositiveInfinity)));
+            Assert.Equal(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Log(1.0, Float128<TAccelerator>.PositiveInfinity));
+        }
+
+        [Fact]
         public void Log2OfPositiveInfinityIsPositiveInfinity()
         {
             Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Log2(Float128<TAccelerator>.PositiveInfinity)));
