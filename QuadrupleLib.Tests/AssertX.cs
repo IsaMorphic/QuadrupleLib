@@ -39,7 +39,8 @@ namespace QuadrupleLib.Tests
             where T : IBinaryFloatingPointIeee754<T>
         {
             T bound = T.Abs(expected) * relativeTolerance;
-            if (T.Abs(actual - expected) > bound)
+            // written as a negated <= so that a NaN difference fails the check
+            if (!(T.Abs(actual - expected) <= bound))
             {
                 throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(RelativelyEqual)} failure: Values differ by more than {relativeTolerance} relative\nExpected: {expected}\nActual: {actual}.");
             }

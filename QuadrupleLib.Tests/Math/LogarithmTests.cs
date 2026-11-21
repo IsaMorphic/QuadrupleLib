@@ -253,8 +253,89 @@ namespace QuadrupleLib.Tests.Math
         [Fact]
         public void LogOfEulerNumberIsOneTo30Digits()
         {
+            // reference: e (Euler's number) to 45 digits (mathematical constant)
             Float128<TAccelerator> e = Float128<TAccelerator>.Parse("2.718281828459045235360287471352662497757247093");
             AssertX.RelativelyEqual(Float128<TAccelerator>.One, Float128<TAccelerator>.Log(e), _relativeTolerance);
+        }
+
+        [Theory]
+        [InlineData("3", "1.09861228866810969139524523692252570464749E+0")]
+        [InlineData("1.5", "4.05465108108164381978013115464349136571990E-1")]
+        public void LogMatchesReferenceValueTo30Digits(string x, string expected)
+        {
+            // reference: Python decimal module at 70 significant digits; 3 and 1.5 have mantissas above sqrt(2), so the normalisation step recentres them
+            AssertX.RelativelyEqual(Float128<TAccelerator>.Parse(expected), Float128<TAccelerator>.Log(Float128<TAccelerator>.Parse(x)), _relativeTolerance);
+        }
+
+        [Theory]
+        [InlineData("0.5")]
+        [InlineData("1.5")]
+        [InlineData("2.0")]
+        [InlineData("10.0")]
+        [InlineData("0.1")]
+        [InlineData("100.0")]
+        public void ExpOfLogReturnsInputAfterRoundTripTo30Digits(string x)
+        {
+            Float128<TAccelerator> input = Float128<TAccelerator>.Parse(x);
+            Float128<TAccelerator> roundTrip = Float128<TAccelerator>.Exp(Float128<TAccelerator>.Log(input));
+            AssertX.RelativelyEqual(input, roundTrip, _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfOnePlusTinyIsTinyTo30Digits()
+        {
+            // ln(1 + 2^-60): reference: Python decimal module at 70 significant digits; relative accuracy must hold near 1
+            Float128<TAccelerator> input = Float128<TAccelerator>.One + Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -60);
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("8.67361737988403546829804048432821366808139E-19");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(input), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfOneMinusTinyIsTinyTo30Digits()
+        {
+            // ln(1 - 2^-60): reference: Python decimal module at 70 significant digits; relative accuracy must hold on the other side of 1
+            Float128<TAccelerator> input = Float128<TAccelerator>.One - Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -60);
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("-8.67361737988403547582120432959085371908130E-19");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(input), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfTwoToMinusOneThousandMatchesReferenceValueTo30Digits()
+        {
+            // reference: ln(2^-1000) = -1000*ln(2); checked with Python decimal module at 70 significant digits
+            Float128<TAccelerator> input = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -1000);
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("-6.93147180559945309417232121458176568075500E+2");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(input), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfSmallestSubnormalMatchesReferenceValueTo30Digits()
+        {
+            // 2^-16494 is the smallest positive subnormal; reference: ln(2^-16494) = -16494*ln(2); checked with Python decimal module at 70 significant digits
+            Float128<TAccelerator> input = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -16494);
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("-1.14327695961557379335278266113311643138372E+4");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(input), _relativeTolerance);
+        }
+
+        [Fact]
+        public void LogOfMaxValueMatchesReferenceValueTo30Digits()
+        {
+            // MaxValue = (2 - 2^-112) * 2^16383, built exactly from representable parts; reference: Python decimal module at 70 significant digits
+            Float128<TAccelerator> mantissa = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 1) - Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -112);
+            Float128<TAccelerator> input = Float128<TAccelerator>.ScaleB(mantissa, 16383);
+            Float128<TAccelerator> expected = Float128<TAccelerator>.Parse("1.13565234062941439494919310779707648912526E+4");
+            AssertX.RelativelyEqual(expected, Float128<TAccelerator>.Log(input), _relativeTolerance);
+        }
+
+        [Theory]
+        [InlineData("3", "7")]
+        [InlineData("0.3", "0.7")]
+        [InlineData("1E-200", "1E+100")]
+        public void LogOfProductMatchesSumOfLogs(string a, string b)
+        {
+            Float128<TAccelerator> pa = Float128<TAccelerator>.Parse(a);
+            Float128<TAccelerator> pb = Float128<TAccelerator>.Parse(b);
+            AssertX.RelativelyEqual(Float128<TAccelerator>.Log(pa) + Float128<TAccelerator>.Log(pb), Float128<TAccelerator>.Log(pa * pb), _relativeTolerance);
         }
     }
 
