@@ -283,6 +283,31 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Fact]
+        public void IeeeRemainderRoundsQuotientToNearestEven()
+        {
+            // IEEE 754: n = round-half-even(x / y); 2.5 -> n = 2, 3.5 -> n = 4
+            Assert.Equal((Float128<TAccelerator>)0.5, Float128<TAccelerator>.Ieee754Remainder(2.5, 1.0));
+            Assert.Equal((Float128<TAccelerator>)(-0.5), Float128<TAccelerator>.Ieee754Remainder(3.5, 1.0));
+        }
+
+        [Fact]
+        public void IeeeRemainderOfExactMultipleKeepsSignOfDividend()
+        {
+            Float128<TAccelerator> negative = Float128<TAccelerator>.Ieee754Remainder(-4.0, 2.0);
+            Assert.True(Float128<TAccelerator>.IsZero(negative));
+            Assert.True(RawStorage<TAccelerator>.IsSignSet(negative));
+        }
+
+        [Fact]
+        public void IeeeRemainderWithSubnormalResultIsExact()
+        {
+            // x = 1.5 * 2^-16000 and y = 2^-16000 are exact subnormals; x / y = 1.5 ties to 2, so r = -0.5 * 2^-16000
+            Float128<TAccelerator> y = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -16000);
+            Float128<TAccelerator> x = Float128<TAccelerator>.ScaleB((Float128<TAccelerator>)1.5, -16000);
+            Assert.Equal(Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.NegativeOne, -16001), Float128<TAccelerator>.Ieee754Remainder(x, y));
+        }
+
+        [Fact]
         public void SmallestSubnormalRemainderZeroIsNaN()
         {
             // IEEE 754: the remainder with a zero divisor is an invalid operation, so it returns NaN rather than throwing

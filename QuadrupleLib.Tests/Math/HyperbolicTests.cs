@@ -303,6 +303,16 @@ namespace QuadrupleLib.Tests.Math
         {
             Assert.Equal(-1.0, (double)Float128<TAccelerator>.Tanh(Float128<TAccelerator>.NegativeInfinity));
         }
+
+        [Fact]
+        public void SinhAndCoshOfValueWhoseExponentOverflowsAreInfinite()
+        {
+            // e^x overflows binary128 here; the half-exponential path must not throw
+            Float128<TAccelerator> x = Float128<TAccelerator>.Parse("8.94E+4931");
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Sinh(x)));
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Cosh(x)));
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Sinh(-x)));
+        }
     }
 
     public class HyperbolicTests_DefaultAccelerator :

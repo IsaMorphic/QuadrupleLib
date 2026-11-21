@@ -52,7 +52,6 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
-        [InlineData(0.0)]
         [InlineData(-1.0)]
         public void IsLogNaN(double x)
         {
@@ -74,7 +73,6 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
-        [InlineData(0.0)]
         [InlineData(-1.0)]
         public void IsLog2NaN(double x)
         {
@@ -96,7 +94,6 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
-        [InlineData(0.0)]
         [InlineData(-1.0)]
         public void IsLog10NaN(double x)
         {
@@ -123,9 +120,7 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Theory]
-        [InlineData(0.0, 2.0)]
         [InlineData(-1.0, 2.0)]
-        [InlineData(0.0, 0.5)]
         [InlineData(-1.0, 0.5)]
         [InlineData(1.0, 0.0)]
         [InlineData(2.0, 0.0)]
@@ -140,6 +135,23 @@ namespace QuadrupleLib.Tests.Math
         {
             Float128<TAccelerator> y = Float128<TAccelerator>.Log(x, b);
             Assert.True(Float128<TAccelerator>.IsNaN(y));
+        }
+
+        [Fact]
+        public void LogOfZeroIsNegativeInfinity()
+        {
+            // IEEE 754: the logarithm of zero is negative infinity, for every base above 1 (and the base-2 and base-10 forms)
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, Float128<TAccelerator>.Log(0.0));
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, Float128<TAccelerator>.Log2(0.0));
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, Float128<TAccelerator>.Log10(0.0));
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, Float128<TAccelerator>.Log(0.0, 2.0));
+        }
+
+        [Fact]
+        public void LogOfZeroWithBaseBelowOneIsPositiveInfinity()
+        {
+            // log_b(0) = ln(0) / ln(b), and ln(b) is negative for 0 < b < 1
+            Assert.Equal(Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.Log(0.0, 0.5));
         }
 
         [Fact]

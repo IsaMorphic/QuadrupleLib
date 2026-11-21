@@ -149,6 +149,17 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Fact]
+        public void SubtractNearlyEqualValuesIsExact()
+        {
+            // 1 - (1 - 2^-113) = 2^-113 exactly; the aligned sum is below 8 guard-bit units
+            Float128<TAccelerator> one = Float128<TAccelerator>.One;
+            Float128<TAccelerator> ulpHalf = Float128<TAccelerator>.ScaleB(one, -113);
+            Float128<TAccelerator> nearOne = one - ulpHalf;
+            Assert.Equal(ulpHalf, one - nearOne);
+            Assert.Equal(-ulpHalf, nearOne - one);
+        }
+
+        [Fact]
         public void OverflowingDiffIsInfinity()
         {
             Float128<TAccelerator> max = Float128<TAccelerator>.ScaleB((Float128<TAccelerator>)(UInt128.MaxValue >> 15), short.MaxValue >> 1);

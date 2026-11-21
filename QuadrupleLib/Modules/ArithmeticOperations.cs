@@ -17,6 +17,7 @@
  */
 
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib;
@@ -208,7 +209,51 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Ieee754Remainder(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        return left - right * Round(left / right);
+        if (IsNaN(left) || IsNaN(right) || IsInfinity(left) || IsZero(right))
+        {
+            return _qNaN;
+        }
+        else if (IsInfinity(right) || IsZero(left))
+        {
+            return left;
+        }
+
+        // both operands are exact integer multiples of 2^e, so left - n * right is computed exactly in integers
+        int exponentL = left.Exponent - 112, exponentR = right.Exponent - 112;
+        int e = Math.Min(exponentL, exponentR);
+        BigInteger x = (BigInteger)left.Significand << (exponentL - e);
+        BigInteger y = (BigInteger)right.Significand << (exponentR - e);
+
+        // n = x / y rounded to nearest, ties to even; the remainder then lies in [-y / 2, y / 2]
+        BigInteger quotient = BigInteger.DivRem(x, y, out BigInteger remainder);
+        if (remainder << 1 > y || (remainder << 1 == y && !quotient.IsEven))
+        {
+            remainder -= y;
+        }
+
+        if (remainder.IsZero)
+        {
+            return left.RawSignBit ? NegativeZero : Zero;
+        }
+
+        return FromScaledInteger(BigInteger.Abs(remainder), e, left.RawSignBit ^ (remainder.Sign < 0));
+    }
+
+    // exact value of (-1)^negative * magnitude * 2^exponent; the caller guarantees that it is representable
+    private static Float128<TAccelerator> FromScaledInteger(BigInteger magnitude, int exponent, bool negative)
+    {
+        UInt128 sign = negative ? UInt128.One << 127 : UInt128.Zero;
+        int bitLength = (int)magnitude.GetBitLength();
+        int leadingExponent = exponent + bitLength - 1;
+        if (leadingExponent < -EXPONENT_BIAS + 1)
+        {
+            // subnormal: the significand is in units of 2^(1 - EXPONENT_BIAS - 112)
+            return new Float128<TAccelerator>(sign | (UInt128)(magnitude << (exponent + EXPONENT_BIAS + 112 - 1)));
+        }
+
+        BigInteger significand = magnitude << (113 - bitLength);
+        UInt128 biased = (UInt128)(leadingExponent + EXPONENT_BIAS);
+        return new Float128<TAccelerator>(sign | (biased << 112) | ((UInt128)significand & (SIGNIFICAND_MASK)));
     }
 
     public static Float128<TAccelerator> operator +(Float128<TAccelerator> left, Float128<TAccelerator> right)
@@ -275,10 +320,12 @@ public partial struct Float128<TAccelerator>
             }
 
             // normalize output
+            // normalize so the leading bit sits at position 115 (p + 3 bits, p = 113)
+            // a nonzero sum can be below 8 here, e.g. 1 - (1 - 2^-113), so normalize from the full sum
             int normDist;
-            if ((sumSignificand >> 3) != 0)
+            if (sumSignificand != UInt128.Zero)
             {
-                normDist = (int)UInt128.LeadingZeroCount(sumSignificand >> 3) - 15;
+                normDist = (int)UInt128.LeadingZeroCount(sumSignificand) - 12;
                 if (normDist > 0)
                 {
                     normDist = Math.Min(normDist, sumExponent - (-EXPONENT_BIAS + 1));

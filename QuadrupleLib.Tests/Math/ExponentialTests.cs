@@ -100,6 +100,14 @@ namespace QuadrupleLib.Tests.Math
         }
 
         [Fact]
+        public void Exp10OfValueWhoseProductOverflowsIsPositiveInfinity()
+        {
+            // 8.94e4931 * log2(10) is beyond the binary128 range before the exponent is formed
+            Float128<TAccelerator> x = Float128<TAccelerator>.Parse("8.94E+4931");
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Exp10(x)));
+        }
+
+        [Fact]
         public void Exp10OfNaNIsNaN()
         {
             Float128<TAccelerator> result = Float128<TAccelerator>.Exp10(Float128<TAccelerator>.NaN);
