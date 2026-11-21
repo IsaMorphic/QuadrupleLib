@@ -502,14 +502,26 @@ public partial struct Float128<TAccelerator>
             return _pInf;
         }
 
-        Float128<TAccelerator> k = Log2(E);
-        Float128<TAccelerator> x_n = Log2(y) / k;
-        for (int i = 0; i < 15; i++)
+        // y = m * 2^k with m in [1, 2); recentre m to [sqrt(1/2), sqrt(2)) so that |s| is small below
+        int k = ILogB(y);
+        Float128<TAccelerator> m = ScaleB(y, -k);
+        if (m > 1.4142135623730951)
         {
-            x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
+            m = ScaleB(m, -1);
+            k++;
         }
 
-        return x_n;
+        // ln(m) = 2 * atanh(s) with s = (m - 1) / (m + 1), so |s| < 0.1716 and s^2 < 0.0295
+        Float128<TAccelerator> s = (m - One) / (m + One);
+        Float128<TAccelerator> s2 = s * s;
+        Float128<TAccelerator> series = One / 49;
+        for (int i = 23; i >= 0; i--)
+        {
+            series = FusedMultiplyAdd(series, s2, One / (2 * i + 1));
+        }
+
+        Float128<TAccelerator> lnM = 2 * s * series;
+        return FusedMultiplyAdd(k, _ln2Lo, lnM) + k * _ln2Hi;
     }
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y, Float128<TAccelerator> newBase)
@@ -601,20 +613,29 @@ public partial struct Float128<TAccelerator>
         {
             return y > Zero ? _pInf : Zero;
         }
-
-        Float128<TAccelerator> x_n = Exp2(y / Log(2));
-        if (IsInfinity(x_n) || IsZero(x_n))
+        else if (y > 11357)
         {
-            // the result overflows or underflows, and refining it would produce NaN
-            return x_n;
+            // beyond ln(MaxValue)
+            return _pInf;
+        }
+        else if (y < -11434)
+        {
+            // beyond ln(smallest subnormal / 2)
+            return Zero;
         }
 
-        for (int n = 0; n < 15; n++)
+        // y = k * ln(2) + r with |r| <= ln(2) / 2; the first subtraction is exact because k * _ln2Hi is exact
+        Float128<TAccelerator> kf = Round(y / _ln2Hi);
+        Float128<TAccelerator> r = FusedMultiplyAdd(-kf, _ln2Lo, y - kf * _ln2Hi);
+
+        // exp(r) = 1 + r * (1 + r / 2 * (1 + r / 3 * (...))), evaluated by Horner's rule
+        Float128<TAccelerator> series = One;
+        for (int n = 27; n >= 1; n--)
         {
-            x_n = Abs(FusedMultiplyAdd(x_n, y - Log(x_n), x_n));
+            series = One + r * series / n;
         }
 
-        return x_n;
+        return ScaleB(series, (int)kf);
     }
 
     public static Float128<TAccelerator> Exp10(Float128<TAccelerator> y)
