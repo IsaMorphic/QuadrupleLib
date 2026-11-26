@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024-2026 Chosen Few Software
+ *  Copyright 2026 Chosen Few Software
  *  This file is part of QuadrupleLib.
  *
  *  QuadrupleLib is free software: you can redistribute it and/or modify
@@ -18,21 +18,23 @@
 
 namespace QuadrupleLib;
 
-// Internal extended-precision arithmetic. A value is held as an unevaluated sum hi + lo of two binary128 numbers,
-// which carries about 226 significant bits. The transcendental functions compute in this form and round once at the
-// end, so their results are within one unit in the last place of the exact value.
+// double-double: unevaluated sum hi + lo
 public partial struct Float128<TAccelerator>
 {
-    #region Constants (each is the binary128 value of the constant, and the binary128 value of the remainder)
+    #region Constants
 
-    private static readonly Float128<TAccelerator> _log2_10Hi = Parse("3.3219280948873623478703194294893902863042970131526463323338936822586020536363093924592249095439910888671875");
-    private static readonly Float128<TAccelerator> _log2_10Lo = Parse("-1.1043946562012806572027913728644266896030167451329050686145587790377896955232355e-34");
-    private static readonly Float128<TAccelerator> _invLn2Hi = Parse("1.442695040888963407359924681001892043334674933537275198973620597624558693772289785783868865109980106353759765625");
-    private static readonly Float128<TAccelerator> _invLn2Lo = Parse("9.4091971020615710735161828809306554689666984432786418344140961767459146897959919e-35");
-    private static readonly Float128<TAccelerator> _invLn10Hi = Parse("0.4342944819032518276511289189166050957622625721549327728439280984926379805544094381275499472394585609436035156250");
-    private static readonly Float128<TAccelerator> _invLn10Lo = Parse("-1.3467865566351266206729474315326772719703877842977256695004758995360200826325784e-35");
-    private static readonly Float128<TAccelerator> _piHi = Parse("3.141592653589793238462643383279502797479068098137295573004504331874296718662975536062731407582759857177734375");
-    private static readonly Float128<TAccelerator> _piLo = Parse("8.6718101301237810247970440260433522541054144901523884386078071930357488340431829e-35");
+    // log2(10) = Hi + Lo, relative error below 2^-230 against a 110-digit reference. Used by Exp10.
+    private static readonly Float128<TAccelerator> _log210Hi = new(new UInt128(0x4000A934F0979A37UL, 0x15FC9257EDFE9B60UL));
+    private static readonly Float128<TAccelerator> _log210Lo = new(new UInt128(0xBF8E2599349D500EUL, 0x4262958B724A9BFCUL));
+    // 1/ln 2 = Hi + Lo, relative error below 2^-227 against a 110-digit reference. Used by Exp, DDExpOf, HalfExp, and DDLog2.
+    private static readonly Float128<TAccelerator> _invLn2Hi = new(new UInt128(0x3FFF71547652B82FUL, 0xE1777D0FFDA0D23AUL));
+    private static readonly Float128<TAccelerator> _invLn2Lo = new(new UInt128(0x3F8DF4475ABBD546UL, 0xEB4AD2C45928B367UL));
+    // 1/ln 10 = Hi + Lo, relative error below 2^-228 against a 110-digit reference. Used by Log10.
+    private static readonly Float128<TAccelerator> _invLn10Hi = new(new UInt128(0x3FFDBCB7B1526E50UL, 0xE32A6AB7555F5A68UL));
+    private static readonly Float128<TAccelerator> _invLn10Lo = new(new UInt128(0xBF8B1E6E08E5CFEDUL, 0xD1B2EFEE2E0695D8UL));
+    // pi = Hi + Lo, relative error below 2^-229 against a 110-digit reference. Used by DDAtan, Atan2, and PiTimes. Hi is pi rounded to binary128.
+    private static readonly Float128<TAccelerator> _piHi = new(new UInt128(0x4000921FB54442D1UL, 0x8469898CC51701B8UL));
+    private static readonly Float128<TAccelerator> _piLo = new(new UInt128(0x3F8DCD129024E088UL, 0xA67CC74020BBEA64UL));
 
     #endregion
 
@@ -45,7 +47,6 @@ public partial struct Float128<TAccelerator>
         return (s, (a - (s - bb)) + (b - bb));
     }
 
-    // requires |a| >= |b| or a == 0
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDQuickTwoSum(Float128<TAccelerator> a, Float128<TAccelerator> b)
     {
         Float128<TAccelerator> s = a + b;
@@ -62,9 +63,9 @@ public partial struct Float128<TAccelerator>
         (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a,
         (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) b)
     {
-        var s = DDTwoSum(a.Hi, b.Hi);
-        var t = DDTwoSum(a.Lo, b.Lo);
-        var u = DDQuickTwoSum(s.Hi, s.Lo + t.Hi);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) s = DDTwoSum(a.Hi, b.Hi);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) t = DDTwoSum(a.Lo, b.Lo);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) u = DDQuickTwoSum(s.Hi, s.Lo + t.Hi);
         return DDQuickTwoSum(u.Hi, u.Lo + t.Lo);
     }
 
@@ -77,8 +78,8 @@ public partial struct Float128<TAccelerator>
         (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a,
         (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) b)
     {
-        var p = DDTwoProd(a.Hi, b.Hi);
-        // an overflowing product has no finite error term (FMA would give NaN), so keep the infinity
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) p = DDTwoProd(a.Hi, b.Hi);
+        // keep infinity
         if (IsInfinity(p.Hi))
         {
             return (p.Hi, Zero);
@@ -91,17 +92,21 @@ public partial struct Float128<TAccelerator>
         (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) b)
     {
         Float128<TAccelerator> q1 = a.Hi / b.Hi;
-        var r = DDAdd(a, DDNegate(DDMul((q1, Zero), b)));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) r = DDAdd(a, DDNegate(DDMul((q1, Zero), b)));
         Float128<TAccelerator> q2 = r.Hi / b.Hi;
         r = DDAdd(r, DDNegate(DDMul((q2, Zero), b)));
         Float128<TAccelerator> q3 = r.Hi / b.Hi;
         return DDAdd(DDQuickTwoSum(q1, q2), (q3, Zero));
     }
 
+    // Requires a.Hi > 0: a zero argument gives NaN from the 0/0 seed. Callers must handle zero first.
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDSqrt((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a)
     {
-        Float128<TAccelerator> x = Sqrt(a.Hi);
-        var residual = DDAdd(a, DDNegate(DDTwoProd(x, x)));
+        // double seed, one Newton step
+        int half = a.Hi.Exponent / 2;
+        Float128<TAccelerator> seed = ScaleB((Float128<TAccelerator>)Math.Sqrt((double)ScaleB(a.Hi, -2 * half)), half);
+        Float128<TAccelerator> x = 0.5 * (seed + a.Hi / seed);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) residual = DDAdd(a, DDNegate(DDTwoProd(x, x)));
         return DDQuickTwoSum(x, residual.Hi / (2 * x));
     }
 
@@ -114,7 +119,8 @@ public partial struct Float128<TAccelerator>
 
     #region Extended-precision elementary functions
 
-    // ln(1 + z) for |z| < 1/2, through ln(1 + z) = 2 atanh(s) with s = z / (2 + z) and |s| < 0.1716
+    // ln(1 + z) = 2 atanh(z / (2 + z)). Callers keep |s| < 0.1716 (see DDLog). The series is cut after 26 odd terms;
+    // the omitted terms are below 2^-130 relative.
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDLog1pSmall((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) z)
     {
         if (z.Hi == Zero)
@@ -122,24 +128,26 @@ public partial struct Float128<TAccelerator>
             return (Zero, Zero);
         }
 
-        var s = DDDiv(z, DDAdd((2, Zero), z));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) s = DDDiv(z, DDAdd((2, Zero), z));
         Float128<TAccelerator> s2 = s.Hi * s.Hi;
 
-        // tail = s2 / 3 + s2^2 / 5 + ..., so that ln(1 + z) = 2 s (1 + tail)
-        Float128<TAccelerator> p = One / (2 * 26 + 1);
-        for (int n = 25; n >= 1; n--)
+        // tail = s2 / 3 + s2^2 / 5 + ...
+        Float128<TAccelerator>[] odd = OddReciprocals;
+        Float128<TAccelerator> p = odd[ODD_SERIES_TERMS];
+        for (int n = ODD_SERIES_TERMS - 1; n >= 1; n--)
         {
-            p = p * s2 + One / (2 * n + 1);
+            p = p * s2 + odd[n];
         }
         Float128<TAccelerator> tail = s2 * p;
 
         return DDQuickTwoSum(2 * s.Hi, 2 * s.Lo + 2 * s.Hi * tail);
     }
 
-    // ln(y) for finite y > 0, as an extended-precision value
+    // ln(y), finite y > 0
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDLog(Float128<TAccelerator> y)
     {
-        // y = m * 2^k with m recentred to [sqrt(1/2), sqrt(2)), so that |m - 1| < 0.42 and m - 1 is exact
+        // reduce: y = m * 2^k, m in (sqrt(1/2), 1.4142135623730951], so |s| < 0.1716 in DDLog1pSmall.
+        // k * _ln2Hi is exact for |k| <= 2^20 (see Constants.cs).
         int k = ILogB(y);
         Float128<TAccelerator> m = ScaleB(y, -k);
         if (m > 1.4142135623730951)
@@ -148,11 +156,11 @@ public partial struct Float128<TAccelerator>
             k++;
         }
 
-        var lnM = DDLog1pSmall((m - One, Zero));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) lnM = DDLog1pSmall((m - One, Zero));
 
-        // k * ln(2): k has at most 15 bits, so k * _ln2Hi (93 significant bits, so exact for |k| < 2^20) is exact
+        // k * ln 2
         Float128<TAccelerator> kf = k;
-        var kLn2 = (kf * _ln2Hi, kf * _ln2Lo);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) kLn2 = DDMul((kf, Zero), (_ln2Hi, _ln2Lo));
         return DDAdd(kLn2, lnM);
     }
 
@@ -162,49 +170,63 @@ public partial struct Float128<TAccelerator>
         return DDAdd(DDLog(u.Hi), DDLog1pSmall((u.Lo / u.Hi, Zero)));
     }
 
-    private const int ExpSeriesTerms = 27;
+    private const int EXP_SERIES_TERMS = 27;
 
-    // 1/n as extended-precision values for n = 1 .. ExpSeriesTerms (index 0 is unused). Built on first use, not in a
-    // static initialiser, because the static fields of this type are initialised in no defined order across files.
-    private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[]? _reciprocals;
+    private const int ODD_SERIES_TERMS = 26;
 
-    private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[] Reciprocals
+    // 1/(2n+1) for n = 0 .. ODD_SERIES_TERMS, built on first use
+    private static readonly Lazy<Float128<TAccelerator>[]> _oddReciprocals =
+        new Lazy<Float128<TAccelerator>[]>(BuildOddReciprocals);
+
+    private static Float128<TAccelerator>[] OddReciprocals => _oddReciprocals.Value;
+
+    private static Float128<TAccelerator>[] BuildOddReciprocals()
     {
-        get
+        Float128<TAccelerator>[] table = new Float128<TAccelerator>[ODD_SERIES_TERMS + 1];
+        for (int n = 0; n <= ODD_SERIES_TERMS; n++)
         {
-            if (_reciprocals == null)
-            {
-                var table = new (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[ExpSeriesTerms + 1];
-                for (int n = 1; n <= ExpSeriesTerms; n++)
-                {
-                    table[n] = DDDiv((One, Zero), (n, Zero));
-                }
-                _reciprocals = table;
-            }
-            return _reciprocals;
+            table[n] = One / (2 * n + 1);
         }
+        return table;
     }
 
-    // exp(r) for |r| <= 0.35, by the Taylor series in Horner form; each term multiplies by a precomputed 1/n
+    // exp(r), Horner form over 1/k!. Callers pass |r| <= ln 2 / 2 (see DDExp2). The series is cut after k = 27;
+    // the omitted terms are below 2^-140.
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDExpSmall((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) r)
     {
-        var reciprocals = Reciprocals;
-        var s = (One, Zero);
-        for (int n = ExpSeriesTerms; n >= 1; n--)
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[] inverse = InverseFactorials;
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) s = inverse[EXP_SERIES_TERMS];
+        for (int n = EXP_SERIES_TERMS - 1; n >= 0; n--)
         {
-            s = DDAdd((One, Zero), DDMul(DDMul(r, reciprocals[n]), s));
+            s = DDAdd(inverse[n], DDMul(r, s));
         }
         return s;
     }
 
-    // 2^w for an extended-precision exponent w; there is no overflow check here,
-    // so Exp2FromDD checks the range first and this must only be called with a finite result
+    // 1/k!, for k = 0 .. EXP_SERIES_TERMS, built on first use.
+    private static readonly Lazy<(Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[]> _inverseFactorials =
+        new Lazy<(Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[]>(BuildInverseFactorials);
+
+    private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[] InverseFactorials => _inverseFactorials.Value;
+
+    private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[] BuildInverseFactorials()
+    {
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[] table = new (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo)[EXP_SERIES_TERMS + 1];
+        table[0] = (One, Zero);
+        for (int n = 1; n < table.Length; n++)
+        {
+            table[n] = DDDiv(table[n - 1], (n, Zero));
+        }
+        return table;
+    }
+
+    // 2^w, unchecked. |w - round(w)| <= 1/2, so r = f ln 2 satisfies |r| <= ln 2 / 2 for DDExpSmall.
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDExp2((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) w)
     {
-        // w = k + f with |f| <= 1/2, so that 2^w = 2^k * exp(f * ln 2)
+        // w = k + f
         Float128<TAccelerator> kf = Round(w.Hi);
-        var f = DDQuickTwoSum(w.Hi - kf, w.Lo);
-        var r = DDMul(f, (_ln2Hi, _ln2Lo));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) f = DDQuickTwoSum(w.Hi - kf, w.Lo);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) r = DDMul(f, (_ln2Hi, _ln2Lo));
         return DDScale(DDExpSmall(r), (int)kf);
     }
 
@@ -220,36 +242,52 @@ public partial struct Float128<TAccelerator>
             return Zero;
         }
 
-        var e = DDExp2(w);
+        // integer exponent: exact power of two
+        if (w.Lo == Zero && IsInteger(w.Hi))
+        {
+            return ScaleB(One, (int)w.Hi);
+        }
+
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) e = DDExp2(w);
         return e.Hi + e.Lo;
     }
 
-    // exp(a) as an extended-precision value, for finite a whose exp(a) is in range (the caller checks this)
+    // exp(a), extended precision
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDExpOf(Float128<TAccelerator> a)
     {
         return DDExp2(DDMul((a, Zero), (_invLn2Hi, _invLn2Lo)));
     }
 
-    // exp(a) / 2 rounded to binary128, for a where sinh and cosh are finite; halving is exact
+    // exp(a) / 2 = 2^(a / ln 2 - 1)
     private static Float128<TAccelerator> HalfExp(Float128<TAccelerator> a)
     {
-        return ScaleB(Exp2FromDD(DDMul((a, Zero), (_invLn2Hi, _invLn2Lo))), -1);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) w = DDMul((a, Zero), (_invLn2Hi, _invLn2Lo));
+        if (IsInfinity(w.Hi))
+        {
+            return _pInf;
+        }
+        return Exp2FromDD(DDAdd(w, (-One, Zero)));
     }
 
-    // thresholds (as properties, so no static field initialisation order is involved)
-    private static Float128<TAccelerator> SmallArgument => ScaleB(One, -57);          // below this, sinh, tanh, asinh, atan, atanh return x
-    private static Float128<TAccelerator> HyperbolicLargeArgument => 45;             // above this, sinh/cosh are e^|x|/2 and tanh is 1 to rounding
-    private static Float128<TAccelerator> LogLargeArgument => ScaleB(One, 60);       // above this, asinh and acosh are ln(2|x|) to rounding
+    // thresholds, as raw binary128 bits.
+    // |x| < 2^-57: Asin, Sinh, Tanh, Asinh, Atan, Atanh return x. The omitted cubic term is below 2^-115 times |x|, under half an ulp of x.
+    private static readonly Float128<TAccelerator> _smallArgument = new(new UInt128(0x3FC6000000000000UL, 0x0UL));
+    // |x| >= 45: Sinh, Cosh use HalfExp, with an omitted relative term below e^-90 < 2^-129. Tanh returns +-1. The omitted Tanh tail, about 2*e^(-2|x|), is below 2*e^-90 < 2^-128, far under half an ulp of 1.
+    private static readonly Float128<TAccelerator> _hyperbolicLargeArgument = new(new UInt128(0x4004680000000000UL, 0x0UL));
+    // |x| > 2^60: Acosh, Asinh use ln(2|x|). The dropped 1/(4x^2) is below 2^-122, under half an ulp of a result above 42 (2^-108).
+    private static readonly Float128<TAccelerator> _logLargeArgument = new(new UInt128(0x403B000000000000UL, 0x0UL));
 
-    // b^n for n >= 1, by repeated squaring; the caller keeps the magnitude of the result in range
+    // b^n for n >= 1, by repeated squaring
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDPowInt((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) b, ulong n)
     {
-        var result = (One, Zero);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) result = (Zero, Zero);
+        bool hasResult = false;
         while (true)
         {
             if ((n & 1) != 0)
             {
-                result = DDMul(result, b);
+                result = hasResult ? DDMul(result, b) : b;
+                hasResult = true;
             }
             n >>= 1;
             if (n == 0)
@@ -266,7 +304,8 @@ public partial struct Float128<TAccelerator>
         return DDMul(DDLog(y), (_invLn2Hi, _invLn2Lo));
     }
 
-    // arctangent of an extended-precision value, by halving the argument three times and summing the series
+    // atan(z). |z| is reduced to <= 1 by inversion, then three halvings give |z| <= tan(pi / 32), about 0.0985.
+    // The series is cut after 18 odd terms; the omitted terms are below 2^-120.
     private static (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) DDAtan((Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) z)
     {
         bool negative = z.Hi < Zero;
@@ -281,21 +320,22 @@ public partial struct Float128<TAccelerator>
             z = DDDiv((One, Zero), z);
         }
 
-        // atan(z) = 2 atan(z / (1 + sqrt(1 + z^2))); three halvings leave |z| < tan(pi / 32) < 0.1
+        // three halvings, then series
         for (int i = 0; i < 3; i++)
         {
-            var root = DDSqrt(DDAdd((One, Zero), DDMul(z, z)));
+            (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) root = DDSqrt(DDAdd((One, Zero), DDMul(z, z)));
             z = DDDiv(z, DDAdd((One, Zero), root));
         }
 
-        // atan(z) = z - z^3 / 3 + z^5 / 5 - ... = z * (1 - z^2 / 3 + ...)
-        var z2 = DDMul(z, z);
-        var p = (Zero, Zero);
+        // series
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) z2 = DDMul(z, z);
+        Float128<TAccelerator>[] odd = OddReciprocals;
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) p = (Zero, Zero);
         for (int n = 17; n >= 0; n--)
         {
-            p = DDAdd((One / (2 * n + 1), Zero), DDNegate(DDMul(z2, p)));
+            p = DDAdd((odd[n], Zero), DDNegate(DDMul(z2, p)));
         }
-        var result = DDScale(DDMul(z, p), 3);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) result = DDScale(DDMul(z, p), 3);
 
         if (inverted)
         {

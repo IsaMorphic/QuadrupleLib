@@ -70,14 +70,17 @@ public partial struct Float128 : IComparable, IComparable<Float128>, IEquatable<
     #region Private API (constants)
 
     private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
-    private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
     private static readonly UInt128 SIGNBIT_MASK = (UInt128.MaxValue >> 1) + 1;
+    // must follow SIGNBIT_MASK: static fields initialize in declaration order
+    private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
     private static readonly ushort EXPONENT_BIAS = short.MaxValue >> 1;
 
     #endregion
 
     #region Public API (constants)
 
+    // NaN bit patterns, see BREAKING_CHANGES.md §1. _qNaN is the library NaN (no quiet bit). _sNaN is the sign-set
+    // signaling NaN, which differs from the generic _sNaN in Constants.cs (known inconsistency).
     private static readonly Float128 _qNaN = new Float128(UInt128.One, short.MaxValue, false);
     private static readonly Float128 _sNaN = new Float128(UInt128.One, short.MaxValue, true);
     private static readonly Float128 _pInf = new Float128(UInt128.Zero, short.MaxValue, false);

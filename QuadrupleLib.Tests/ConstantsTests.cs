@@ -42,6 +42,20 @@ namespace QuadrupleLib.Tests
         {
             Assert.Equal(Float128<TAccelerator>.One, Float128<TAccelerator>.MultiplicativeIdentity);
         }
+
+        [Fact]
+        public void EIsReferenceValue()
+        {
+            // reference: e to 300 digits, rounded to binary128 (Python decimal, exact series)
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("40005BF0A8B1457695355FB8AC404E7A"), RawStorage<TAccelerator>.Bits(Float128<TAccelerator>.E));
+        }
+
+        [Fact]
+        public void TauIsReferenceValue()
+        {
+            // reference: 2 * pi to 300 digits, rounded to binary128 (Python decimal, Machin's formula); equals Pi with exponent + 1
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("4001921FB54442D18469898CC51701B8"), RawStorage<TAccelerator>.Bits(Float128<TAccelerator>.Tau));
+        }
     }
 
     public class ConstantsTests_DefaultAccelerator :

@@ -6,7 +6,8 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 
 # Main Features
 
-- [x] Adheres to recommended requirements of IEEE 754 specification
+- [x] Special values follow IEEE 754-2019 where it defines them, except that the library NaN (`Float128.NaN`) has no quiet bit; where IEEE 754 leaves a case open, `Pow`, `Atan2`, and the hyperbolic functions follow C99 Annex F.9; `RootN` follows IEEE 754-2019 §9.2 (see [BREAKING_CHANGES.md](https://github.com/IsaMorphic/QuadrupleLib/blob/main/BREAKING_CHANGES.md), §1–§2)
+- [x] `+`, `-`, `*`, `/`, and `Sqrt` are correctly rounded; `Pow`, `RootN`, `Exp10`, `Hypot`, and the other transcendental functions are not guaranteed to be (see [BREAKING_CHANGES.md](https://github.com/IsaMorphic/QuadrupleLib/blob/main/BREAKING_CHANGES.md), §5–§6)
 - [x] Implements .NET 10 `IBinaryFloatingPointIeee754` generic arithmetic interface
 - [x] Implements all basic arithmetic operations (`+`, `-`, `*`, `/`, `%`, `++`, `--`)
 - [x] Implements all standard rounding functions (`Round`, `Floor`, `Ceiling`)
@@ -14,13 +15,15 @@ QuadrupleLib is a modern implementation of the IEEE 754 `binary128` floating poi
 - [x] Implements basic `ToString` and `Parse`/`TryParse` methods
 - [x] Supports .NET Core formatting features for `ToString` and `Parse`
 - [x] Implements conversion methods to & from all standard number types (except `decimal`)
-- [x] Implements `IEEERemainder` as suggested in IEEE 754
+- [x] Implements `Ieee754Remainder` as suggested in IEEE 754
 - [x] Implements typical library functions (`Pow`, `Atan2`, `Log`)
 - [x] Unit tests to check for specification coverage & overall correctness
 
 # Using QuadrupleLib
 
 QuadrupleLib is available as a regularly updated [NuGet package](https://www.nuget.org/packages/QuadrupleLib), published via my GitHub Actions workflow. Alternatively, see the [Releases](https://github.com/IsaMorphic/QuadrupleLib/releases) page for a downloadable version you may use in your local or private feeds. 
+
+Behavior changes that can affect existing code are listed in [BREAKING_CHANGES.md](https://github.com/IsaMorphic/QuadrupleLib/blob/main/BREAKING_CHANGES.md).
 
 ## Basic Usage
 
@@ -45,7 +48,7 @@ public static Float128 Pi => _pi;
 
 ## Notes on Hardware Acceleration
 
-`Float128<TAccelerator>` is a generic type offered by the library which can accept one of two "accelerators" that are built-in: `DefaultAccelerator` and `SoftwareAccelerator`. The former uses typical hardware accelerated intrinsics for 128-bit multiplication and division operations, while the latter provides a custom, software defined version of the same thing. In almost all cases, you'll want to use `DefaultAccelerator`, unless you are running your code on a platform that does not include intrinsics for 128-bit arithmetic. In those cases, `SoftwareAccelerator` provides a faster alternative that is widely compatible. The most notable example of such a platform is when using QuadrupleLib in conjunction with [ILGPU](https://ilgpu.net), a JIT compiler for running .NET code on the GPU. 
+`Float128<TAccelerator>` is a generic type offered by the library which can accept one of two "accelerators" that are built-in: `DefaultAccelerator` and `SoftwareAccelerator`. The former uses typical hardware accelerated intrinsics for 128-bit multiplication and division operations, while the latter provides a custom, software defined version of the same thing. In almost all cases, you'll want to use `DefaultAccelerator`, unless you are running your code on a platform that does not include intrinsics for 128-bit arithmetic. In those cases, `SoftwareAccelerator` provides a portable, widely compatible alternative that does not depend on 128-bit hardware intrinsics. The most notable example of such a platform is when using QuadrupleLib in conjunction with [ILGPU](https://ilgpu.net), a JIT compiler for running .NET code on the GPU. 
 
 **As of version 0.2.x** of the library, the `Float128` type also defines a non-generic variant that allows for basic comparison and equality checks when using the type as part of a collection or for other, more general purposes like serialization. Any generic instance of `Float128<TAccelerator>` can be implicitly cast to this thin wrapper, allowing for easy portability across a given codebase. 
 

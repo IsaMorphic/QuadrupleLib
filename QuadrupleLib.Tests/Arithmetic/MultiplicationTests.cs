@@ -16,6 +16,7 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Numerics;
 using QuadrupleLib.Accelerators;
 using Xunit;
 
@@ -107,7 +108,10 @@ namespace QuadrupleLib.Tests.Arithmetic
         [InlineData(0.33)]
         public void MultiplyByZeroIsZero(double x)
         {
-            Assert.Equal(Float128<TAccelerator>.Zero, x * Float128<TAccelerator>.Zero);
+            Float128<TAccelerator> product = x * Float128<TAccelerator>.Zero;
+
+            Assert.Equal(Float128<TAccelerator>.Zero, product);
+            Assert.Equal(x < 0, Float128<TAccelerator>.IsNegative(product));
         }
 
         [Theory]
@@ -154,7 +158,8 @@ namespace QuadrupleLib.Tests.Arithmetic
         [Fact]
         public void MultiplySubnormalIsCorrect()
         {
-            Float128<TAccelerator> twoEps = Float128<TAccelerator>.BitIncrement(Float128<TAccelerator>.Epsilon);
+            // 2 * Epsilon has the bit pattern 2; the expected value is written as bits, not taken from the library
+            Float128<TAccelerator> twoEps = RawStorage<TAccelerator>.FromBits((UInt128)2);
             Assert.Equal(twoEps, Float128<TAccelerator>.Epsilon * 2.0);
         }
 
@@ -200,6 +205,51 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Fact]
+        public void FusedMultiplyAddWithSameSignProductAndAddendIsMagnitudeSum()
+        {
+            // 2 * 3 + 4 = 10, and (-2) * 3 + (-4) = -10; both exact
+            Assert.Equal((Float128<TAccelerator>)10.0, Float128<TAccelerator>.FusedMultiplyAdd((Float128<TAccelerator>)2.0, (Float128<TAccelerator>)3.0, (Float128<TAccelerator>)4.0));
+            Assert.Equal((Float128<TAccelerator>)(-10.0), Float128<TAccelerator>.FusedMultiplyAdd((Float128<TAccelerator>)(-2.0), (Float128<TAccelerator>)3.0, (Float128<TAccelerator>)(-4.0)));
+        }
+
+        [Theory]
+        [InlineData(false, false, false)]
+        [InlineData(true, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(true, true, true)]
+        public void FusedMultiplyAddWithZeroProductAndZeroAddendIsZeroWithSign(bool productNegative, bool addendNegative, bool resultNegative)
+        {
+            // (+0) + (+0), (-0) + (+0) and (+0) + (-0) are +0; only (-0) + (-0) is -0, under round-to-nearest
+            Float128<TAccelerator> left = productNegative ? Float128<TAccelerator>.NegativeZero : Float128<TAccelerator>.Zero;
+            Float128<TAccelerator> addend = addendNegative ? Float128<TAccelerator>.NegativeZero : Float128<TAccelerator>.Zero;
+
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(left, (Float128<TAccelerator>)5.0, addend);
+
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.Equal(resultNegative, RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Theory]
+        [InlineData(3.0)]
+        [InlineData(-3.0)]
+        public void FusedMultiplyAddWithZeroProductAndNonZeroAddendIsAddend(double addend)
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.Zero, (Float128<TAccelerator>)5.0, (Float128<TAccelerator>)addend);
+
+            Assert.Equal((Float128<TAccelerator>)addend, result);
+        }
+
+        [Fact]
+        public void FusedMultiplyAddWithZeroOnLeftAndInfiniteRightIsPositiveNaN()
+        {
+            // 0 * +Inf is invalid; the reversed order is FusedMultiplyAddWithZeroTimesInfinityIsPositiveNaN
+            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.Zero, Float128<TAccelerator>.PositiveInfinity, Float128<TAccelerator>.One);
+
+            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.False(RawStorage<TAccelerator>.IsSignSet(result));
+        }
+
+        [Fact]
         public void FusedMultiplyAddWithInfiniteProductIsPositiveInfinity()
         {
             // the product +Inf * 2 is +Inf, and +Inf + 1 is +Inf
@@ -239,10 +289,12 @@ namespace QuadrupleLib.Tests.Arithmetic
         [Fact]
         public void FusedMultiplyAddWithNaNOperandIsNaN()
         {
-            // IEEE 754: any NaN operand makes the result NaN
-            Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(Float128<TAccelerator>.NaN, (Float128<TAccelerator>)1.0, (Float128<TAccelerator>)1.0);
+            // IEEE 754: any NaN operand makes the result NaN, whichever operand it is
+            Float128<TAccelerator> nan = Float128<TAccelerator>.NaN, one = Float128<TAccelerator>.One;
 
-            Assert.True(Float128<TAccelerator>.IsNaN(result));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.FusedMultiplyAdd(nan, one, one)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.FusedMultiplyAdd(one, nan, one)));
+            Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.FusedMultiplyAdd(one, one, nan)));
         }
 
         [Theory]
@@ -355,6 +407,61 @@ namespace QuadrupleLib.Tests.Arithmetic
             Float128<TAccelerator> result = Float128<TAccelerator>.FusedMultiplyAdd(x, y, addend);
 
             Assert.Equal(RawStorage<TAccelerator>.ParseBits("3F208000000000000000000000000000"), RawStorage<TAccelerator>.Bits(result));
+        }
+
+        [Fact]
+        public void MultiplySeededSweepOfNormalOperandsIsCorrectlyRounded()
+        {
+            // seeded BigInteger reference: the exact product of two normal significands, rounded to 113 bits, ties to even
+            Random random = new(20260107);
+            for (int trial = 0; trial < 2000; trial++)
+            {
+                BigInteger significandX = RawStorage<TAccelerator>.RandomSignificand(random);
+                BigInteger significandY = RawStorage<TAccelerator>.RandomSignificand(random);
+                int exponentX = random.Next(-8000, 8000);
+                int exponentY = random.Next(-8000, 8000);
+                bool negativeX = random.Next(2) == 0;
+                bool negativeY = random.Next(2) == 0;
+
+                Float128<TAccelerator> x = RawStorage<TAccelerator>.FromBits(RawStorage<TAccelerator>.PackBits(negativeX, exponentX, significandX));
+                Float128<TAccelerator> y = RawStorage<TAccelerator>.FromBits(RawStorage<TAccelerator>.PackBits(negativeY, exponentY, significandY));
+
+                int lsb = exponentX + exponentY - 224;
+                Assert.Equal(ReferenceProductBits(negativeX != negativeY, significandX * significandY, lsb), RawStorage<TAccelerator>.Bits(x * y));
+            }
+        }
+
+        [Theory]
+        [InlineData(1UL, 0UL)]
+        [InlineData(3UL, 2UL)]
+        [InlineData(5UL, 2UL)]
+        [InlineData(7UL, 4UL)]
+        public void MultiplySmallestSubnormalIsRoundedHalfToEven(ulong numerator, ulong expectedBits)
+        {
+            // numerator * 2^-16494 times 0.5 is a tie between two subnormals; the tie goes to the even significand
+            Float128<TAccelerator> multiplicand = RawStorage<TAccelerator>.FromBits((UInt128)numerator);
+            Assert.Equal((UInt128)expectedBits, RawStorage<TAccelerator>.Bits(multiplicand * (Float128<TAccelerator>)0.5));
+        }
+
+        // the exact product is significand * 2^lsb; keep its top 113 bits, rounded half to even, for normal results
+        private static UInt128 ReferenceProductBits(bool negative, BigInteger product, int lsb)
+        {
+            int shift = (int)product.GetBitLength() - 113;
+            BigInteger kept = product >> shift;
+            BigInteger dropped = product & ((BigInteger.One << shift) - 1);
+            BigInteger half = BigInteger.One << (shift - 1);
+            if (dropped > half || (dropped == half && !kept.IsEven))
+            {
+                kept += BigInteger.One;
+            }
+
+            if (kept == BigInteger.One << 113)
+            {
+                kept >>= 1;
+                shift++;
+            }
+
+            return RawStorage<TAccelerator>.PackBits(negative, lsb + shift + 112, kept);
         }
     }
 
