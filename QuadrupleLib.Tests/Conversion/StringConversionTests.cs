@@ -72,8 +72,69 @@ namespace QuadrupleLib.Tests.Conversion
         public void ParseStringIsCorrect(string s, double x)
         {
             AssertX.NearlyEqual((Float128<TAccelerator>)x,
-                Float128<TAccelerator>.Parse(s),
+                Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture),
                 Precision.NearestTenThousandth);
+        }
+
+        [Theory]
+        [InlineData("1E99999")]
+        [InlineData("1E99999999999")]
+        public void ParseExponentAboveRangeIsPositiveInfinity(string s)
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Parse(s)));
+        }
+
+        [Theory]
+        [InlineData("-1E99999")]
+        [InlineData("-1E99999999999")]
+        public void ParseNegativeExponentAboveRangeIsNegativeInfinity(string s)
+        {
+            Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Parse(s)));
+        }
+
+        [Fact]
+        public void ParseExponentBelowRangeIsPositiveZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Parse("1E-99999");
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void ParseExponentAtMaxRangeIsFinite()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Parse("1E4932");
+            Assert.True(Float128<TAccelerator>.IsFinite(result));
+            Assert.False(Float128<TAccelerator>.IsZero(result));
+        }
+
+        [Fact]
+        public void ParseExponentJustAboveMaxRangeIsPositiveInfinity()
+        {
+            Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Parse("1E4933")));
+        }
+
+        [Fact]
+        public void ParseSubnormalUnderflowBoundaryIsPositiveZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Parse("3.2E-4966");
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.False(Float128<TAccelerator>.IsNegative(result));
+        }
+
+        [Fact]
+        public void ParseAboveSubnormalUnderflowBoundaryIsSmallestSubnormal()
+        {
+            // reference: midpoint 2^-16495 is about 3.2375E-4966
+            Assert.Equal(RawStorage<TAccelerator>.ParseBits("00000000000000000000000000000001"), RawStorage<TAccelerator>.Bits(Float128<TAccelerator>.Parse("3.3E-4966")));
+        }
+
+        [Fact]
+        public void ParseNegativeExponentBelowRangeIsNegativeZero()
+        {
+            Float128<TAccelerator> result = Float128<TAccelerator>.Parse("-1E-99999");
+            Assert.True(Float128<TAccelerator>.IsZero(result));
+            Assert.True(RawStorage<TAccelerator>.IsSignSet(result));
         }
 
         [Theory]
@@ -97,7 +158,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData("125e-2", 1.25)]
         public void ExponentWithMultiDigitWholePartIsExact(string s, double expected)
         {
-            // each value is exactly representable, wherever the decimal point falls
+            // each input is exact in binary128, so equality is bitwise
             Assert.Equal((Float128<TAccelerator>)expected, Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture));
         }
 
@@ -135,14 +196,13 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void HalfOfSmallestSubnormalOrLessIsZero()
         {
-            // 3e-4966 is below half of 2^-16494 (about 3.24e-4966), so it rounds to zero
+            // reference: midpoint of 0 and 2^-16494
             Assert.True(Float128<TAccelerator>.IsZero(Float128<TAccelerator>.Parse("3e-4966", CultureInfo.InvariantCulture)));
         }
 
         [Fact]
         public void TenthToStringLeadingDigitIsSingle()
         {
-            // a value below one prints a single digit before the decimal point
             string text = Float128<TAccelerator>.Parse("0.1", CultureInfo.InvariantCulture).ToString();
 
             Assert.DoesNotMatch(@"^-?0\d", text);
@@ -153,7 +213,7 @@ namespace QuadrupleLib.Tests.Conversion
         {
             string text = Float128<TAccelerator>.Parse("0.1", CultureInfo.InvariantCulture).ToString();
 
-            Assert.Equal(0.1, double.Parse(text, NumberStyles.Float, CultureInfo.CurrentCulture));
+            Assert.Equal(0.1, double.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
         [Fact]
@@ -161,13 +221,13 @@ namespace QuadrupleLib.Tests.Conversion
         {
             string text = Float128<TAccelerator>.Parse("1E-30", CultureInfo.InvariantCulture).ToString();
 
-            Assert.Equal(1e-30, double.Parse(text, NumberStyles.Float, CultureInfo.CurrentCulture));
+            Assert.Equal(1e-30, double.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
         [Fact]
         public void LongFractionParseIsNearestDouble()
         {
-            // 0.1000000000000000005 rounds to the double 0.1
+            // reference: double 0.1
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse("0.1000000000000000005", CultureInfo.InvariantCulture);
 
             Assert.Equal(double.Parse("0.1000000000000000005", NumberStyles.Float, CultureInfo.InvariantCulture), (double)value);
@@ -194,7 +254,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void TryFormatIntoTooSmallBufferIsFalse()
         {
-            // ISpanFormattable: a destination that cannot hold the text returns false
+            // ISpanFormattable: short destination
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse("123.456", CultureInfo.InvariantCulture);
             Span<char> destination = stackalloc char[3];
             Assert.False(value.TryFormat(destination, out int charsWritten, default, CultureInfo.InvariantCulture));
@@ -204,7 +264,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void TryFormatIntoSufficientBufferIsTrue()
         {
-            // ISpanFormattable: a destination that holds the text copies it and returns true
+            // ISpanFormattable: destination fits
             NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = 38 };
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse("123.456", formatter);
             Span<char> destination = stackalloc char[64];
@@ -225,8 +285,32 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ParseOfInvalidStringIsNaN()
         {
-            // a string that is not a number fails to match and yields a NaN
+            // invalid input gives quiet NaN 7FFF8000..., unlike Float128.NaN, which has no quiet bit (see BREAKING_CHANGES.md §1)
             Assert.True(Float128<TAccelerator>.IsNaN(Float128<TAccelerator>.Parse("abc", CultureInfo.InvariantCulture)));
+
+            UInt128 quietNaNBits = RawStorage<TAccelerator>.ParseBits("7FFF8000000000000000000000000000");
+            Assert.Equal(quietNaNBits, RawStorage<TAccelerator>.Bits(Float128<TAccelerator>.Parse("abc", CultureInfo.InvariantCulture)));
+            Assert.True(Float128.IsNaN(Float128.Parse("abc", CultureInfo.InvariantCulture)));
+        }
+
+        [Fact]
+        public void NonGenericParseOfInvalidStringIsSignalingNaN()
+        {
+            // the non-generic Parse returns the sign-set signaling NaN, not the quiet NaN of the generic Parse (see BREAKING_CHANGES.md §1)
+            UInt128 signalingNaNBits = RawStorage<TAccelerator>.ParseBits("FFFF0000000000000000000000000001");
+            Assert.Equal(signalingNaNBits, RawStorage<TAccelerator>.Bits(Float128.Parse("abc", CultureInfo.InvariantCulture)));
+            Assert.True(RawStorage<TAccelerator>.IsSignSet(Float128.Parse("abc", CultureInfo.InvariantCulture)));
+        }
+
+        [Fact]
+        public void NonGenericTryParseOfInvalidStringIsFalseWithSignalingNaN()
+        {
+            bool parsed = Float128.TryParse("abc", CultureInfo.InvariantCulture, out Float128 value);
+
+            Assert.False(parsed);
+            UInt128 signalingNaNBits = RawStorage<TAccelerator>.ParseBits("FFFF0000000000000000000000000001");
+            Assert.Equal(signalingNaNBits, RawStorage<TAccelerator>.Bits(value));
+            Assert.True(RawStorage<TAccelerator>.IsSignSet(value));
         }
 
         [Fact]
@@ -241,7 +325,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ParseOfOverflowingValueIsInfinity()
         {
-            // 1e4933 exceeds the largest finite binary128 value (~1.18e4932)
+            // reference: largest finite binary128 is about 1.19e4932
             Assert.True(Float128<TAccelerator>.IsPositiveInfinity(Float128<TAccelerator>.Parse("1e4933", CultureInfo.InvariantCulture)));
             Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Parse("-1e4933", CultureInfo.InvariantCulture)));
         }
@@ -249,7 +333,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ParseWithParenthesesPatternIsNegative()
         {
-            // negative pattern 0: negative numbers are wrapped in parentheses
+            // NumberNegativePattern 0 is the parenthesized form
             NumberFormatInfo formatter = new NumberFormatInfo() { NumberNegativePattern = 0 };
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse("(1.5)", formatter);
 
@@ -344,7 +428,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(2, "- ", "")]
         [InlineData(3, "", "-")]
         [InlineData(4, "", " -")]
-        public void ToStringWithNegativePatternPlacesSignCorrectly(int pattern, string prefix, string suffix)
+        public void ToStringWithNegativePatternIsSignPlacedCorrectly(int pattern, string prefix, string suffix)
         {
             NumberFormatInfo formatter = new NumberFormatInfo() { NumberNegativePattern = pattern, NumberDecimalDigits = 38 };
             string text = ((Float128<TAccelerator>)(-2.0)).ToString(formatter);
@@ -356,7 +440,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ToStringWithInvalidNegativePatternIsFormatException()
         {
-            // the public setter validates 0-4, so set the backing field directly to reach the Format switch's default branch
+            // the setter rejects 5, so reflection reaches the FormatException branch
             NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = 38 };
             typeof(NumberFormatInfo).GetField("_numberNegativePattern", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(formatter, 5);
 
@@ -368,8 +452,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData("-1e99999999999999999999", true)]
         public void ExponentBeyondLongRangeIsInfinity(string s, bool negative)
         {
-            // a 20-digit exponent overflows a long, so it is clamped to half the long range,
-            // which is far beyond the largest finite value
+            // clamped exponent
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture);
 
             Assert.True(Float128<TAccelerator>.IsInfinity(value));
@@ -379,8 +462,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ParseRoundingCarryIntoNewBitIsOne()
         {
-            // 1 - 10^-35 lies above the midpoint to 1.0, so it rounds up through a carry
-            // into a new leading bit, giving exactly 1.0
+            // carry into a new leading bit
             string s = "0." + new string('9', 35);
             Float128<TAccelerator> value = Float128<TAccelerator>.Parse(s, CultureInfo.InvariantCulture);
 
@@ -390,9 +472,7 @@ namespace QuadrupleLib.Tests.Conversion
         [Fact]
         public void ParseRoundingCarryOverflowIsInfinity()
         {
-            // 2^16384 - 2^16270 is the exact midpoint between the largest finite value
-            // (2^16384 - 2^16271) and 2^16384, so it is a tie that rounds up through a
-            // carry past the largest finite exponent, overflowing to infinity
+            // tie past the largest finite value overflows to infinity
             BigInteger x = (BigInteger.One << 16384) - (BigInteger.One << 16270);
             string s = x.ToString(CultureInfo.InvariantCulture);
 
@@ -400,8 +480,7 @@ namespace QuadrupleLib.Tests.Conversion
             Assert.True(Float128<TAccelerator>.IsNegativeInfinity(Float128<TAccelerator>.Parse("-" + s, CultureInfo.InvariantCulture)));
         }
 
-        // reference: double.ToString("F" + digits), the exact decimal value rounded half to even, with the
-        // trailing zeros after the decimal point removed as Float128 does; each input is exact in double and binary128
+        // reference: double.ToString("F" + digits) with trailing zeros trimmed; inputs are exact in double and binary128
         [Theory]
         [InlineData(0.0123456, 2)]
         [InlineData(0.123456, 1)]
@@ -419,7 +498,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(-0.25, 0)]
         [InlineData(0.000123456, 2)]
         [InlineData(-12.3456, 2)]
-        public void ToStringWithDecimalDigitsMatchesDoubleFixedFormat(double x, int digits)
+        public void ToStringWithDecimalDigitsIsDoubleFixedFormat(double x, int digits)
         {
             NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = digits };
             Float128<TAccelerator> value = x;
@@ -436,7 +515,7 @@ namespace QuadrupleLib.Tests.Conversion
         [InlineData(1.5E30, 38)]
         [InlineData(1.23456E-30, 3)]
         [InlineData(-1.23456E-30, 1)]
-        public void ToStringWithDecimalDigitsMatchesDoubleExponentFormat(double x, int digits)
+        public void ToStringWithDecimalDigitsIsDoubleExponentFormat(double x, int digits)
         {
             NumberFormatInfo formatter = new NumberFormatInfo() { NumberDecimalDigits = digits };
             Float128<TAccelerator> value = x;
@@ -449,37 +528,59 @@ namespace QuadrupleLib.Tests.Conversion
         }
 
         [Fact]
-        public void ToStringWithInvariantCultureHasTwoDecimalPlaces()
+        public void ToStringWithInvariantCultureIsTwoDecimalPlaces()
         {
-            // InvariantCulture's NumberDecimalDigits is 2, and 0.125 is a tie that rounds to the even digit
+            // 0.125 is exact in binary128 and a tie at two decimal places; ties round to even, so the result is "0.12"
             Float128<TAccelerator> value = 0.125;
 
             Assert.Equal("0.12", value.ToString(CultureInfo.InvariantCulture));
         }
 
-        // reference: double.ToString("F38"); with no provider, ToString keeps 38 decimal places in plain
-        // notation, and each input is exact in double and binary128
+        // reference: double.ToString("F38"); inputs are exact in double and binary128
         [Theory]
         [InlineData(0.1)]
         [InlineData(0.5)]
         [InlineData(2.5)]
         [InlineData(123.456)]
         [InlineData(-123.456)]
-        public void ToStringWithNoProviderHas38DecimalPlaces(double x)
+        public void ToStringWithNoProviderIs38DecimalPlaces(double x)
         {
-            Float128<TAccelerator> value = x;
+            // precondition: de-DE must use a comma, or this test would not show that the culture is ignored
+            Assert.Equal(",", CultureInfo.GetCultureInfo("de-DE").NumberFormat.NumberDecimalSeparator);
 
-            Assert.Equal(TrimFractionZeros(x.ToString("F38", CultureInfo.InvariantCulture)), value.ToString());
+            CultureInfo previous = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+            try
+            {
+                Float128<TAccelerator> value = x;
+
+                Assert.Equal(TrimFractionZeros(x.ToString("F38", CultureInfo.InvariantCulture)), value.ToString());
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
         }
 
         [Fact]
-        public void ToStringWithNoProviderTrimsExponentFormZeros()
+        public void ToStringWithNoProviderIsExponentFormZerosTrimmed()
         {
-            // 1.5 * 10^30 = 15 * 5^29 * 2^29 with 15 * 5^29 < 2^113, so it is exact in binary128 (unlike in
-            // double), and E notation drops the mantissa's trailing zeros
-            Float128<TAccelerator> value = Float128<TAccelerator>.Parse("1.5E30", CultureInfo.InvariantCulture);
+            // precondition: de-DE must use a comma, or this test would not show that the culture is ignored
+            Assert.Equal(",", CultureInfo.GetCultureInfo("de-DE").NumberFormat.NumberDecimalSeparator);
 
-            Assert.Equal("1.5E+30", value.ToString());
+            CultureInfo previous = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+            try
+            {
+                // reference: 1.5E30 = 15 * 5^29 * 2^29, exact in binary128
+                Float128<TAccelerator> value = Float128<TAccelerator>.Parse("1.5E30", CultureInfo.InvariantCulture);
+
+                Assert.Equal("1.5E+30", value.ToString());
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
         }
 
         private static string TrimFractionZeros(string s)

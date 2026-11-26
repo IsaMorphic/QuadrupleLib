@@ -46,6 +46,35 @@ namespace QuadrupleLib.Tests
             }
         }
 
+        public static void WithinUlps<TAccelerator>(Float128<TAccelerator> expected, Float128<TAccelerator> actual, UInt128 maxUlps)
+            where TAccelerator : IAccelerator
+        {
+            // bit-pattern distance
+            UInt128 signBit = UInt128.One << 127;
+            UInt128 expectedBits = RawStorage<TAccelerator>.Bits(expected);
+            UInt128 actualBits = RawStorage<TAccelerator>.Bits(actual);
+            UInt128 expectedMagnitude = expectedBits & ~signBit;
+            UInt128 actualMagnitude = actualBits & ~signBit;
+            UInt128 distance = expectedMagnitude > actualMagnitude ? expectedMagnitude - actualMagnitude : actualMagnitude - expectedMagnitude;
+            if (Float128<TAccelerator>.IsNaN(expected) || Float128<TAccelerator>.IsNaN(actual))
+            {
+                throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(WithinUlps)} failure: A NaN operand is never within ulps\nExpected: {expected}\nActual: {actual}.");
+            }
+            if ((Float128<TAccelerator>.IsInfinity(expected) || Float128<TAccelerator>.IsInfinity(actual)) && expectedBits != actualBits)
+            {
+                throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(WithinUlps)} failure: An infinite operand is within ulps only of the identical value\nExpected: {expected}\nActual: {actual}.");
+            }
+            // sign mismatch
+            if ((expectedBits & signBit) != (actualBits & signBit))
+            {
+                throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(WithinUlps)} failure: Values differ in sign\nExpected: {expected}\nActual: {actual}.");
+            }
+            if (distance > maxUlps)
+            {
+                throw new NearlyEqualException($"{nameof(AssertX)}.{nameof(WithinUlps)} failure: Values differ by more than {maxUlps} ulps\nExpected: {expected}\nActual: {actual}.");
+            }
+        }
+
         public static void DoesNotThrow<TException>(Action action)
             where TException : Exception
         {
@@ -57,7 +86,6 @@ namespace QuadrupleLib.Tests
             {
                 throw new DoesNotThrowException($"{nameof(AssertX)}.{nameof(DoesNotThrow)} failure: Expected no exception of type {typeof(TException).Name} to be thrown, but it was thrown with message: {ex.Message}", ex);
             }
-            catch { }
         }
     }
 }

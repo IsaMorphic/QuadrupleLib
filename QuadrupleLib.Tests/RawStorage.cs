@@ -17,6 +17,7 @@
  */
 
 using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 
 namespace QuadrupleLib.Tests
@@ -56,6 +57,23 @@ namespace QuadrupleLib.Tests
         public static UInt128 ParseBits(string hex)
         {
             return UInt128.Parse(hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture);
+        }
+
+        // a normal significand in [2^112, 2^113)
+        public static BigInteger RandomSignificand(Random random)
+        {
+            byte[] bytes = new byte[16];
+            random.NextBytes(bytes);
+            BigInteger fraction = new BigInteger(bytes, isUnsigned: true);
+            return (fraction & ((BigInteger.One << 112) - 1)) | (BigInteger.One << 112);
+        }
+
+        // binary128 bits for (-1)^negative * significand * 2^(leadingExponent - 112), normal significand only
+        public static UInt128 PackBits(bool negative, int leadingExponent, BigInteger significand)
+        {
+            UInt128 sign = negative ? UInt128.One << 127 : UInt128.Zero;
+            UInt128 biased = (UInt128)(leadingExponent + 16383) << 112;
+            return sign | biased | (UInt128)(significand - (BigInteger.One << 112));
         }
 
         public static Float128<TAccelerator> LargestFinite()

@@ -16,6 +16,8 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using QuadrupleLib.Utilities;
+
 namespace QuadrupleLib;
 
 public partial struct Float128<TAccelerator>
@@ -95,11 +97,12 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            // scale both legs by a power of two, which is exact, so the sum of squares neither overflows nor underflows
+            // scale by 2^k
             int scale = Math.Max(ax.Exponent, ay.Exponent);
             Float128<TAccelerator> sx = ScaleB(ax, -scale);
             Float128<TAccelerator> sy = ScaleB(ay, -scale);
-            return ScaleB(Sqrt(FusedMultiplyAdd(sx, sx, sy * sy)), scale);
+            (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) root = DDSqrt(DDAdd(DDTwoProd(sx, sx), DDTwoProd(sy, sy)));
+            return ScaleB(root.Hi + root.Lo, scale);
         }
     }
 
@@ -137,21 +140,17 @@ public partial struct Float128<TAccelerator>
 
         Float128<TAccelerator> x = One, y = CopySign(Zero, alpha);
         Float128<TAccelerator> phi = Ieee754Remainder(alpha, Tau);
+
+        // The remainder lies in [-Pi, Pi] and Tau == 4 * HalfPi exactly, so one quarter turn brings phi into [-HalfPi, HalfPi]
         if (phi > HalfPi)
         {
-            do
-            {
-                phi -= HalfPi;
-                (x, y) = (-y, x);
-            } while (phi > HalfPi);
+            phi -= HalfPi;
+            (x, y) = (-y, x);
         }
         else if (phi < -HalfPi)
         {
-            do
-            {
-                phi += HalfPi;
-                (x, y) = (y, -x);
-            } while (phi < -HalfPi);
+            phi += HalfPi;
+            (x, y) = (y, -x);
         }
 
         if (phi == Zero)
@@ -180,19 +179,35 @@ public partial struct Float128<TAccelerator>
 
     public static (Float128<TAccelerator> SinPi, Float128<TAccelerator> CosPi) SinCosPi(Float128<TAccelerator> x)
     {
+        // x * Pi reaches 2^112 near |x| = 1.65E+33, where SinCos returns NaN. Exact reduction modulo 2 is
+        // deferred to the follow-up that adds the CoRDiC kernel (BREAKING_CHANGES §6).
         return SinCos(x * Pi);
     }
 
     public static Float128<TAccelerator> Asin(Float128<TAccelerator> x)
     {
-        if (x > One || x < NegativeOne)
+        if (IsNaN(x) || x > One || x < NegativeOne)
         {
             return _qNaN;
         }
-        else
+        else if (IsZero(x))
         {
-            return Atan2(x, Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)));
+            return x;
         }
+        else if (x == NegativeOne || x == One)
+        {
+            return CopySign(HalfPi, x);
+        }
+        else if (Abs(x) < _smallArgument)
+        {
+            // asin(x) rounds to x
+            return x;
+        }
+
+        // asin(x) = atan(x / sqrt(1 - x^2))
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) oneMinusSquare = DDAdd((One, Zero), DDNegate(DDTwoProd(x, x)));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDAtan(DDDiv((x, Zero), DDSqrt(oneMinusSquare)));
+        return a.Hi + a.Lo;
     }
 
     public static Float128<TAccelerator> AsinPi(Float128<TAccelerator> x)
@@ -209,14 +224,23 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Acos(Float128<TAccelerator> x)
     {
-        if (x > One || x < NegativeOne)
+        if (IsNaN(x) || x > One || x < NegativeOne)
         {
             return _qNaN;
         }
-        else
+        else if (x == One)
         {
-            return Atan2(Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)), x);
+            return Zero;
         }
+        else if (x == NegativeOne)
+        {
+            return Pi;
+        }
+
+        // acos(x) = 2 atan(sqrt((1 - x) / (1 + x)))
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) ratio = DDSqrt(DDDiv(DDTwoSum(One, -x), DDTwoSum(One, x)));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDAtan(ratio);
+        return ScaleB(a.Hi + a.Lo, 1);
     }
 
     public static Float128<TAccelerator> AcosPi(Float128<TAccelerator> x)
@@ -227,7 +251,8 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            return Atan2Pi(Sqrt(-FusedMultiplyAdd(x, x, NegativeOne)), x);
+            // 1 - x^2 is +0 at x = +-1, so the radicand is +0 and AcosPi(-1) = 1, AcosPi(1) = +0
+            return Atan2Pi(Sqrt(FusedMultiplyAdd(-x, x, One)), x);
         }
     }
 
@@ -257,23 +282,14 @@ public partial struct Float128<TAccelerator>
         {
             return -HalfPi;
         }
-
-        Float128<TAccelerator> x = One, y = z, theta = Zero, sigma, sigma_neg;
-        for (int i = 0; i < SINCOS_ITER_COUNT; i++)
+        else if (IsZero(z) || Abs(z) < _smallArgument)
         {
-            if (y > Zero)
-            {
-                (sigma, sigma_neg) = (NegativeOne, One);
-            }
-            else
-            {
-                (sigma, sigma_neg) = (One, NegativeOne);
-            }
-
-            (x, y) = (FusedMultiplyAdd(y, ScaleB(sigma_neg, -i), x), FusedMultiplyAdd(x, ScaleB(sigma, -i), y));
-            theta += sigma_neg * _thetaTable[i];
+            // atan(z) rounds to z
+            return z;
         }
-        return theta;
+
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDAtan((z, Zero));
+        return a.Hi + a.Lo;
     }
 
     public static Float128<TAccelerator> AtanPi(Float128<TAccelerator> x)
@@ -287,31 +303,52 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (y >= Zero && x < Zero)
+        else if (IsInfinity(y) && IsInfinity(x))
         {
-            return Atan(y / x) + Pi;
+            return CopySign(x > Zero ? PiTimes(ScaleB(One, -2)) : PiTimes(ScaleB(3, -2)), y);
         }
-        else if (y < Zero && x < Zero)
+        else if (IsInfinity(y))
         {
-            return Atan(y / x) - Pi;
+            return CopySign(HalfPi, y);
         }
-        else if (y > Zero && x == Zero)
+        else if (IsInfinity(x))
         {
-            return Pi / 2.0;
+            return x > Zero ? CopySign(Zero, y) : CopySign(Pi, y);
         }
-        else if (y < Zero && x == Zero)
+        else if (IsZero(y))
         {
-            return Pi / -2.0;
+            return x > Zero || (IsZero(x) && !IsNegative(x)) ? y : CopySign(Pi, y);
         }
-        else if (x > Zero)
+        else if (IsZero(x))
         {
-            return Atan(y / x);
+            return CopySign(HalfPi, y);
         }
-        else
+        else if (ILogB(y) - ILogB(x) > 16380)
         {
-            // atan2(+/-0, +/-0)
-            return IsNegative(x) ? CopySign(Pi, y) : y;
+            // +/- pi / 2
+            return CopySign(HalfPi, y);
         }
+        else if (ILogB(y) - ILogB(x) < -120)
+        {
+            // y / x, or +/- pi when x < 0
+            return x > Zero ? y / x : CopySign(Pi, y);
+        }
+
+        // atan(y / x), plus or minus pi for x < 0
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) ratio = DDDiv((y, Zero), (x, Zero));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDAtan(ratio);
+        if (x < Zero)
+        {
+            a = DDAdd(a, (IsNegative(y) ? DDNegate((_piHi, _piLo)) : (_piHi, _piLo)));
+        }
+        return a.Hi + a.Lo;
+    }
+
+    // pi * factor, rounded once
+    private static Float128<TAccelerator> PiTimes(Float128<TAccelerator> factor)
+    {
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) product = DDMul((_piHi, _piLo), (factor, Zero));
+        return product.Hi + product.Lo;
     }
 
     public static Float128<TAccelerator> Atan2Pi(Float128<TAccelerator> y, Float128<TAccelerator> x)
@@ -325,32 +362,76 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Cosh(Float128<TAccelerator> x)
     {
-        if (IsZero(x))
+        Float128<TAccelerator> ax = Abs(x);
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (IsZero(x))
         {
             return One;
         }
-        else
+        else if (IsInfinity(x))
         {
-            return (Exp(x) + Exp(-x)) * 0.5;
+            return _pInf;
         }
+        else if (ax >= _hyperbolicLargeArgument)
+        {
+            return HalfExp(ax);
+        }
+
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) e = DDExpOf(ax);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) sum = DDAdd(e, DDDiv((One, Zero), e));
+        return ScaleB(sum.Hi + sum.Lo, -1);
     }
 
     public static Float128<TAccelerator> Sinh(Float128<TAccelerator> x)
     {
-        if (IsZero(x))
+        Float128<TAccelerator> ax = Abs(x);
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (IsInfinity(x) || IsZero(x))
         {
             return x;
         }
-        else
+        else if (ax < _smallArgument)
         {
-            return (Exp(x) - Exp(-x)) * 0.5;
+            return x;
         }
+        else if (ax >= _hyperbolicLargeArgument)
+        {
+            return CopySign(HalfExp(ax), x);
+        }
+
+        // sinh(x) = (e^x - e^-x) / 2
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) e = DDExpOf(ax);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) difference = DDAdd(e, DDNegate(DDDiv((One, Zero), e)));
+        return CopySign(ScaleB(difference.Hi + difference.Lo, -1), x);
     }
 
     public static Float128<TAccelerator> Tanh(Float128<TAccelerator> x)
     {
-        Float128<TAccelerator> t = Exp(-2 * Abs(x));
-        return CopySign((One - t) / (One + t), x);
+        Float128<TAccelerator> ax = Abs(x);
+        if (IsNaN(x))
+        {
+            return _qNaN;
+        }
+        else if (IsZero(x) || ax < _smallArgument)
+        {
+            return x;
+        }
+        else if (IsInfinity(x) || ax >= _hyperbolicLargeArgument)
+        {
+            // rounds to +-1
+            return CopySign(One, x);
+        }
+
+        // tanh(x) = (e^2x - 1) / (e^2x + 1)
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) e2 = DDExpOf(2 * ax);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) ratio = DDDiv(DDAdd(e2, (-One, Zero)), DDAdd(e2, (One, Zero)));
+        return CopySign(ratio.Hi + ratio.Lo, x);
     }
 
     public static Float128<TAccelerator> Acosh(Float128<TAccelerator> x)
@@ -367,18 +448,22 @@ public partial struct Float128<TAccelerator>
         {
             return Zero;
         }
-        else if (x > ScaleB(One, EXPONENT_BIAS / 2))
-        {
-            return Log(x + Abs(x) - One / ScaleB(Abs(x), 1));
-        }
-        else if (x > One)
-        {
-            return Log(x + Sqrt(FusedMultiplyAdd(x, x, NegativeOne)));
-        }
-        else
+        else if (x < One)
         {
             return _qNaN;
         }
+        else if (x > _logLargeArgument)
+        {
+            // large x: ln(2x)
+            (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) big = DDAdd(DDLog(x), (_ln2Hi, _ln2Lo));
+            return big.Hi + big.Lo;
+        }
+
+        // acosh(x) = ln(x + sqrt(x^2 - 1))
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) root = DDSqrt(DDAdd(DDTwoProd(x, x), (-One, Zero)));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) u = DDAdd((x, Zero), root);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDLogOf(u);
+        return a.Hi + a.Lo;
     }
 
     public static Float128<TAccelerator> Asinh(Float128<TAccelerator> x)
@@ -387,49 +472,46 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (IsPositiveInfinity(x))
-        {
-            return _pInf;
-        }
-        else if (IsNegativeInfinity(x))
-        {
-            return _nInf;
-        }
-        else if (IsZero(x))
+        else if (IsInfinity(x) || IsZero(x) || Abs(x) < _smallArgument)
         {
             return x;
         }
-        else if (x > ScaleB(One, EXPONENT_BIAS / 2))
+
+        Float128<TAccelerator> absX = Abs(x);
+        if (absX > _logLargeArgument)
         {
-            return Log(x + Abs(x) + One / ScaleB(Abs(x), 1));
+            // large |x|: ln(2|x|)
+            (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) big = DDAdd(DDLog(absX), (_ln2Hi, _ln2Lo));
+            return CopySign(big.Hi + big.Lo, x);
         }
-        else
-        {
-            Float128<TAccelerator> absX = Abs(x);
-            return CopySign(Log(absX + Sqrt(FusedMultiplyAdd(absX, absX, One))), x);
-        }
+
+        // asinh(|x|) = ln(|x| + sqrt(x^2 + 1))
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) root = DDSqrt(DDAdd(DDTwoProd(absX, absX), (One, Zero)));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) u = DDAdd((absX, Zero), root);
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDLogOf(u);
+        return CopySign(a.Hi + a.Lo, x);
     }
 
     public static Float128<TAccelerator> Atanh(Float128<TAccelerator> x)
     {
-        if (IsZero(x))
+        Float128<TAccelerator> absX = Abs(x);
+        if (IsNaN(x) || absX > One)
+        {
+            return _qNaN;
+        }
+        else if (IsZero(x) || absX < _smallArgument)
         {
             return x;
-        }
-        
-        Float128<TAccelerator> absX = Abs(x);
-        if (absX < One)
-        {
-            return Log((One + x) / (One - x)) * 0.5;
         }
         else if (absX == One)
         {
             return CopySign(_pInf, x);
         }
-        else
-        {
-            return _qNaN;
-        }
+
+        // atanh(x) = ln((1 + x) / (1 - x)) / 2
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) ratio = DDDiv(DDTwoSum(One, x), DDTwoSum(One, -x));
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) a = DDLogOf(ratio);
+        return ScaleB(a.Hi + a.Lo, -1);
     }
 
     #endregion
@@ -441,57 +523,41 @@ public partial struct Float128<TAccelerator>
         return x.Exponent - (int)UInt128.LeadingZeroCount(x.Significand) + 15;
     }
 
-    private static Float128<TAccelerator> _Log2(Float128<TAccelerator> y, int N)
-    {
-        if (N == 0 || y == One)
-        {
-            return Zero;
-        }
-        else
-        {
-            int m = 0;
-            while (y < 2.0)
-            { y *= y; --m; }
-            return ScaleB(One + _Log2(y * 0.5, N - 1), m);
-        }
-    }
-
     public static Float128<TAccelerator> Log2(Float128<TAccelerator> x)
     {
-        if (IsNaN(x))
+        if (IsNaN(x) || x < Zero)
         {
             return _qNaN;
         }
-        else if (x <= Zero)
+        else if (IsZero(x))
         {
-            return _qNaN;
+            return _nInf;
         }
         else if (IsPositiveInfinity(x))
         {
             return _pInf;
         }
 
+        // exact for powers of two
         int n = ILogB(x);
-        Float128<TAccelerator> y = ScaleB(x, -n);
-        if (y == One)
+        if (ScaleB(x, -n) == One)
         {
             return n;
         }
-        else
-        {
-            return n + _Log2(y, 30);
-        }
+
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) result = DDLog2(x);
+        return result.Hi + result.Lo;
     }
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y)
     {
-        if (IsNaN(y))
+        if (IsNaN(y) || y < Zero)
         {
             return _qNaN;
         }
-        else if (y <= Zero)
+        else if (IsZero(y))
         {
-            return _qNaN;
+            return _nInf;
         }
         else if (y == One)
         {
@@ -502,26 +568,8 @@ public partial struct Float128<TAccelerator>
             return _pInf;
         }
 
-        // y = m * 2^k with m in [1, 2); recentre m to [sqrt(1/2), sqrt(2)) so that |s| is small below
-        int k = ILogB(y);
-        Float128<TAccelerator> m = ScaleB(y, -k);
-        if (m > 1.4142135623730951)
-        {
-            m = ScaleB(m, -1);
-            k++;
-        }
-
-        // ln(m) = 2 * atanh(s) with s = (m - 1) / (m + 1), so |s| < 0.1716 and s^2 < 0.0295
-        Float128<TAccelerator> s = (m - One) / (m + One);
-        Float128<TAccelerator> s2 = s * s;
-        Float128<TAccelerator> series = One / 49;
-        for (int i = 23; i >= 0; i--)
-        {
-            series = FusedMultiplyAdd(series, s2, One / (2 * i + 1));
-        }
-
-        Float128<TAccelerator> lnM = 2 * s * series;
-        return FusedMultiplyAdd(k, _ln2Lo, lnM) + k * _ln2Hi;
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) result = DDLog(y);
+        return result.Hi + result.Lo;
     }
 
     public static Float128<TAccelerator> Log(Float128<TAccelerator> y, Float128<TAccelerator> newBase)
@@ -530,55 +578,52 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (y <= Zero || newBase <= Zero)
+        else if (y == One && IsZero(newBase))
         {
+            // ln(1) = +0 divided by ln(+-0) = -inf gives -0, as System.Math.Log(1, +-0)
+            return NegativeZero;
+        }
+        else if (y < Zero || newBase <= Zero)
+        {
+            return _qNaN;
+        }
+        else if (newBase == One)
+        {
+            // newBase == 1: NaN, as System.Math.Log(x, 1)
             return _qNaN;
         }
         else if (y == One)
         {
-            return Zero;
+            // ln(1) = +0, divided by ln(newBase)
+            return newBase < One ? NegativeZero : Zero;
         }
-        else if (newBase == One)
+        else if (IsPositiveInfinity(newBase))
         {
-            // the base-1 logarithm is undefined (ln(1) is zero); matches System.Math.Log(a, 1), which returns NaN
+            // NaN for y != 1, as System.Math.Log(a, +inf)
             return _qNaN;
+        }
+        else if (IsZero(y))
+        {
+            return newBase < One ? _pInf : _nInf;
         }
         else if (IsPositiveInfinity(y))
         {
             return newBase < One ? _nInf : _pInf;
         }
 
-        Float128<TAccelerator> k = Log2(newBase);
-        Float128<TAccelerator> x_n = Abs(Log2(y) / k);
-        if (k > Zero)
-        {
-            for (int i = 0; i < 25; i++)
-            {
-                x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
-            }
-
-            return x_n;
-        }
-        else
-        {
-            for (int i = 0; i < 25; i++)
-            {
-                x_n += FusedMultiplyAdd(y, Exp2(k * x_n), NegativeOne);
-            }
-
-            return -x_n;
-        }
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) quotient = DDDiv(DDLog(y), DDLog(newBase));
+        return quotient.Hi + quotient.Lo;
     }
 
     public static Float128<TAccelerator> Log10(Float128<TAccelerator> y)
     {
-        if (IsNaN(y))
+        if (IsNaN(y) || y < Zero)
         {
             return _qNaN;
         }
-        else if (y <= Zero)
+        else if (IsZero(y))
         {
-            return _qNaN;
+            return _nInf;
         }
         else if (y == One)
         {
@@ -589,14 +634,8 @@ public partial struct Float128<TAccelerator>
             return _pInf;
         }
 
-        Float128<TAccelerator> k = Log2(10);
-        Float128<TAccelerator> x_n = Log2(y) / k;
-        for (int i = 0; i < 15; i++)
-        {
-            x_n += FusedMultiplyAdd(y, Exp2(-k * x_n), NegativeOne);
-        }
-
-        return x_n;
+        (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) result = DDMul(DDLog(y), (_invLn10Hi, _invLn10Lo));
+        return result.Hi + result.Lo;
     }
 
     #endregion
@@ -624,18 +663,8 @@ public partial struct Float128<TAccelerator>
             return Zero;
         }
 
-        // y = k * ln(2) + r with |r| <= ln(2) / 2; the first subtraction is exact because k * _ln2Hi is exact
-        Float128<TAccelerator> kf = Round(y / _ln2Hi);
-        Float128<TAccelerator> r = FusedMultiplyAdd(-kf, _ln2Lo, y - kf * _ln2Hi);
-
-        // exp(r) = 1 + r * (1 + r / 2 * (1 + r / 3 * (...))), evaluated by Horner's rule
-        Float128<TAccelerator> series = One;
-        for (int n = 27; n >= 1; n--)
-        {
-            series = One + r * series / n;
-        }
-
-        return ScaleB(series, (int)kf);
+        // exp(y) = exp2(y / ln(2))
+        return Exp2FromDD(DDMul((y, Zero), (_invLn2Hi, _invLn2Lo)));
     }
 
     public static Float128<TAccelerator> Exp10(Float128<TAccelerator> y)
@@ -649,19 +678,8 @@ public partial struct Float128<TAccelerator>
             return y > Zero ? _pInf : Zero;
         }
 
-        Float128<TAccelerator> x_n = Exp2(y / Log10(2));
-        if (IsInfinity(x_n) || IsZero(x_n))
-        {
-            // the result overflows or underflows, and refining it would produce NaN
-            return x_n;
-        }
-
-        for (int n = 0; n < 15; n++)
-        {
-            x_n = Abs(FusedMultiplyAdd(x_n, y - Log10(x_n), x_n));
-        }
-
-        return x_n;
+        // 10^y = 2^(y log2 10)
+        return Exp2FromDD(DDMul((y, Zero), (_log210Hi, _log210Lo)));
     }
 
     public static Float128<TAccelerator> Exp2(Float128<TAccelerator> y)
@@ -670,23 +688,8 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (Abs(y) >= EXPONENT_BIAS + 1)
-        {
-            return y > Zero ? _pInf : Zero;
-        }
 
-        Float128<TAccelerator> x_n = ScaleB(One, (int)y);
-
-        if (y % One != Zero)
-        {
-            Float128<TAccelerator> log2 = One / Log2(E);
-            for (int n = 0; n < 5; n++)
-            {
-                x_n = Abs(FusedMultiplyAdd(x_n * log2, y - Log2(x_n), x_n));
-            }
-        }
-
-        return x_n;
+        return Exp2FromDD((y, Zero));
     }
 
     public static Float128<TAccelerator> Pow(Float128<TAccelerator> x, Float128<TAccelerator> y)
@@ -727,58 +730,33 @@ public partial struct Float128<TAccelerator>
         {
             return _qNaN;
         }
-        else if (IsInteger(y) && Abs(y) <= ulong.MaxValue)
-        {
-            // an integer power by repeated squaring is exact when the result is representable,
-            // and its error grows only with the exponent, so it is far closer than the exponential
-            // and logarithm
-            ulong n = (ulong)Abs(y);
-            if (IsPositive(y))
-            {
-                return PowN(x, n);
-            }
 
-            // take the reciprocal of a normal power; when the power overflows or loses bits
-            // as a subnormal, raise the reciprocal instead
-            Float128<TAccelerator> power = PowN(x, n);
-            return IsNormal(power) ? One / power : PowN(One / x, n);
-        }
-        else if (IsEvenInteger(y))
+        Float128<TAccelerator> baseMagnitude = Abs(x);
+        Float128<TAccelerator> magnitude;
+
+        // y = 2, then integer y
+        if (y == 2)
         {
-            return Exp(y * Log(Abs(x)));
+            magnitude = baseMagnitude * baseMagnitude;
         }
-        else if (IsOddInteger(y))
+        else if (IsInteger(y) && Abs(y) < ScaleB(One, 20) && Abs(y) * (Math.Abs(ILogB(baseMagnitude)) + 1) < EXPONENT_BIAS - 3)
         {
-            return CopySign(Exp(y * Log(Abs(x))), x);
+            (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) power = DDPowInt((baseMagnitude, Zero), (ulong)Abs(y));
+            if (IsNegative(y))
+            {
+                power = DDDiv((One, Zero), power);
+            }
+            magnitude = power.Hi + power.Lo;
         }
         else
         {
-            return Exp(y * Log(x));
+            // |x|^y = 2^(y log2|x|)
+            (Float128<TAccelerator> Hi, Float128<TAccelerator> Lo) logMagnitude = DDMul((y, Zero), DDLog2(baseMagnitude));
+            magnitude = Exp2FromDD(logMagnitude);
         }
-    }
 
-    #endregion
-
-    #region Private API (exponential functions)
-
-    private static Float128<TAccelerator> PowN(Float128<TAccelerator> x, ulong n)
-    {
-        Float128<TAccelerator> result = One;
-        while (true)
-        {
-            if ((n & 1) != 0)
-            {
-                result *= x;
-            }
-
-            n >>= 1;
-            if (n == 0)
-            {
-                return result;
-            }
-
-            x *= x;
-        }
+        // sign
+        return IsNegative(x) && isOddPower ? -magnitude : magnitude;
     }
 
     #endregion
@@ -805,12 +783,42 @@ public partial struct Float128<TAccelerator>
         }
         else
         {
-            Float128<TAccelerator> y_n = ScaleB(x, -x.Exponent / 2);
-            for (int n = 0; n < 25; n++)
+            // x = radicand * 2^power with power even
+            int power = x.Exponent - 112;
+            UInt256 radicand = x.Significand;
+            if ((power & 1) != 0)
             {
-                y_n = 0.5 * (y_n + x / y_n);
+                radicand <<= 1;
+                power--;
             }
-            return y_n;
+
+            // shift so the root has exactly 116 bits
+            int bitLength = 256 - (int)UInt256.LeadingZeroCount(radicand);
+            int shift = 232 - bitLength - (bitLength & 1);
+            radicand <<= shift;
+            power -= shift;
+
+            // bit-by-bit sqrt; 2^230 is the top power of four
+            UInt256 bit = UInt256.One << 230;
+            UInt256 root = UInt256.Zero;
+            UInt256 remainder = radicand;
+            while (bit != UInt256.Zero)
+            {
+                if (remainder >= root + bit)
+                {
+                    remainder -= root + bit;
+                    root = (root >> 1) + bit;
+                }
+                else
+                {
+                    root >>= 1;
+                }
+                bit >>= 2;
+            }
+
+            // set sticky bit
+            UInt128 significand = (UInt128)root | (remainder != UInt256.Zero ? UInt128.One : UInt128.Zero);
+            return Compose(RoundToNearestEven(significand), power / 2 + 115, false);
         }
     }
 
@@ -822,19 +830,12 @@ public partial struct Float128<TAccelerator>
         }
         else if (x == Zero || IsInfinity(x))
         {
-            // IEEE 754: the cube root of a zero or an infinity is that same value, sign included
+            // IEEE 754: keeps the sign of zero
             return x;
         }
-        else
-        {
-            Float128<TAccelerator> y_n = ScaleB(x, -x.Exponent * 2 / 3);
-            for (int n = 0; n < 25; n++)
-            {
-                Float128<TAccelerator> sq = y_n * y_n;
-                y_n = (x / sq + 2.0 * y_n) / 3.0;
-            }
-            return y_n;
-        }
+
+        // cbrt(x) = 2^(log2(|x|) / 3)
+        return CopySign(Exp2FromDD(DDDiv(DDLog2(Abs(x)), (3, Zero))), x);
     }
 
     public static Float128<TAccelerator> RootN(Float128<TAccelerator> x, int n)
@@ -849,13 +850,17 @@ public partial struct Float128<TAccelerator>
         }
         else if (x == Zero)
         {
-            // IEEE 754 rootn: a negative degree gives a pole, and an odd degree keeps the sign of zero
+            // zero: n < 0 is a pole, signed for odd n
             bool oddDegree = (n & 1) != 0;
             if (n < 0)
             {
                 return oddDegree && x.RawSignBit ? _nInf : _pInf;
             }
             return oddDegree ? x : Zero;
+        }
+        else if (IsPositiveInfinity(x))
+        {
+            return n > 0 ? _pInf : Zero;
         }
         else
         {
@@ -867,48 +872,13 @@ public partial struct Float128<TAccelerator>
                     return Sqrt(x);
                 case 3:
                     return Cbrt(x);
-                case < 0:
-                    // widen before negating, since int.MinValue has no positive counterpart
-                    return One / RootNPositive(x, (ulong)(-(long)n));
+                case -1:
+                    return One / x;
                 default:
-                    return RootNPositive(x, (ulong)n);
+                    // x^(1/n) = 2^(log2(x) / n)
+                    return Exp2FromDD(DDDiv(DDLog2(x), (n, Zero)));
             }
         }
-    }
-
-    #endregion
-
-    #region Private API (root functions)
-
-    private static Float128<TAccelerator> RootNPositive(Float128<TAccelerator> x, ulong n)
-    {
-        switch (n)
-        {
-            case 1:
-                return x;
-            case 2:
-                return Sqrt(x);
-            case 3:
-                return Cbrt(x);
-        }
-
-        // start from the exponential and logarithm estimate, then refine it with Newton's method
-        // on y^n = x; dividing the correction by n cancels the rounding error that the power adds
-        Float128<TAccelerator> degree = n;
-        Float128<TAccelerator> y = Pow(x, One / degree);
-        for (int i = 0; i < 8; i++)
-        {
-            Float128<TAccelerator> correction = (x / PowN(y, n - 1) - y) / degree;
-            if (IsZero(correction) || !IsFinite(correction))
-            {
-                // converged, or the power underflowed and the estimate cannot be refined
-                break;
-            }
-
-            y += correction;
-        }
-
-        return y;
     }
 
     #endregion

@@ -16,7 +16,6 @@
  *  along with QuadrupleLib.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Diagnostics.CodeAnalysis;
 using QuadrupleLib.Utilities;
 
 namespace QuadrupleLib;
@@ -101,7 +100,7 @@ public partial struct Float128<TAccelerator>
 
     private static UInt128 RoundToNearestEven(UInt128 significand)
     {
-        // guard bit set, and any of the round bit, sticky bit or least significant bit set
+        // guard set; round, sticky or lsb set
         var roundUp = ((significand >> 2) & 1) == 1 && (significand & 0b1011) != 0;
         return (significand >> 3) + (roundUp ? UInt128.One : UInt128.Zero);
     }
@@ -166,7 +165,7 @@ public partial struct Float128<TAccelerator>
         var productTop = productUnit + 255 - (int)UInt256.LeadingZeroCount(product);
         var addendTop = addendUnit + 127 - (int)UInt128.LeadingZeroCount(addend.Significand);
 
-        // align significands, with the larger operand's leading bit at bit 250
+        // align significands; larger leading bit at bit 250
         var baseExponent = Math.Max(productTop, addendTop) - 250;
         var productAligned = ShiftWithSticky(product, productUnit - baseExponent);
         var addendAligned = ShiftWithSticky(addend.Significand, addendUnit - baseExponent);
@@ -208,7 +207,83 @@ public partial struct Float128<TAccelerator>
 
     public static Float128<TAccelerator> Ieee754Remainder(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        return left - right * Round(left / right);
+        return ExactRemainder(left, right, roundQuotientToNearest: true);
+    }
+
+    // left - n * right, exact
+    private static Float128<TAccelerator> ExactRemainder(Float128<TAccelerator> left, Float128<TAccelerator> right, bool roundQuotientToNearest)
+    {
+        if (IsNaN(left) || IsNaN(right) || IsInfinity(left) || IsZero(right))
+        {
+            return _qNaN;
+        }
+        else if (IsInfinity(right) || IsZero(left))
+        {
+            return left;
+        }
+
+        int exponentL = left.Exponent - 112, exponentR = right.Exponent - 112;
+        if (exponentL < exponentR)
+        {
+            if (!roundQuotientToNearest)
+            {
+                return left;
+            }
+
+            // quotient +-1
+            if (Abs(left + left) > Abs(right))
+            {
+                return left.RawSignBit == right.RawSignBit ? left - right : left + right;
+            }
+
+            return left;
+        }
+
+        // modulus fits UInt128
+        UInt128 divisor = right.Significand;
+        UInt128 modulus = left.Significand % divisor;
+        bool quotientOdd = (left.Significand / divisor & UInt128.One) != UInt128.Zero;
+        int remaining = exponentL - exponentR;
+        while (remaining > 0)
+        {
+            // chunked long division
+            int chunk = Math.Min(remaining, 142);
+            (UInt256 q, UInt128 r) = TAccelerator.DivRem((UInt256)modulus << chunk, divisor);
+            modulus = r;
+            quotientOdd = (q & UInt256.One) != UInt256.Zero;
+            remaining -= chunk;
+        }
+
+        bool negative = false;
+        if (roundQuotientToNearest && (modulus << 1 > divisor || (modulus << 1 == divisor && quotientOdd)))
+        {
+            modulus = divisor - modulus;
+            negative = true;
+        }
+
+        if (modulus == UInt128.Zero)
+        {
+            return left.RawSignBit ? NegativeZero : Zero;
+        }
+
+        return FromScaledInteger(modulus, exponentR, left.RawSignBit ^ negative);
+    }
+
+    // (-1)^negative * magnitude * 2^exponent
+    private static Float128<TAccelerator> FromScaledInteger(UInt128 magnitude, int exponent, bool negative)
+    {
+        UInt128 sign = negative ? UInt128.One << 127 : UInt128.Zero;
+        int bitLength = 128 - (int)UInt128.LeadingZeroCount(magnitude);
+        int leadingExponent = exponent + bitLength - 1;
+        if (leadingExponent < -EXPONENT_BIAS + 1)
+        {
+            // subnormal
+            return new Float128<TAccelerator>(sign | (magnitude << (exponent + EXPONENT_BIAS + 112 - 1)));
+        }
+
+        UInt128 significand = magnitude << (113 - bitLength);
+        UInt128 biased = (UInt128)(leadingExponent + EXPONENT_BIAS);
+        return new Float128<TAccelerator>(sign | (biased << 112) | (significand & (SIGNIFICAND_MASK)));
     }
 
     public static Float128<TAccelerator> operator +(Float128<TAccelerator> left, Float128<TAccelerator> right)
@@ -274,11 +349,11 @@ public partial struct Float128<TAccelerator>
                     leftSignificand - sumSignificand;
             }
 
-            // normalize output
+            // normalize from the full sum
             int normDist;
-            if ((sumSignificand >> 3) != 0)
+            if (sumSignificand != UInt128.Zero)
             {
-                normDist = (int)UInt128.LeadingZeroCount(sumSignificand >> 3) - 15;
+                normDist = (int)UInt128.LeadingZeroCount(sumSignificand) - 12;
                 if (normDist > 0)
                 {
                     normDist = Math.Min(normDist, sumExponent - (-EXPONENT_BIAS + 1));
@@ -349,7 +424,7 @@ public partial struct Float128<TAccelerator>
         {
             return left.RawSignBit != right.RawSignBit ? _nInf : _pInf;
         }
-        else if (IsFinite(left) && IsInfinity(right))
+        else if (IsZero(left) || IsInfinity(right))
         {
             return left.RawSignBit != right.RawSignBit ? NegativeZero : Zero;
         }
@@ -366,76 +441,43 @@ public partial struct Float128<TAccelerator>
             var quotExponent = leftExponent - rightExponent;
             var quotSign = left.RawSignBit != right.RawSignBit;
 
-            UInt256 fullSignificand;
-            UInt128 quotSignificand, remSignificand;
             if (quotExponent > EXPONENT_BIAS)
             {
                 return quotSign ? _nInf : _pInf;
             }
-            else
-            {
-                (fullSignificand, remSignificand) = TAccelerator.DivRem(leftSignificand, rightSignificand);
-            }
+
+            // quotient top bit
+            int rightTop = 127 - (int)UInt128.LeadingZeroCount(rightSignificand);
+            int quotTop = leftSignificand >= (UInt256)rightSignificand << (255 - rightTop) ? 255 - rightTop : 254 - rightTop;
 
             // normalize output
-            int normDist;
-            if ((fullSignificand >> 3) != 0)
+            int normDist = 115 - quotTop;
+            if (quotExponent - normDist > EXPONENT_BIAS) // overflowing quotient
             {
-                normDist = (int)UInt256.LeadingZeroCount(fullSignificand >> 3) - 143;
-                if (quotExponent - normDist > EXPONENT_BIAS) // overflowing quotient
-                {
-                    return quotSign ? _nInf : _pInf;
-                }
-                else if (quotExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing quotient
-                {
-                    normDist = quotExponent + EXPONENT_BIAS - 1;
-                }
-
-                // divide again at the normalized scale so the guard, round and sticky bits are exact
-                UInt256 scaled = normDist >= 0 ? leftSignificand << normDist : leftSignificand >> -normDist;
-                (fullSignificand, remSignificand) = TAccelerator.DivRem(scaled, rightSignificand);
-                quotSignificand = (UInt128)fullSignificand;
-                quotExponent -= normDist;
+                return quotSign ? _nInf : _pInf;
             }
-            else
+            else if (quotExponent - normDist <= -EXPONENT_BIAS + 1) // underflowing quotient
             {
-                quotExponent = -EXPONENT_BIAS + 1;
-                quotSignificand = UInt128.Zero;
-                normDist = 0;
+                normDist = quotExponent + EXPONENT_BIAS - 1;
             }
 
-            // set sticky bit: the remainder, or any bits of the dividend shifted out below the guard bits
-            quotSignificand |= remSignificand != UInt128.Zero || (normDist < 0 && (leftSignificand & ((UInt256.One << -normDist) - 1)) != UInt256.Zero) ?
+            // quotTop >= 142, so normDist < 0
+            UInt256 scaled = leftSignificand >> -normDist;
+            (UInt256 fullSignificand, UInt128 remSignificand) = TAccelerator.DivRem(scaled, rightSignificand);
+            UInt128 quotSignificand = (UInt128)fullSignificand;
+            quotExponent -= normDist;
+
+            // set sticky bit
+            quotSignificand |= remSignificand != UInt128.Zero || (leftSignificand & ((UInt256.One << -normDist) - 1)) != UInt256.Zero ?
                 UInt128.One : UInt128.Zero;
-
-            // rescale subnormal quotient
-            RescaleSubnormalQuotient(ref quotSignificand, ref quotExponent);
 
             return Compose(RoundToNearestEven(quotSignificand), quotExponent, quotSign);
         }
     }
 
-    // After normalization the quotient exponent is always >= -EXPONENT_BIAS + 1, so this rescale is
-    // unreachable; it is kept as a defensive guard and excluded from coverage.
-    [ExcludeFromCodeCoverage]
-    private static void RescaleSubnormalQuotient(ref UInt128 quotSignificand, ref int quotExponent)
-    {
-        if (quotExponent < -EXPONENT_BIAS + 1)
-        {
-            var shiftDist = Math.Min(-EXPONENT_BIAS + 1 - quotExponent, 127);
-            var shiftedOut = quotSignificand & ((UInt128.One << shiftDist) - 1);
-
-            quotSignificand >>= shiftDist;
-            quotSignificand |= UInt128.Min(shiftedOut, 1);
-            quotExponent = -EXPONENT_BIAS + 1;
-        }
-    }
-
     public static Float128<TAccelerator> operator %(Float128<TAccelerator> left, Float128<TAccelerator> right)
     {
-        return (Abs(left) - (Abs(right) *
-        (Floor(Abs(left) / Abs(right))))) *
-        Sign(left);
+        return ExactRemainder(left, right, roundQuotientToNearest: false);
     }
 
     public static Float128<TAccelerator> operator ++(Float128<TAccelerator> value)

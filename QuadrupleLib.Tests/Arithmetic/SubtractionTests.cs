@@ -125,7 +125,10 @@ namespace QuadrupleLib.Tests.Arithmetic
         [Fact]
         public void SubtractSubnormalIsCorrect()
         {
-            Assert.Equal(Float128<TAccelerator>.Zero, Float128<TAccelerator>.Epsilon - Float128<TAccelerator>.Epsilon);
+            Float128<TAccelerator> difference = Float128<TAccelerator>.Epsilon - Float128<TAccelerator>.Epsilon;
+
+            Assert.Equal(Float128<TAccelerator>.Zero, difference);
+            Assert.False(Float128<TAccelerator>.IsNegative(difference));
         }
 
         [Theory]
@@ -149,10 +152,57 @@ namespace QuadrupleLib.Tests.Arithmetic
         }
 
         [Fact]
+        public void SubtractNearlyEqualValuesIsExact()
+        {
+            // 1 - (1 - 2^-113) = 2^-113
+            Float128<TAccelerator> one = Float128<TAccelerator>.One;
+            Float128<TAccelerator> ulpHalf = Float128<TAccelerator>.ScaleB(one, -113);
+            Float128<TAccelerator> nearOne = one - ulpHalf;
+            Assert.Equal(ulpHalf, one - nearOne);
+            Assert.Equal(-ulpHalf, nearOne - one);
+        }
+
+        [Fact]
+        public void TwoMinusTwoMinusUlpIsExact()
+        {
+            // reference: 2 - 2^-112 is representable, so 2 - (2 - 2^-112) = 2^-112 exactly
+            Float128<TAccelerator> two = RawStorage<TAccelerator>.FromBits((UInt128)16384 << 112);
+            Float128<TAccelerator> twoMinusUlp = RawStorage<TAccelerator>.FromBits(((UInt128)16383 << 112) | ((UInt128.One << 112) - 1));
+
+            Assert.Equal(RawStorage<TAccelerator>.FromBits(RawStorage<TAccelerator>.ParseBits("3F8F0000000000000000000000000000")), two - twoMinusUlp);
+        }
+
+        [Fact]
+        public void SubtractSmallOffsetFromLargeValueIsExact()
+        {
+            // 2^-12 is one ulp of 2^100
+            Float128<TAccelerator> large = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, 100);
+            Float128<TAccelerator> small = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.One, -12);
+            Assert.Equal(small, (large + small) - large);
+        }
+
+        [Fact]
+        public void SubtractNearbyValuesWithSubnormalDifferenceIsExact()
+        {
+            // x = 2^-16380, y = 2^-16380 - 2^-16492, so x - y = 2^-16492 = 4 * 2^-16494
+            Float128<TAccelerator> x = RawStorage<TAccelerator>.FromBits((UInt128)3 << 112);
+            Float128<TAccelerator> y = RawStorage<TAccelerator>.FromBits(((UInt128)2 << 112) | (((UInt128.One << 112) - 2)));
+            Assert.Equal(RawStorage<TAccelerator>.FromBits((UInt128)4), x - y);
+        }
+
+        [Fact]
+        public void SubtractSubnormalsIsExact()
+        {
+            // 2 * 2^-16494 - 2^-16494 = 2^-16494, the smallest subnormal
+            Float128<TAccelerator> twiceSmallest = Float128<TAccelerator>.ScaleB(Float128<TAccelerator>.Epsilon, 1);
+            Assert.Equal(Float128<TAccelerator>.Epsilon, twiceSmallest - Float128<TAccelerator>.Epsilon);
+        }
+
+        [Fact]
         public void OverflowingDiffIsInfinity()
         {
-            Float128<TAccelerator> max = Float128<TAccelerator>.ScaleB((Float128<TAccelerator>)(UInt128.MaxValue >> 15), short.MaxValue >> 1);
-            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, -max - max);
+            Float128<TAccelerator> largest = RawStorage<TAccelerator>.LargestFinite();
+            Assert.Equal(Float128<TAccelerator>.NegativeInfinity, -largest - largest);
         }
 
         [Fact]

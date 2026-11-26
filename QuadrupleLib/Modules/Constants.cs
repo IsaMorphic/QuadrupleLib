@@ -25,14 +25,16 @@ public partial struct Float128<TAccelerator>
     #region Private API (constants)
 
     private static readonly UInt128 SIGNIFICAND_MASK = UInt128.MaxValue >> 16;
-    private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
     private static readonly UInt128 SIGNBIT_MASK = (UInt128.MaxValue >> 1) + 1;
+    // must follow SIGNBIT_MASK: static fields initialize in declaration order
+    private static readonly UInt128 EXPONENT_MASK = ~SIGNIFICAND_MASK ^ SIGNBIT_MASK;
     private static readonly ushort EXPONENT_BIAS = short.MaxValue >> 1;
 
     #endregion
 
     #region Public API (constants)
 
+    // NaN bit patterns, see BREAKING_CHANGES.md §1. Names are reversed from IEEE: _qNaN (library NaN) has no quiet bit, so it is signaling; _sNaN has it set.
     private static readonly Float128<TAccelerator> _qNaN = new Float128<TAccelerator>(UInt128.One, short.MaxValue, false);
     private static readonly Float128<TAccelerator> _sNaN = new Float128<TAccelerator>(UInt128.One << 111, short.MaxValue, false);
 
@@ -71,8 +73,8 @@ public partial struct Float128<TAccelerator>
 
     private static readonly Float128<TAccelerator> _e = Parse("2.7182818284590452353602874713526625");
 
-    // ln(2) = _ln2Hi + _ln2Lo. _ln2Hi has 96 significant bits, so k * _ln2Hi is exact for |k| < 2^17.
-    private static readonly Float128<TAccelerator> _ln2Hi = new(new UInt128(0x62e42fefa39eUL, 0xf35793c767300000UL), -1, false); // exact: 0x1.62e42fefa39ef3p-1
+    // ln(2) = Hi + Lo. Hi's set bits span 91 positions, so k * Hi is exact for |k| <= 2^20.
+    private static readonly Float128<TAccelerator> _ln2Hi = new(new UInt128(0x62e42fefa39eUL, 0xf35793c767300000UL), -1, false);
     private static readonly Float128<TAccelerator> _ln2Lo = Parse("0.000000000000000000000000000000194704509238074995158795957333327380278528298909288512357468");
 
     [MakeNonGeneric]
